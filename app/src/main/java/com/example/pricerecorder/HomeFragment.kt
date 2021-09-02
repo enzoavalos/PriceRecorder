@@ -1,22 +1,30 @@
 package com.example.pricerecorder
 
+import android.app.Application
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.pricerecorder.database.ProductDatabase
+import com.example.pricerecorder.database.ProductDatabaseDao
 import com.example.pricerecorder.databinding.HomeFragmentBinding
 
 class HomeFragment:Fragment() {
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val binding : HomeFragmentBinding = DataBindingUtil.inflate(inflater,R.layout.home_fragment,container,false)
-        val viewModel = ViewModelProvider(this)[(HomeViewModel::class.java)]
-        val manager = GridLayoutManager(activity,2)
+
+        val application: Application = requireNotNull(this.activity).application
+        val dataSource = ProductDatabase.getInstance(application).productDatabaseDao
+        val viewModelFactory = HomeViewModelFactory(dataSource,application)
+        val viewModel = ViewModelProvider(this, viewModelFactory)[HomeViewModel::class.java]
 
         binding.viewModel = viewModel
-        binding.lifecycleOwner = this
+        binding.lifecycleOwner = viewLifecycleOwner
+        val manager = LinearLayoutManager(context)
         binding.productsList.layoutManager = manager
 
         viewModel.fabClicked.observe(viewLifecycleOwner,{

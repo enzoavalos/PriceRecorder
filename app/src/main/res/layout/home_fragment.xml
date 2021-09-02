@@ -23,7 +23,7 @@
                     android:id="@+id/products_list"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    tools:listitem="@layout/aux_lay"
+                    tools:listitem="@layout/list_item_product"
                     />
             </androidx.core.widget.NestedScrollView>
             <com.google.android.material.floatingactionbutton.FloatingActionButton
