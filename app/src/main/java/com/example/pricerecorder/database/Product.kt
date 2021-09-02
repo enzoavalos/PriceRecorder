@@ -1,10 +1,8 @@
-package com.example.pricerecorder.Database
+package com.example.pricerecorder.database
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.text.SimpleDateFormat
-import java.util.*
 
 @Entity(tableName = "products_table")
 data class Product(
@@ -18,8 +16,8 @@ data class Product(
     var price : Double,
 
     @ColumnInfo(name = "place_of_purchase")
-    var placeOfPurchase : String,
+    var placeOfPurchase : String
 
-    @ColumnInfo(name = "upload_date")
-    var date : String = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+    /*@ColumnInfo(name = "upload_date")
+    var date : String = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())*/
 )

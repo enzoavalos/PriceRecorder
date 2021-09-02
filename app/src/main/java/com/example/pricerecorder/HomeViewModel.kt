@@ -2,18 +2,13 @@ package com.example.pricerecorder
 
 import android.app.Application
 import android.view.View
-import android.widget.Toast
 import androidx.lifecycle.*
-import com.example.pricerecorder.Database.ProductDatabaseDao
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.example.pricerecorder.database.ProductDatabaseDao
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
-class HomeViewModel: ViewModel() {
-
+class HomeViewModel(val database: ProductDatabaseDao, application: Application): AndroidViewModel(application){
     private var viewModelJob = Job()
-    private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
+    private val products = database.getAllProducts()
 
     private val _fabClicked = MutableLiveData<Int?>()
     val fabClicked : LiveData<Int?>
@@ -29,10 +24,5 @@ class HomeViewModel: ViewModel() {
 
     fun onNavigated(){
         _fabClicked.value = null
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        viewModelJob.cancel()
     }
 }
