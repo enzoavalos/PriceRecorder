@@ -8,7 +8,7 @@ import com.example.pricerecorder.database.ProductDatabaseDao
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class HomeViewModel(val database: ProductDatabaseDao, application: Application): AndroidViewModel(application){
+class HomeViewModel(private val database: ProductDatabaseDao, application: Application): AndroidViewModel(application){
     private var viewModelJob = Job()
 
     val products : LiveData<List<Product>> = database.getAllProducts()
@@ -26,8 +26,8 @@ class HomeViewModel(val database: ProductDatabaseDao, application: Application):
         _productClicked.value = null
     }
 
-    fun onProductClicked(product: Product){
-        _productClicked.value = product.productId
+    fun onProductClicked(productId: Long){
+        _productClicked.value = productId
     }
 
     fun onFabClicked(view: View){
@@ -41,6 +41,12 @@ class HomeViewModel(val database: ProductDatabaseDao, application: Application):
     fun addProduct(product: Product){
         viewModelScope.launch {
             database.insert(product)
+        }
+    }
+
+    fun deleteProduct(product: Product){
+        viewModelScope.launch {
+            database.delete(product)
         }
     }
 

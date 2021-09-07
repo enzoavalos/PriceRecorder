@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pricerecorder.ProductAdapter
+import com.example.pricerecorder.ProductListener
 import com.example.pricerecorder.R
 import com.example.pricerecorder.SpacingItemDecoration
 import com.example.pricerecorder.database.Product
@@ -29,7 +30,9 @@ class HomeFragment:Fragment() {
         binding.lifecycleOwner = viewLifecycleOwner
 
         val manager = LinearLayoutManager(context)
-        val adapter = ProductAdapter()
+        val adapter = ProductAdapter(ProductListener {
+            viewModel.deleteProduct(it)
+        })
         initRecyclerView(binding,manager,adapter)
 
         viewModel.fabClicked.observe(viewLifecycleOwner,{
@@ -49,6 +52,10 @@ class HomeFragment:Fragment() {
 
         viewModel.products.observe(viewLifecycleOwner, {
             adapter.submitList(it)
+        })
+
+        viewModel.productClicked.observe(viewLifecycleOwner,{
+
         })
 
         return binding.root
