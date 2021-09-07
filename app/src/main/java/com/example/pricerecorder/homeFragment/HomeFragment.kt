@@ -1,4 +1,4 @@
-package com.example.pricerecorder
+package com.example.pricerecorder.homeFragment
 
 import android.app.Application
 import android.os.Bundle
@@ -8,6 +8,9 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.pricerecorder.ProductAdapter
+import com.example.pricerecorder.R
+import com.example.pricerecorder.SpacingItemDecoration
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
 import com.example.pricerecorder.databinding.HomeFragmentBinding
@@ -24,38 +27,41 @@ class HomeFragment:Fragment() {
 
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
-        var p1 = Product("Aceite",200.0,"Carrefour","no","2021")
-        var p2 = Product("Fernet",1000.0,"Monarca","no","1982")
-        var p3 = Product("Asado",1000.0,"Monarca","no","1982")
-        var p4 = Product("Carbon",1000.0,"Monarca","no","1982")
-        var p5 = Product("Milanesas",1000.0,"Monarca","no","1982")
-        var p6 = Product("Yogur",1000.0,"Monarca","no","1982")
-        var p7 = Product("Masitas",1000.0,"Monarca","no","1982")
-        var p8 = Product("Harina 0000",1000.0,"Monarca","no","1982")
-        var lista : List<Product> = listOf(p1,p2,p3,p4,p5,p6,p7,p8)
 
-        initRecyclerView(binding,lista)
+        val manager = LinearLayoutManager(context)
+        val adapter = ProductAdapter()
+        initRecyclerView(binding,manager,adapter)
 
         viewModel.fabClicked.observe(viewLifecycleOwner,{
                 it?.let {
                     when(it){
-                        R.id.add_fab -> Toast.makeText(context,"Agregar",Toast.LENGTH_SHORT).show()
+                        R.id.add_fab -> {
+                            val lista = listOf("Galletitas","Aceite","Asado","Polenta","Fideos","Atun","Verdura")
+                            val aux = lista.random()
+                            val p = Product(aux,200.0,"Carrefour","no","6/9/2021")
+                            viewModel.addProduct(p)
+                        }
                         R.id.filter_fab -> Toast.makeText(context,"Filtrar",Toast.LENGTH_SHORT).show()
                     }
                     viewModel.onNavigated()
                 }
         })
 
+        viewModel.products.observe(viewLifecycleOwner, {
+            adapter.submitList(it)
+        })
+
         return binding.root
     }
 
-    private fun initRecyclerView(binding: HomeFragmentBinding, lista: List<Product>){
+    private fun initRecyclerView(binding: HomeFragmentBinding,
+                                 manager: LinearLayoutManager,
+                                 adapter: ProductAdapter
+    ){
         binding.productRecyclerView.apply {
-            layoutManager = LinearLayoutManager(context)
-            addItemDecoration(SpacingItemDecoration(8))
-            val prodAdapter = ProductAdapter()
-            prodAdapter.submitList(lista)
-            adapter = prodAdapter
+            layoutManager = manager
+            addItemDecoration(SpacingItemDecoration(4))
+            this.adapter = adapter
         }
     }
 }

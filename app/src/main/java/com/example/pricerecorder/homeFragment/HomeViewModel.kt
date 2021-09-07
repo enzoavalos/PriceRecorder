@@ -1,4 +1,4 @@
-package com.example.pricerecorder
+package com.example.pricerecorder.homeFragment
 
 import android.app.Application
 import android.view.View
@@ -10,17 +10,25 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(val database: ProductDatabaseDao, application: Application): AndroidViewModel(application){
     private var viewModelJob = Job()
-    val products = database.getAllProducts()
+
+    val products : LiveData<List<Product>> = database.getAllProducts()
 
     private val _fabClicked = MutableLiveData<Int?>()
     val fabClicked : LiveData<Int?>
         get() = _fabClicked
 
+    private val _productClicked = MutableLiveData<Long?>()
+    val productClicked : LiveData<Long?>
+        get() = _productClicked
+
     init {
         _fabClicked.value = null
+        _productClicked.value = null
     }
 
-    fun getProductsList() = products
+    fun onProductClicked(product: Product){
+        _productClicked.value = product.productId
+    }
 
     fun onFabClicked(view: View){
         _fabClicked.value = view.id
@@ -36,7 +44,7 @@ class HomeViewModel(val database: ProductDatabaseDao, application: Application):
         }
     }
 
-    fun clear(){
+    private fun clear(){
         viewModelScope.launch {
             database.clearDb()
         }

@@ -16,7 +16,7 @@ data class Product(
     var placeOfPurchase : String,
 
     @ColumnInfo(name = "image_url")
-    var image : String,
+    var image : String? = null,
 
     @ColumnInfo(name = "update_date")
     var updateDate : String,
