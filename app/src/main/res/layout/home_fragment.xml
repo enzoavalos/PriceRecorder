@@ -6,7 +6,7 @@
     <data>
         <variable
             name="viewModel"
-            type="com.example.pricerecorder.HomeViewModel" />
+            type="com.example.pricerecorder.homeFragment.HomeViewModel" />
     </data>
 
     <LinearLayout android:layout_height="match_parent"
@@ -45,8 +45,8 @@
                 app:layout_anchor="@id/add_fab"
                 app:layout_anchorGravity="top"
                 app:useCompatPadding="true"
-                android:layout_marginEnd="@dimen/spacing_xsmal"
-                android:layout_marginRight="@dimen/spacing_xsmal"
+                android:layout_marginEnd="@dimen/spacing_xsmall"
+                android:layout_marginRight="@dimen/spacing_xsmall"
                 android:src="@drawable/ic_filter_list"
                 app:background="?attr/colorSecondary"
                 app:tint="@color/white"

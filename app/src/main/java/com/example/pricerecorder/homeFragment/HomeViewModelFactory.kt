@@ -1,4 +1,4 @@
-package com.example.pricerecorder
+package com.example.pricerecorder.homeFragment
 
 import android.app.Application
 import androidx.lifecycle.ViewModel

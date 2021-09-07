@@ -1,69 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_height="wrap_content"
     android:layout_width="match_parent"
-    app:cardElevation="10dp"
-    app:cardCornerRadius="8dp"
-    app:cardPreventCornerOverlap="false">
+    android:layout_height="match_parent">
+    <data>
+        <variable
+            name="product"
+            type="com.example.pricerecorder.database.Product" />
+        <variable
+            name="clickListener"
+            type="com.example.pricerecorder.ProductListener" />
+    </data>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <androidx.cardview.widget.CardView
+        android:layout_height="wrap_content"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        app:cardElevation="10dp"
+        app:cardCornerRadius="6dp"
+        app:cardPreventCornerOverlap="false">
 
-        <ImageView
-            android:id="@+id/product_image"
-            android:layout_width="@dimen/icon_width"
-            android:layout_height="@dimen/icon_width"
-            android:layout_marginTop="@dimen/spacing_normal"
-            android:layout_marginBottom="@dimen/spacing_normal"
-            android:layout_margin="@dimen/spacing_normal"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:srcCompat="@tools:sample/avatars" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/product_description_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_normal"
-            android:text="Descripcion"
-            app:layout_constraintStart_toEndOf="@+id/product_image"
-            app:layout_constraintTop_toTopOf="@+id/product_image"
-            android:layout_marginLeft="@dimen/spacing_normal" />
+            <ImageView
+                android:id="@+id/product_image"
+                android:layout_width="@dimen/icon_width"
+                android:layout_height="@dimen/icon_width"
+                android:layout_marginTop="@dimen/spacing_small"
+                android:layout_marginBottom="@dimen/spacing_small"
+                android:layout_margin="@dimen/spacing_small"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:srcCompat="@tools:sample/avatars" />
 
-        <TextView
-            android:id="@+id/purchase_place_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/spacing_normal"
-            android:text="Lugar"
-            app:layout_constraintBottom_toBottomOf="@+id/product_image"
-            app:layout_constraintStart_toEndOf="@+id/product_image"
-            android:layout_marginLeft="@dimen/spacing_normal" />
+            <TextView
+                android:id="@+id/product_description_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_normal"
+                android:text="Descripcion"
+                app:layout_constraintStart_toEndOf="@+id/product_image"
+                app:layout_constraintTop_toTopOf="@+id/product_image"
+                android:layout_marginLeft="@dimen/spacing_normal" />
 
-        <TextView
-            android:id="@+id/product_price_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Precio"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/product_image"
-            android:layout_marginEnd="@dimen/spacing_normal"
-            android:layout_marginRight="@dimen/spacing_normal" />
+            <TextView
+                android:id="@+id/purchase_place_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_normal"
+                android:text="Lugar"
+                app:layout_constraintBottom_toBottomOf="@+id/product_image"
+                app:layout_constraintStart_toEndOf="@+id/product_image"
+                android:layout_marginLeft="@dimen/spacing_normal" />
 
-        <TextView
-            android:id="@+id/update_date_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/spacing_normal"
-            android:layout_marginRight="@dimen/spacing_normal"
-            android:text="Fecha"
-            app:layout_constraintBottom_toBottomOf="@+id/product_image"
-            app:layout_constraintEnd_toEndOf="parent" />
+            <TextView
+                android:id="@+id/product_price_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Precio"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/product_image"
+                android:layout_marginEnd="@dimen/spacing_normal"
+                android:layout_marginRight="@dimen/spacing_normal" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.cardview.widget.CardView>
+            <TextView
+                android:id="@+id/update_date_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/spacing_normal"
+                android:layout_marginRight="@dimen/spacing_normal"
+                android:text="Fecha"
+                app:layout_constraintBottom_toBottomOf="@+id/product_image"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+</layout>
