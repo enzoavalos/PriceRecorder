@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    xmlns:tools="http://schemas.android.com/tools">
     <data>
         <variable
             name="product"
@@ -18,7 +16,8 @@
         android:layout_width="match_parent"
         app:cardElevation="10dp"
         app:cardCornerRadius="6dp"
-        app:cardPreventCornerOverlap="false">
+        app:cardPreventCornerOverlap="false"
+        android:onClick="@{() -> clickListener.onClick(product)}">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -34,14 +33,16 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:srcCompat="@tools:sample/avatars" />
+                tools:srcCompat="@drawable/ic_broken_image"
+                android:src="@drawable/ic_broken_image"
+                />
 
             <TextView
                 android:id="@+id/product_description_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/spacing_normal"
-                android:text="Descripcion"
+                android:text="@{product.component1()}"
                 app:layout_constraintStart_toEndOf="@+id/product_image"
                 app:layout_constraintTop_toTopOf="@+id/product_image"
                 android:layout_marginLeft="@dimen/spacing_normal" />
@@ -51,7 +52,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/spacing_normal"
-                android:text="Lugar"
+                android:text="@{product.component3()}"
                 app:layout_constraintBottom_toBottomOf="@+id/product_image"
                 app:layout_constraintStart_toEndOf="@+id/product_image"
                 android:layout_marginLeft="@dimen/spacing_normal" />
@@ -60,7 +61,7 @@
                 android:id="@+id/product_price_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Precio"
+                productPriceString="@{product}"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/product_image"
                 android:layout_marginEnd="@dimen/spacing_normal"
@@ -72,7 +73,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/spacing_normal"
                 android:layout_marginRight="@dimen/spacing_normal"
-                android:text="Fecha"
+                android:text="@{product.component5()}"
                 app:layout_constraintBottom_toBottomOf="@+id/product_image"
                 app:layout_constraintEnd_toEndOf="parent" />
 
