@@ -3,6 +3,8 @@ package com.example.pricerecorder.database
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.text.DateFormat
+import java.util.*
 
 @Entity(tableName = "products_table")
 data class Product(
@@ -19,10 +21,16 @@ data class Product(
     var image : String? = null,
 
     @ColumnInfo(name = "update_date")
-    var updateDate : String,
+    var updateDate : String = "",
 
     @PrimaryKey(autoGenerate = true)
-    var productId : Long =0L,
-    /*@ColumnInfo(name = "upload_date")
-    var date : String = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())*/
-)
+    var productId : Long =0L
+){
+    init {
+        updateDate = setUpdateDate()
+    }
+
+    private fun setUpdateDate(): String {
+        return DateFormat.getDateInstance().format(Calendar.getInstance().time)
+    }
+}

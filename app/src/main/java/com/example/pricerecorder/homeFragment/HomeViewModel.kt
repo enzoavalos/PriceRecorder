@@ -17,17 +17,8 @@ class HomeViewModel(private val database: ProductDatabaseDao, application: Appli
     val fabClicked : LiveData<Int?>
         get() = _fabClicked
 
-    private val _productClicked = MutableLiveData<Long?>()
-    val productClicked : LiveData<Long?>
-        get() = _productClicked
-
     init {
         _fabClicked.value = null
-        _productClicked.value = null
-    }
-
-    fun onProductClicked(productId: Long){
-        _productClicked.value = productId
     }
 
     fun onFabClicked(view: View){
@@ -50,7 +41,7 @@ class HomeViewModel(private val database: ProductDatabaseDao, application: Appli
         }
     }
 
-    private fun clear(){
+    fun clear(){
         viewModelScope.launch {
             database.clearDb()
         }
@@ -58,7 +49,6 @@ class HomeViewModel(private val database: ProductDatabaseDao, application: Appli
 
     override fun onCleared() {
         super.onCleared()
-        clear()
         viewModelJob.cancel()
     }
 }
