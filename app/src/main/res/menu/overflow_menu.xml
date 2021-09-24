@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item android:id="@+id/op_delete_all"
-        android:title="Eliminar todos"/>
-    <item android:id="@+id/op_settings"
-        android:title="Ajustes"/>
+    <group
+        android:id="@+id/menu_group">
+        <item android:id="@+id/op_delete_all"
+            android:title="Eliminar todos"/>
+        <item android:id="@+id/op_settings"
+            android:title="Ajustes"/>
+    </group>
     <item
         android:id="@+id/op_search"
         android:icon="@drawable/ic_search"

@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(private val database: ProductDatabaseDao, application: Application): AndroidViewModel(application){
     private var viewModelJob = Job()
-
     val products : LiveData<List<Product>> = database.getAllProducts()
 
     private val _fabClicked = MutableLiveData<Int?>()
@@ -27,12 +26,6 @@ class HomeViewModel(private val database: ProductDatabaseDao, application: Appli
 
     fun onNavigated(){
         _fabClicked.value = null
-    }
-
-    fun addProduct(product: Product){
-        viewModelScope.launch {
-            database.insert(product)
-        }
     }
 
     fun deleteProduct(product: Product){
