@@ -9,7 +9,7 @@ import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.databinding.ListItemProductBinding
 
 /*Adapta los datos usados a la recyclerView*/
-class ProductAdapter(val clickListener: ProductListener): ListAdapter<Product,RecyclerView.ViewHolder>(ProductDiffCallback) {
+class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Product,RecyclerView.ViewHolder>(ProductDiffCallback) {
 
     /*Crea los distintos viewholders usados, sera llamado cuando no haya viewholders existentes para reutilizar*/
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -38,7 +38,7 @@ class ProductAdapter(val clickListener: ProductListener): ListAdapter<Product,Re
     }
 
     /*La clase extiende de RecyclerView.ViewHolder ya que ese es el tipo de viewholder que se le especifico al adapter.*/
-    class ProductViewHolder private constructor(val binding: ListItemProductBinding): RecyclerView.ViewHolder(binding.root){
+    class ProductViewHolder private constructor(private val binding: ListItemProductBinding): RecyclerView.ViewHolder(binding.root){
         /*Responsable de unir cada objeto Producto a las vistas del layout*/
         fun bind(product: Product,clickListener: ProductListener){
             binding.product = product

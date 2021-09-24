@@ -15,5 +15,4 @@ class HomeViewModelFactory(private val dataSource:ProductDatabaseDao,
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
-
 }

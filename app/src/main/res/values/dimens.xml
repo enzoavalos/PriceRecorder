@@ -5,4 +5,8 @@
     <dimen name="spacing_xsmall">4dp</dimen>
     <dimen name="icon_width">64dp</dimen>
     <dimen name="icon_height">60dp</dimen>
+    <dimen name="price_text_size">24sp</dimen>
+    <dimen name="decription_text_size">18sp</dimen>
+    <dimen name="spacing_big">24dp</dimen>
+    <dimen name="spacing_xbig">40dp</dimen>
 </resources>

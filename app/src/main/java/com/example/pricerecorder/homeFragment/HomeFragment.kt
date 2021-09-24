@@ -4,15 +4,16 @@ import android.app.Application
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.Navigation
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.pricerecorder.ProductAdapter
-import com.example.pricerecorder.ProductListener
-import com.example.pricerecorder.R
-import com.example.pricerecorder.SpacingItemDecoration
+import com.example.pricerecorder.*
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
 import com.example.pricerecorder.databinding.HomeFragmentBinding
@@ -21,10 +22,14 @@ import java.util.*
 class HomeFragment:Fragment() {
     private lateinit var viewModel: HomeViewModel
     private lateinit var adapter: ProductAdapter
+    private lateinit var binding: HomeFragmentBinding
+    private lateinit var mainMenu: Menu
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val binding : HomeFragmentBinding = DataBindingUtil.inflate(inflater,
+        binding = DataBindingUtil.inflate(inflater,
             R.layout.home_fragment,container,false)
+
+        MainToolbar.show(activity as AppCompatActivity,getString(R.string.app_name),false)
 
         val application: Application = requireNotNull(this.activity).application
         val dataSource = ProductDatabase.getInstance(application).productDatabaseDao
@@ -38,17 +43,11 @@ class HomeFragment:Fragment() {
         adapter = ProductAdapter(ProductListener {
             viewModel.deleteProduct(it)
         })
-        initRecyclerView(binding,manager,adapter)
 
         viewModel.fabClicked.observe(viewLifecycleOwner,{
                 it?.let {
                     when(it){
-                        R.id.add_fab -> {
-                            val lista = listOf("Galletitas","Aceite","Asado","Polenta","Fideos","Atun","Verdura","Gaseosa","Pollo")
-                            val aux = lista.random()
-                            val p = Product(aux,200.0,"Carrefour","no")
-                            viewModel.addProduct(p)
-                        }
+                        R.id.add_fab -> Navigation.findNavController(binding.root).navigate(R.id.action_homeFragment_to_addFragment)
                         R.id.filter_fab -> Toast.makeText(context,"Filtrar",Toast.LENGTH_SHORT).show()
                     }
                     viewModel.onNavigated()
@@ -59,10 +58,33 @@ class HomeFragment:Fragment() {
             adapter.submitList(it)
         })
 
+        initRecyclerView(binding,manager,adapter)
         setHasOptionsMenu(true)
+        setFabOnScrollBehaviour()
         return binding.root
     }
 
+    /*Configura comportamiento de los botones flotantes al ser scrolleada la pantalla*/
+    private fun setFabOnScrollBehaviour() {
+        binding.nestedScrollView.setOnScrollChangeListener(
+            NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, _ ->
+            if(binding.addFab.isVisible){
+                if(scrollY != 0){
+                    binding.apply {
+                        addFab.shrink()
+                        filterFab.hide()
+                    }
+                }else{
+                    binding.apply {
+                        addFab.extend()
+                        filterFab.show()
+                    }
+                }
+            }
+        })
+    }
+
+    // Initializes the recyclerview
     private fun initRecyclerView(binding: HomeFragmentBinding,
                                  manager: LinearLayoutManager,
                                  adapter: ProductAdapter){
@@ -76,6 +98,7 @@ class HomeFragment:Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.overflow_menu,menu)
+        mainMenu = menu
 
         //Sets the functionality for the searchview in the toolbar
         val menuItem = menu.findItem(R.id.op_search)
@@ -89,10 +112,12 @@ class HomeFragment:Fragment() {
                 return true
             }
 
+            //Invoked when the searchView text is changed
             override fun onQueryTextChange(newText: String?): Boolean {
                 val tempList : MutableList<Product> = mutableListOf()
                 val searchText = newText!!.lowercase(Locale.getDefault())
 
+                //Creates a temporary list with the elements that match with the search
                 if(searchText.isNotEmpty()){
                     viewModel.products.value!!.forEach {
                         if(it.description.lowercase(Locale.getDefault()).contains(searchText)){
@@ -108,11 +133,28 @@ class HomeFragment:Fragment() {
             }
         })
 
-        /*Se ejecuta al cerrarse la barra de busqueda*/
-        searchView.setOnCloseListener {
-            adapter.submitList(viewModel.products.value)
-            true
-        }
+        searchView.addOnAttachStateChangeListener(object:View.OnAttachStateChangeListener{
+            //Invoked when the searchview is attached to the screen(search bar is opened)
+            override fun onViewAttachedToWindow(v: View?) {
+                binding.apply {
+                    addFab.hide()
+                    filterFab.hide()
+                    mainMenu.setGroupVisible(R.id.menu_group,false)
+                }
+            }
+
+            //Invoked when the searchView is detached from the screen
+            override fun onViewDetachedFromWindow(v: View?) {
+                mainMenu.setGroupVisible(R.id.menu_group,true)
+                binding.addFab.show()
+                if(binding.nestedScrollView.scrollY == 0) {
+                    binding.apply {
+                        addFab.extend()
+                        filterFab.show()
+                    }
+                }
+            }
+        })
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

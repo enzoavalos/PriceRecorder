@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Price Recorder</string>
+    <string name="add_product_string">Agregar</string>
+    <string name="accept_button_string">Aceptar</string>
+    <string name="cancel_button_string">Cancelar</string>
+    <string name="place_hint">Lugar</string>
+    <string name="price_hint">$500.0</string>
+    <string name="description_string">Descripcion</string>
 </resources>

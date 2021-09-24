@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="preloaded_fonts" translatable="false">
+        <item>@font/changa_one_italic</item>
+        <item>@font/old_standard_tt</item>
+        <item>@font/old_standard_tt_bold</item>
+        <item>@font/ultra</item>
+    </array>
+</resources>
