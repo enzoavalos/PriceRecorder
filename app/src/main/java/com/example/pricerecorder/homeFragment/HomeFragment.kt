@@ -12,11 +12,14 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.Navigation
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.pricerecorder.*
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
 import com.example.pricerecorder.databinding.HomeFragmentBinding
+import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
 class HomeFragment:Fragment() {
@@ -39,15 +42,31 @@ class HomeFragment:Fragment() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
+        //Recycler view adapter
         val manager = LinearLayoutManager(context)
         adapter = ProductAdapter(ProductListener {
-            viewModel.deleteProduct(it)
+            navigateToEditFragment()
         })
+        val swipeDelete = object : SwipeToDeleteCallback(requireContext()) {
+            //Called when a viewHolder is swiped by the user
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val swipedItem = adapter.getItemProduct(viewHolder as ProductAdapter.ProductViewHolder)
+                viewModel.deleteProduct(swipedItem!!)
+                Snackbar.make(view!!,"Producto eliminado",Snackbar.LENGTH_SHORT)
+                    .setAction("Deshacer"){
+                        viewModel.addProduct(swipedItem)
+                    }
+                    .show()
+            }
+        }
+        val touchHelper = ItemTouchHelper(swipeDelete)
+        touchHelper.attachToRecyclerView(binding.productRecyclerView)
+
 
         viewModel.fabClicked.observe(viewLifecycleOwner,{
                 it?.let {
                     when(it){
-                        R.id.add_fab -> Navigation.findNavController(binding.root).navigate(R.id.action_homeFragment_to_addFragment)
+                        R.id.add_fab -> navigateToAddFragment()
                         R.id.filter_fab -> Toast.makeText(context,"Filtrar",Toast.LENGTH_SHORT).show()
                     }
                     viewModel.onNavigated()
@@ -62,6 +81,14 @@ class HomeFragment:Fragment() {
         setHasOptionsMenu(true)
         setFabOnScrollBehaviour()
         return binding.root
+    }
+
+    private fun navigateToEditFragment(){
+        Navigation.findNavController(binding.root).navigate(R.id.action_homeFragment_to_editFragment)
+    }
+
+    private fun navigateToAddFragment(){
+        Navigation.findNavController(binding.root).navigate(R.id.action_homeFragment_to_addFragment)
     }
 
     /*Configura comportamiento de los botones flotantes al ser scrolleada la pantalla*/

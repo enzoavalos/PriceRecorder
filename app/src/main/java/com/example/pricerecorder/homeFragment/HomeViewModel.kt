@@ -40,6 +40,12 @@ class HomeViewModel(private val database: ProductDatabaseDao, application: Appli
         }
     }
 
+    fun addProduct(product: Product){
+        viewModelScope.launch {
+            database.insert(product)
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         viewModelJob.cancel()

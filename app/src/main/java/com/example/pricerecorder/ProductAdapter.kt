@@ -25,6 +25,11 @@ class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Pr
         }
     }
 
+    //Returns the object binded to the given view holder
+    fun getItemProduct(viewHolder: ProductViewHolder) : Product?{
+        return getItem(viewHolder.bindingAdapterPosition)
+    }
+
     /*Este objeto permite identificar los cambios entre 2 listas, y retorna una serie de operaciones minimas para
     * para convertir la 1er lista en la segunda de forma eficiente*/
     object ProductDiffCallback : DiffUtil.ItemCallback<Product>(){
