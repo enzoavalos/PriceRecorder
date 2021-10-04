@@ -9,54 +9,51 @@
             type="com.example.pricerecorder.homeFragment.HomeViewModel" />
     </data>
 
-    <LinearLayout android:layout_height="match_parent"
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:orientation="vertical">
-        <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_height="match_parent">
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nestedScrollView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <androidx.core.widget.NestedScrollView
-                android:id="@+id/nestedScrollView"
+            android:layout_height="match_parent"
+            >
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/product_recycler_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                >
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/product_recycler_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    tools:listitem="@layout/list_item_product"
-                    />
-            </androidx.core.widget.NestedScrollView>
-            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/add_fab"
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom|end"
-                android:layout_margin="@dimen/spacing_normal"
-                app:icon="@drawable/ic_fab"
-                android:text="@string/add_product_string"
-                android:textColor="@color/white"
-                app:iconTint="@color/white"
-                app:background="?attr/colorSecondary"
-                app:tint="@color/white"
-                android:visibility="visible"
-                android:onClick="@{(view) -> viewModel.onFabClicked(view)}"
+                tools:listitem="@layout/list_item_product"
                 />
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/filter_fab"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top|end"
-                app:layout_anchor="@id/add_fab"
-                app:layout_anchorGravity="end"
-                android:layout_marginEnd="@dimen/spacing_xsmall"
-                app:useCompatPadding="true"
-                android:src="@drawable/ic_filter_list"
-                app:background="?attr/colorSecondary"
-                app:tint="@color/white"
-                android:visibility="visible"
-                android:onClick="@{(view) -> viewModel.onFabClicked(view)}"
-                android:layout_marginRight="@dimen/spacing_xsmall" />
-        </androidx.coordinatorlayout.widget.CoordinatorLayout>
-    </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/add_fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="@dimen/spacing_normal"
+            app:icon="@drawable/ic_fab"
+            android:text="@string/add_product_string"
+            android:textColor="@color/white"
+            app:iconTint="@color/white"
+            app:background="?attr/colorSecondary"
+            app:tint="@color/white"
+            android:visibility="visible"
+            android:onClick="@{(view) -> viewModel.onFabClicked(view)}"
+            />
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/filter_fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            app:layout_anchor="@id/add_fab"
+            app:layout_anchorGravity="end"
+            android:layout_marginEnd="@dimen/spacing_xsmall"
+            app:useCompatPadding="true"
+            android:src="@drawable/ic_filter_list"
+            app:background="?attr/colorSecondary"
+            app:tint="@color/white"
+            android:visibility="visible"
+            android:onClick="@{(view) -> viewModel.onFabClicked(view)}"
+            android:layout_marginRight="@dimen/spacing_xsmall" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

@@ -13,21 +13,21 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.Navigation
-import com.example.pricerecorder.MainToolbar
-import com.example.pricerecorder.R
+import com.example.pricerecorder.*
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
 import com.example.pricerecorder.databinding.AddFragmentBinding
+import com.google.android.material.textfield.TextInputEditText
 
-class AddFragment:Fragment() {
+class AddFragment:Fragment(){
     private lateinit var binding : AddFragmentBinding
     private lateinit var viewModel: AddFragmentViewModel
 
+
     companion object {
         const val MAX_INTEGRAL_DIGITS = 7
-        const val MAX_DECIMAL_DIGITS = 2
-        const val DESCRIPTION_MAX_LENGTH = 50
-        const val PLACE_MAX_LENGTH = 30
+        const val DESCRIPTION_MAX_LENGTH = 40
+        const val PLACE_MAX_LENGTH = 25
     }
 
     override fun onCreateView(inflater: LayoutInflater,container: ViewGroup?,savedInstanceState: Bundle?): View {
@@ -46,14 +46,13 @@ class AddFragment:Fragment() {
             setTitle(activity,"Nuevo producto")
         }
 
-        viewModel.addButtonClicked.observe(viewLifecycleOwner,{
-            if(it){
+        binding.acceptButton.setOnClickListener {
+            if (it.id == binding.acceptButton.id)
                 createNewProduct()
-            }
-        })
+        }
 
         setHasOptionsMenu(true)
-        setEditTextBehaviour()
+        setEditTextBehaviour(binding.descriptionEditText,binding.placeEditText,binding.priceEditText)
         return binding.root
     }
 
@@ -66,41 +65,22 @@ class AddFragment:Fragment() {
         viewModel.addProduct(newProduct)
         Toast.makeText(context,"Agregado",Toast.LENGTH_SHORT).show()
         navigateUp()
-        viewModel.onNavigated()
     }
 
     //Validates all edittext inputs
     private fun validateInputs(){
         binding.apply {
-            if(!descriptionEditText.text.isNullOrEmpty() and !placeEditText.text.isNullOrEmpty()
-                and !priceEditText.text.isNullOrEmpty()) {
-                try{
-                    priceEditText.text.toString().toDouble()
-                    setAcceptButtonEnabled(true)
-                }catch (e:Exception){
-                    binding.priceEditText.error = "Valor Invalido"
-                    setAcceptButtonEnabled(false)
-                }
-            }
+            if(descriptionEditText.validateTextInput() and placeEditText.validateTextInput()
+                and priceEditText.validateNumericInputDouble())
+                    binding.acceptButton.setAcceptButtonEnabled(true)
             else
-                setAcceptButtonEnabled(false)
-        }
-    }
-
-    //Enable accept button when all editTexts inputs are valid
-    private fun setAcceptButtonEnabled(enabled:Boolean){
-        binding.acceptButton.apply {
-            isEnabled = enabled
-            alpha = if(enabled)
-                1F
-            else
-                0.7F
+                binding.acceptButton.setAcceptButtonEnabled(false)
         }
     }
 
     //Congifures the editTetxs behaviour
-    private fun setEditTextBehaviour() {
-        binding.descriptionEditText.apply {
+    private fun setEditTextBehaviour(description:TextInputEditText,place:TextInputEditText,price:EditText) {
+        description.apply {
             addTextChangedListener(object:TextWatcher{
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 }
@@ -117,7 +97,7 @@ class AddFragment:Fragment() {
             filters = arrayOf(InputFilter.LengthFilter(DESCRIPTION_MAX_LENGTH))
         }
 
-        binding.placeEditText.apply {
+        place.apply {
             addTextChangedListener(object:TextWatcher{
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 }
@@ -134,7 +114,7 @@ class AddFragment:Fragment() {
             filters = arrayOf(InputFilter.LengthFilter(PLACE_MAX_LENGTH))
         }
 
-        binding.priceEditText.apply {
+        price.apply {
             addTextChangedListener(object:TextWatcher{
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
                 }
@@ -146,7 +126,7 @@ class AddFragment:Fragment() {
                     if (!error.isNullOrEmpty())
                         error = null
                     removeTextChangedListener(this)
-                    currencyInputFormatter(this@apply)
+                    CurrencyFormatter.formatInput(this@apply)
                     addTextChangedListener(this)
                 }
             })
@@ -155,40 +135,6 @@ class AddFragment:Fragment() {
             filters = arrayOf(InputFilter.LengthFilter(9))
         }
     }
-
-    //Formats the price input
-    private fun currencyInputFormatter(editText: EditText){
-        var sequence:String = editText.text.toString()
-        var cursorPosition = editText.selectionStart
-
-        if(sequence.isNotEmpty()){
-            if(sequence.startsWith(".")) {
-                sequence = "0$sequence"
-                cursorPosition += 1
-            }
-
-            var pattern = Regex("^0[0-9]")
-            if(sequence.contains(pattern)) {
-                sequence = sequence.dropWhile { it == '0' }
-                if(sequence.isEmpty()) {
-                    sequence = "0"
-                    cursorPosition = 1
-                }else{
-                    cursorPosition = sequence.length
-                }
-            }
-
-            pattern = Regex("\\...[0-9]+")
-            if(sequence.contains(pattern)) {
-                sequence = sequence.dropLast(1)
-                cursorPosition-=1
-            }
-
-            editText.setText(sequence)
-            editText.setSelection(cursorPosition)
-        }
-    }
-
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId){
