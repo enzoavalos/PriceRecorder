@@ -5,22 +5,25 @@ import com.example.pricerecorder.addFragment.AddFragment
 
 class CurrencyFormatter {
     companion object{
-        //Formates the price input
+        //Formats the price input
         fun formatInput(editText: EditText){
             var sequence:String = editText.text.toString()
             var cursorPosition = editText.selectionStart
 
             if(sequence.isNotEmpty()){
+                //Allows only 7 integral digits
                 if((!sequence.contains('.')) and (sequence.length > AddFragment.MAX_INTEGRAL_DIGITS)) {
                     sequence = sequence.dropLast(1)
                     cursorPosition -= 1
                 }
 
+                //Adds a 0 to the start if the price starts with a "."
                 if(sequence.startsWith(".")) {
                     sequence = "0$sequence"
                     cursorPosition += 1
                 }
 
+                //Does not allow numbers starting with 0
                 var pattern = Regex("^0[0-9]")
                 if(sequence.contains(pattern)) {
                     sequence = sequence.dropWhile { it == '0' }
@@ -32,6 +35,7 @@ class CurrencyFormatter {
                     }
                 }
 
+                //Allows only 2 decimal digits
                 pattern = Regex("\\..[0-9]+")
                 if(sequence.contains(pattern)) {
                     sequence = sequence.dropLast(1)

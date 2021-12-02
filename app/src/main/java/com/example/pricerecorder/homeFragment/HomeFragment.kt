@@ -19,6 +19,7 @@ import com.example.pricerecorder.*
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
 import com.example.pricerecorder.databinding.HomeFragmentBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
@@ -52,8 +53,8 @@ class HomeFragment:Fragment() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val swipedItem = adapter.getItemProduct(viewHolder as ProductAdapter.ProductViewHolder)
                 viewModel.deleteProduct(swipedItem!!)
-                Snackbar.make(view!!,"Producto eliminado",Snackbar.LENGTH_SHORT)
-                    .setAction("Deshacer"){
+                Snackbar.make(view!!,resources.getString(R.string.product_deleted_msg),Snackbar.LENGTH_SHORT)
+                    .setAction(resources.getString(R.string.undo_action_msg)){
                         viewModel.addProduct(swipedItem)
                     }
                     .show()
@@ -91,7 +92,7 @@ class HomeFragment:Fragment() {
         Navigation.findNavController(binding.root).navigate(R.id.action_homeFragment_to_addFragment)
     }
 
-    /*Configura comportamiento de los botones flotantes al ser scrolleada la pantalla*/
+    /* Configures the behaviour of the floating buttons when the screen is scrolled*/
     private fun setFabOnScrollBehaviour() {
         binding.nestedScrollView.setOnScrollChangeListener(
             NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, _ ->
@@ -127,14 +128,20 @@ class HomeFragment:Fragment() {
         inflater.inflate(R.menu.overflow_menu,menu)
         mainMenu = menu
 
-        //Sets the functionality for the searchview in the toolbar
+        /* Disables the option to delete all elements in the menu, when there are no elements.
+        * Is automatically updated whenever there is a change in the list of products*/
+        val deleteItem = menu.findItem(R.id.op_delete_all)
+        viewModel.products.observe(viewLifecycleOwner,{
+            deleteItem.isEnabled = !it.isNullOrEmpty()
+        })
+
+        //Sets the functionality for the search view in the toolbar
         val menuItem = menu.findItem(R.id.op_search)
         val searchView = menuItem.actionView as SearchView
         searchView.maxWidth = Int.MAX_VALUE
 
         searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
             override fun onQueryTextSubmit(query: String?): Boolean {
-                Toast.makeText(context,"Buscar $query",Toast.LENGTH_SHORT).show()
                 searchView.clearFocus()
                 return true
             }
@@ -161,7 +168,7 @@ class HomeFragment:Fragment() {
         })
 
         searchView.addOnAttachStateChangeListener(object:View.OnAttachStateChangeListener{
-            //Invoked when the searchview is attached to the screen(search bar is opened)
+            //Invoked when the search view is attached to the screen(search bar is opened)
             override fun onViewAttachedToWindow(v: View?) {
                 binding.apply {
                     addFab.hide()
@@ -187,8 +194,20 @@ class HomeFragment:Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId){
             R.id.op_delete_all -> {
-                viewModel.clear()
-                Toast.makeText(context, "Elementos eliminados correctamente", Toast.LENGTH_SHORT).show()
+                if(!viewModel.products.value.isNullOrEmpty()){
+                    //Creates a dialog box that gives you the opportunity to cancel the operation
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(resources.getString(R.string.delete_all_dialog_title))
+                        .setMessage(resources.getString(R.string.delete_all_dialog_msg))
+                        .setNegativeButton(resources.getString(R.string.button_cancel_string))
+                        { dialog, _ -> dialog!!.dismiss() }
+                        .setPositiveButton(resources.getString(R.string.button_accept_string)) { dialog, _ ->
+                            viewModel.clear()
+                            Toast.makeText(context,resources.getString(R.string.delete_all_success_msg), Toast.LENGTH_SHORT).show()
+                            dialog!!.dismiss()
+                        }
+                        .show()
+                }
             }
             R.id.op_settings -> Toast.makeText(context,"Settings", Toast.LENGTH_SHORT).show()
         }

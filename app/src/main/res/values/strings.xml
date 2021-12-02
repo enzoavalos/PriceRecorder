@@ -6,4 +6,14 @@
     <string name="place_hint">Lugar</string>
     <string name="price_hint">$500.0</string>
     <string name="description_string">Descripcion</string>
+    <string name="delete_all_dialog_title">Eliminar todos los elementos?</string>
+    <string name="delete_all_dialog_msg">Una vez eliminados no podran recuperarse</string>
+    <string name="button_cancel_string">Cancelar</string>
+    <string name="button_accept_string">Aceptar</string>
+    <string name="delete_all_success_msg">Elementos eliminados correctamente</string>
+    <string name="new_product_added">Producto agregado</string>
+    <string name="add_fragment_title">Nuevo Producto</string>
+    <string name="product_deleted_msg">Producto eliminado</string>
+    <string name="undo_action_msg">Deshacer</string>
+    <string name="category_input_string">Categoria</string>
 </resources>
