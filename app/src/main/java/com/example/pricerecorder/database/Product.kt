@@ -1,12 +1,12 @@
 package com.example.pricerecorder.database
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import androidx.room.*
+import com.example.pricerecorder.Converters
 import java.text.DateFormat
 import java.util.*
 
 @Entity(tableName = "products_table")
+@TypeConverters(Converters::class)
 data class Product(
     @ColumnInfo(name = "description")
     var description : String,
@@ -17,20 +17,35 @@ data class Product(
     @ColumnInfo(name = "place_of_purchase")
     var placeOfPurchase : String,
 
-    @ColumnInfo(name = "image_url")
-    var image : String? = null,
+    @ColumnInfo(name = "category")
+    var category : String?,
 
     @ColumnInfo(name = "update_date")
     var updateDate : String = "",
+
+    @ColumnInfo(name = "price_history")
+    var priceHistory : MutableList<Pair<Double,String>> = mutableListOf(),
 
     @PrimaryKey(autoGenerate = true)
     var productId : Long =0L
 ){
     init {
         updateDate = setUpdateDate()
+        priceHistory.add(Pair(price,updateDate))
     }
 
     private fun setUpdateDate(): String {
         return DateFormat.getDateInstance().format(Calendar.getInstance().time)
+    }
+
+    fun updatePrice(newPrice:Double){
+        price = newPrice
+        updateDate = setUpdateDate()
+        priceHistory.add(Pair(newPrice,updateDate))
+    }
+
+    companion object{
+        val categories = listOf("Comestibles","Limpieza","Hogar","Bebidas","Mascotas","Jardineria","Cuidado personal",
+            "Verduleria","Lacteos","Panaderia")
     }
 }

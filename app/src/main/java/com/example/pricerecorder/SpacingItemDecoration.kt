@@ -4,8 +4,8 @@ import android.graphics.Rect
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 
-/*RecyclerView.ItemDecoration es una clase que permite agregar un dibujo especial o desplazamiento a vistas del
-* adaptador. En este caso agerga un espaciado entre los elementos de la lista*/
+/* RecyclerView.ItemDecoration its a class that allows to add a special design or transition to the views of the
+adapter. In this case, it adds a spacing between list elements*/
 class SpacingItemDecoration(private val padding:Int):RecyclerView.ItemDecoration() {
     override fun getItemOffsets(
         outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State)

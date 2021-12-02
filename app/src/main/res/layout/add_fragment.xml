@@ -31,10 +31,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_big"
-                android:layout_marginStart="@dimen/spacing_xbig"
-                android:layout_marginEnd="@dimen/spacing_xbig"
-                android:layout_marginLeft="@dimen/spacing_xbig"
-                android:layout_marginRight="@dimen/spacing_xbig"
+                android:layout_marginStart="@dimen/spacing_big"
+                android:layout_marginEnd="@dimen/spacing_big"
+                android:layout_marginLeft="@dimen/spacing_big"
+                android:layout_marginRight="@dimen/spacing_big"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/add_product_image"
@@ -57,11 +57,11 @@
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_normal"
-                android:layout_marginStart="@dimen/spacing_xbig"
-                android:layout_marginEnd="@dimen/spacing_xbig"
-                android:layout_marginLeft="@dimen/spacing_xbig"
-                android:layout_marginRight="@dimen/spacing_xbig"
+                android:layout_marginTop="@dimen/spacing_small"
+                android:layout_marginStart="@dimen/spacing_big"
+                android:layout_marginEnd="@dimen/spacing_big"
+                android:layout_marginLeft="@dimen/spacing_big"
+                android:layout_marginRight="@dimen/spacing_big"
                 app:counterEnabled="true"
                 app:counterMaxLength="25"
                 app:endIconMode="clear_text"
@@ -79,6 +79,31 @@
                     android:hint="@string/place_hint" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/category_input"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_small"
+                android:layout_marginStart="@dimen/spacing_big"
+                android:layout_marginEnd="@dimen/spacing_big"
+                android:layout_marginLeft="@dimen/spacing_big"
+                android:layout_marginRight="@dimen/spacing_big"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/place_input"
+                app:startIconDrawable="@drawable/ic_category">
+
+                <AutoCompleteTextView
+                    android:id="@+id/category_autoComplete_textView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none"
+                    android:hint="@string/category_input_string"
+                    />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
             <EditText
                 android:id="@+id/price_editText"
                 android:layout_width="wrap_content"
@@ -89,7 +114,7 @@
                 android:inputType="numberDecimal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/place_input"
+                app:layout_constraintTop_toBottomOf="@+id/category_input"
                 android:singleLine="true"
                 android:hint="@string/price_hint"
                 android:maxLength="9"
@@ -101,7 +126,7 @@
                 android:id="@+id/accept_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_xbig"
+                android:layout_marginTop="@dimen/spacing_big"
                 android:alpha="0.7"
                 android:enabled="false"
                 android:text="@string/accept_button_string"

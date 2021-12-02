@@ -8,15 +8,15 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.databinding.ListItemProductBinding
 
-/*Adapta los datos usados a la recyclerView*/
+/* Adapts the data classes used by the program to the recyclerView*/
 class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Product,RecyclerView.ViewHolder>(ProductDiffCallback) {
 
-    /*Crea los distintos viewholders usados, sera llamado cuando no haya viewholders existentes para reutilizar*/
+    /* Creates the different view holders used. It will be called when there are no existing view holders to be reused*/
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return ProductViewHolder.from(parent)
     }
 
-    /*Metodo llamado para vincular las vistas no usadas con nuevos objetos y reciclarlas*/
+    /* This method is called to bind the unused views to new objects in order to recycle them*/
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when(holder){
             is ProductViewHolder -> {
@@ -30,8 +30,8 @@ class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Pr
         return getItem(viewHolder.bindingAdapterPosition)
     }
 
-    /*Este objeto permite identificar los cambios entre 2 listas, y retorna una serie de operaciones minimas para
-    * para convertir la 1er lista en la segunda de forma eficiente*/
+    /* This object allows to identify the changes made between 2 lists, and returns a series of minimal operations
+    needed to convert the first list into the second one in an efficient way*/
     object ProductDiffCallback : DiffUtil.ItemCallback<Product>(){
         override fun areItemsTheSame(oldItem: Product, newItem: Product): Boolean {
             return oldItem.productId == newItem.productId
@@ -42,16 +42,16 @@ class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Pr
         }
     }
 
-    /*La clase extiende de RecyclerView.ViewHolder ya que ese es el tipo de viewholder que se le especifico al adapter.*/
+    /* This class extends RecyclerView.ViewHolder because that is the type of view holder that was specified to the adapter*/
     class ProductViewHolder private constructor(private val binding: ListItemProductBinding): RecyclerView.ViewHolder(binding.root){
-        /*Responsable de unir cada objeto Producto a las vistas del layout*/
+        /* Responsible of binding each Product object to the views of the layout*/
         fun bind(product: Product,clickListener: ProductListener){
             binding.product = product
             binding.clickListener = clickListener
             binding.executePendingBindings()
         }
 
-        //Metodo de una clase que puede ser llamado sin necesidad de crear una instancia de la clase
+        /*Method of a class that can be called without the need of instantiating the class*/
         companion object{
             fun from(parent: ViewGroup): RecyclerView.ViewHolder {
                 val layoutInflater = LayoutInflater.from(parent.context)
@@ -62,8 +62,8 @@ class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Pr
     }
 }
 
-/*Clase que implementa un listener para cuando el usuario clickea sobre un elemento de la lista.
-* Recibe como parametro una expresion lambda.*/
+/* This class implements an onClick listener for when the user clicks on an element of the list.
+ Receives a lambda expression as a parameter*/
 class ProductListener(val clickListener: (product:Product) -> Unit){
     fun onClick(product: Product) = clickListener(product)
 }

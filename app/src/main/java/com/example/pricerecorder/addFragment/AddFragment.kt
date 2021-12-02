@@ -6,6 +6,7 @@ import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
 import android.view.*
+import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -43,13 +44,17 @@ class AddFragment:Fragment(){
         MainToolbar.apply {
             val activity = activity as AppCompatActivity
             setUpButton(activity,true)
-            setTitle(activity,"Nuevo producto")
+            setTitle(activity,resources.getString(R.string.add_fragment_title))
         }
 
         binding.acceptButton.setOnClickListener {
             if (it.id == binding.acceptButton.id)
                 createNewProduct()
         }
+
+        /* An adapter for the dropdown input editText is created with the different categories*/
+        val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,Product.categories)
+        binding.categoryAutoCompleteTextView.setAdapter(arrayAdapter)
 
         setHasOptionsMenu(true)
         setEditTextBehaviour(binding.descriptionEditText,binding.placeEditText,binding.priceEditText)
@@ -61,9 +66,14 @@ class AddFragment:Fragment(){
         val desc = binding.descriptionEditText.text.toString()
         val price = binding.priceEditText.text.toString().toDouble()
         val place = binding.placeEditText.text.toString()
-        val newProduct = Product(desc,price,place)
+        val category = if(binding.categoryAutoCompleteTextView.text.isNullOrEmpty())
+            null
+        else
+            binding.categoryAutoCompleteTextView.text.toString()
+
+        val newProduct = Product(desc,price,place,category)
         viewModel.addProduct(newProduct)
-        Toast.makeText(context,"Agregado",Toast.LENGTH_SHORT).show()
+        Toast.makeText(context,resources.getString(R.string.new_product_added),Toast.LENGTH_SHORT).show()
         navigateUp()
     }
 
@@ -78,7 +88,7 @@ class AddFragment:Fragment(){
         }
     }
 
-    //Congifures the editTetxs behaviour
+    //Configures the edit Texts behaviour
     private fun setEditTextBehaviour(description:TextInputEditText,place:TextInputEditText,price:EditText) {
         description.apply {
             addTextChangedListener(object:TextWatcher{
