@@ -12,6 +12,7 @@
     </data>
 
     <androidx.cardview.widget.CardView
+        android:id="@+id/card_view"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
         app:cardElevation="10dp"
@@ -21,27 +22,27 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_small"
+            android:layout_marginBottom="@dimen/spacing_small">
 
             <ImageView
                 android:id="@+id/product_image"
                 android:layout_width="@dimen/icon_width"
                 android:layout_height="@dimen/icon_width"
-                android:layout_margin="@dimen/spacing_small"
-                android:layout_marginTop="@dimen/spacing_small"
-                android:layout_marginBottom="@dimen/spacing_small"
-                android:src="@drawable/ic_broken_image"
-                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginStart="@dimen/spacing_small"
+                android:src="@drawable/ic_fastfood"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:srcCompat="@drawable/ic_broken_image" />
+                tools:srcCompat="@drawable/ic_fastfood"
+                android:layout_marginLeft="@dimen/spacing_small" />
 
             <TextView
                 android:id="@+id/product_description_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_normal"
-                android:layout_marginLeft="@dimen/spacing_normal"
+                android:layout_marginStart="@dimen/spacing_small"
+                android:layout_marginLeft="@dimen/spacing_small"
                 android:layout_marginTop="@dimen/spacing_small"
                 android:fontFamily="sans-serif-black"
                 android:text="@{product.component1()}"
@@ -54,8 +55,8 @@
                 android:id="@+id/purchase_place_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_normal"
-                android:layout_marginLeft="@dimen/spacing_normal"
+                android:layout_marginStart="@dimen/spacing_small"
+                android:layout_marginLeft="@dimen/spacing_small"
                 android:layout_marginBottom="@dimen/spacing_small"
                 android:fontFamily="sans-serif-medium"
                 android:text="@{product.component3()}"
@@ -70,7 +71,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/spacing_normal"
                 android:layout_marginRight="@dimen/spacing_normal"
-                android:fontFamily="@font/changa_one_italic"
+                android:textStyle="bold|italic"
                 android:textSize="@dimen/price_text_size"
                 app:layout_constraintBottom_toBottomOf="@+id/product_description_text"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -89,7 +90,6 @@
                 app:layout_constraintBottom_toBottomOf="@+id/product_image"
                 app:layout_constraintEnd_toEndOf="parent"
                 tools:text="8 sep 2021" />
-
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 </layout>

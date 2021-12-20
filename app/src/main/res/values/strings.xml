@@ -16,4 +16,7 @@
     <string name="product_deleted_msg">Producto eliminado</string>
     <string name="undo_action_msg">Deshacer</string>
     <string name="category_input_string">Categoria</string>
+    <string name="current_price_string">Precio al %1$s</string>
+    <string name="price_increase_string">Aumento desde %1$s</string>
+    <string name="price_increase_numeric">%1$s%2$s%%</string>
 </resources>

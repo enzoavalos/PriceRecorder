@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
@@ -18,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.pricerecorder.*
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
+import com.example.pricerecorder.databinding.DetailFragmentBinding
 import com.example.pricerecorder.databinding.HomeFragmentBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -43,11 +45,21 @@ class HomeFragment:Fragment() {
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
-        //Recycler view adapter
+        //Recycler view adapter, a click listener is passed as a lambda expression
         val manager = LinearLayoutManager(context)
         adapter = ProductAdapter(ProductListener {
-            navigateToEditFragment()
+            val dialogBinding : DetailFragmentBinding = DetailFragmentBinding.inflate(layoutInflater)
+            dialogBinding.product = it
+            onCreateCustomDialog(dialogBinding)
+            val dialog = AlertDialog.Builder(requireContext())
+                .setView(dialogBinding.root).create()
+            dialog.apply {
+                show()
+                window?.setBackgroundDrawableResource(R.color.transparent)
+            }
         })
+
+        //Callback created to implement swipe to delete behaviour
         val swipeDelete = object : SwipeToDeleteCallback(requireContext()) {
             //Called when a viewHolder is swiped by the user
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
@@ -84,12 +96,8 @@ class HomeFragment:Fragment() {
         return binding.root
     }
 
-    private fun navigateToEditFragment(){
-        Navigation.findNavController(binding.root).navigate(R.id.action_homeFragment_to_editFragment)
-    }
-
     private fun navigateToAddFragment(){
-        Navigation.findNavController(binding.root).navigate(R.id.action_homeFragment_to_addFragment)
+        Navigation.findNavController(binding.root).navigate(HomeFragmentDirections.actionHomeFragmentToAddFragment())
     }
 
     /* Configures the behaviour of the floating buttons when the screen is scrolled*/
@@ -212,5 +220,25 @@ class HomeFragment:Fragment() {
             R.id.op_settings -> Toast.makeText(context,"Settings", Toast.LENGTH_SHORT).show()
         }
         return true
+    }
+
+    /*Sets the content of the views and certain behaviours of the detail fragment used as a custom dialog box*/
+    private fun onCreateCustomDialog(b:DetailFragmentBinding){
+        b.apply {
+            priceToDateText.text = resources.getString(R.string.current_price_string,product!!.updateDate)
+            priceIncreaseTextview.text = resources.getString(R.string.price_increase_string,product!!.updateDate)
+            priceIncreaseNumeric.text = resources.getString(R.string.price_increase_numeric,'+',product!!.price.toString())
+            categoryTextview.isVisible = !product!!.category.isNullOrEmpty()
+
+            buttonAddPrice.setOnClickListener {
+                Toast.makeText(context,"Agregar precio",Toast.LENGTH_SHORT).show()
+            }
+            buttonDeleteProduct.setOnClickListener {
+                Toast.makeText(context,"eliminar",Toast.LENGTH_SHORT).show()
+            }
+            buttonEditProduct.setOnClickListener {
+                Toast.makeText(context,"editar",Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
