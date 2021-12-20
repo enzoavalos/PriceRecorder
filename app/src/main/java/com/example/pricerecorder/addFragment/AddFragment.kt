@@ -53,7 +53,7 @@ class AddFragment:Fragment(){
         }
 
         /* An adapter for the dropdown input editText is created with the different categories*/
-        val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,Product.categories)
+        val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,Product.categories.sortedBy { it })
         binding.categoryAutoCompleteTextView.setAdapter(arrayAdapter)
 
         setHasOptionsMenu(true)

@@ -1,14 +1,19 @@
 package com.example.pricerecorder.homeFragment
 
 import android.app.Application
+import android.content.Context
 import android.view.View
+import android.widget.Toast
+import androidx.core.view.isVisible
 import androidx.lifecycle.*
+import com.example.pricerecorder.R
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabaseDao
+import com.example.pricerecorder.databinding.DetailFragmentBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class HomeViewModel(private val database: ProductDatabaseDao, application: Application): AndroidViewModel(application){
+class HomeViewModel(private val database: ProductDatabaseDao,application: Application): AndroidViewModel(application){
     private var viewModelJob = Job()
     val products : LiveData<List<Product>> = database.getAllProducts()
 
