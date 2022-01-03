@@ -44,6 +44,12 @@ data class Product(
         priceHistory.add(Pair(newPrice,updateDate))
     }
 
+    fun updateData(des:String,place:String,cat:String){
+        description = des
+        placeOfPurchase = place
+        category = cat
+    }
+
     companion object{
         val categories = listOf("Comestibles","Limpieza","Hogar","Bebidas","Mascotas","Jardineria","Cuidado personal",
             "Verduleria","Lacteos","Panaderia")

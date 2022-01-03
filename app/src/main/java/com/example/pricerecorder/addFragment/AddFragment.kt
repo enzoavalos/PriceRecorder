@@ -81,7 +81,7 @@ class AddFragment:Fragment(){
     private fun validateInputs(){
         binding.apply {
             if(descriptionEditText.validateTextInput() and placeEditText.validateTextInput()
-                and priceEditText.validateNumericInputDouble())
+                and priceEditText.validatePositiveNumericInputDouble())
                     binding.acceptButton.setAcceptButtonEnabled(true)
             else
                 binding.acceptButton.setAcceptButtonEnabled(false)

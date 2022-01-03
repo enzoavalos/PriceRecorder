@@ -10,7 +10,7 @@
     <string name="delete_all_dialog_msg">Una vez eliminados no podran recuperarse</string>
     <string name="button_cancel_string">Cancelar</string>
     <string name="button_accept_string">Aceptar</string>
-    <string name="delete_all_success_msg">Elementos eliminados correctamente</string>
+    <string name="delete_success_msg">Accion realizada correctamente</string>
     <string name="new_product_added">Producto agregado</string>
     <string name="add_fragment_title">Nuevo Producto</string>
     <string name="product_deleted_msg">Producto eliminado</string>
@@ -18,5 +18,10 @@
     <string name="category_input_string">Categoria</string>
     <string name="current_price_string">Precio al %1$s</string>
     <string name="price_increase_string">Aumento desde %1$s</string>
-    <string name="price_increase_numeric">%1$s%2$s%%</string>
+    <string name="price_increase_numeric">%1$s%%</string>
+    <string name="delete_product_string">Eliminar producto?</string>
+    <string name="delete_product_dialog_msg">Una vez eliminado no podra ser recuperado</string>
+    <string name="price_updated_msg">Precio actualizado</string>
+    <string name="add_price_dialog_title">Ingrese el nuevo precio</string>
+    <string name="edit_fragment_title">Editar Producto</string>
 </resources>

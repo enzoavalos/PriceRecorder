@@ -2,6 +2,9 @@ package com.example.pricerecorder.homeFragment
 
 import android.app.Application
 import android.os.Bundle
+import android.text.Editable
+import android.text.InputFilter
+import android.text.TextWatcher
 import android.view.*
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -19,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.pricerecorder.*
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
+import com.example.pricerecorder.databinding.AddPriceDialogBinding
 import com.example.pricerecorder.databinding.DetailFragmentBinding
 import com.example.pricerecorder.databinding.HomeFragmentBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -48,15 +52,7 @@ class HomeFragment:Fragment() {
         //Recycler view adapter, a click listener is passed as a lambda expression
         val manager = LinearLayoutManager(context)
         adapter = ProductAdapter(ProductListener {
-            val dialogBinding : DetailFragmentBinding = DetailFragmentBinding.inflate(layoutInflater)
-            dialogBinding.product = it
-            onCreateCustomDialog(dialogBinding)
-            val dialog = AlertDialog.Builder(requireContext())
-                .setView(dialogBinding.root).create()
-            dialog.apply {
-                show()
-                window?.setBackgroundDrawableResource(R.color.transparent)
-            }
+            createCustomDetailDialog(it)
         })
 
         //Callback created to implement swipe to delete behaviour
@@ -75,7 +71,7 @@ class HomeFragment:Fragment() {
         val touchHelper = ItemTouchHelper(swipeDelete)
         touchHelper.attachToRecyclerView(binding.productRecyclerView)
 
-
+        //Observers of both fab buttons of the home page
         viewModel.fabClicked.observe(viewLifecycleOwner,{
                 it?.let {
                     when(it){
@@ -98,6 +94,10 @@ class HomeFragment:Fragment() {
 
     private fun navigateToAddFragment(){
         Navigation.findNavController(binding.root).navigate(HomeFragmentDirections.actionHomeFragmentToAddFragment())
+    }
+
+    private fun navigateToEditFragment(productId : Long){
+        Navigation.findNavController(binding.root).navigate(HomeFragmentDirections.actionHomeFragmentToEditFragment(productId))
     }
 
     /* Configures the behaviour of the floating buttons when the screen is scrolled*/
@@ -211,7 +211,7 @@ class HomeFragment:Fragment() {
                         { dialog, _ -> dialog!!.dismiss() }
                         .setPositiveButton(resources.getString(R.string.button_accept_string)) { dialog, _ ->
                             viewModel.clear()
-                            Toast.makeText(context,resources.getString(R.string.delete_all_success_msg), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
                             dialog!!.dismiss()
                         }
                         .show()
@@ -222,23 +222,94 @@ class HomeFragment:Fragment() {
         return true
     }
 
+    /*Creates a custom dialog that displays the details of the product associated*/
+    private fun createCustomDetailDialog(p:Product){
+        val dialogBinding : DetailFragmentBinding = DetailFragmentBinding.inflate(layoutInflater)
+        dialogBinding.product = p
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogBinding.root).create()
+        onCreateCustomDetailDialog(dialogBinding,dialog)
+        dialog.apply {
+            show()
+            window?.setBackgroundDrawableResource(R.color.transparent)
+        }
+    }
+
     /*Sets the content of the views and certain behaviours of the detail fragment used as a custom dialog box*/
-    private fun onCreateCustomDialog(b:DetailFragmentBinding){
+    private fun onCreateCustomDetailDialog(b:DetailFragmentBinding, detailDialog: AlertDialog){
         b.apply {
             priceToDateText.text = resources.getString(R.string.current_price_string,product!!.updateDate)
-            priceIncreaseTextview.text = resources.getString(R.string.price_increase_string,product!!.updateDate)
-            priceIncreaseNumeric.text = resources.getString(R.string.price_increase_numeric,'+',product!!.price.toString())
+            val increase = viewModel.getPriceIncrease(product!!)
+            priceIncreaseTextview.text = resources.getString(R.string.price_increase_string,increase.first)
+            priceIncreaseNumeric.text = resources.getString(R.string.price_increase_numeric,increase.second)
             categoryTextview.isVisible = !product!!.category.isNullOrEmpty()
 
             buttonAddPrice.setOnClickListener {
-                Toast.makeText(context,"Agregar precio",Toast.LENGTH_SHORT).show()
+                createCustomPriceDialog(detailDialog,b)
             }
+
             buttonDeleteProduct.setOnClickListener {
-                Toast.makeText(context,"eliminar",Toast.LENGTH_SHORT).show()
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(resources.getString(R.string.delete_product_string))
+                    .setMessage(resources.getString(R.string.delete_product_dialog_msg))
+                    .setNegativeButton(resources.getString(R.string.button_cancel_string))
+                    { dialog, _ -> dialog!!.dismiss() }
+                    .setPositiveButton(resources.getString(R.string.button_accept_string)) { dialog, _ ->
+                        viewModel.deleteProduct(b.product!!)
+                        dialog!!.dismiss()
+                        detailDialog.dismiss()
+                        Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
+                    }
+                    .show()
             }
+
             buttonEditProduct.setOnClickListener {
-                Toast.makeText(context,"editar",Toast.LENGTH_SHORT).show()
+                detailDialog.dismiss()
+                navigateToEditFragment(product!!.productId)
             }
         }
+    }
+
+    /*Creates a custom dialog box for the users to update the price of a given product*/
+    private fun createCustomPriceDialog(detailDialog: AlertDialog,detailFragmentBinding: DetailFragmentBinding){
+        val priceDialogBinding = AddPriceDialogBinding.inflate(layoutInflater)
+        val priceDialog = AlertDialog.Builder(requireContext())
+            .setView(priceDialogBinding.root).create()
+
+        priceDialogBinding.addPriceEdittext.apply {
+            addTextChangedListener(object: TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                }
+                override fun afterTextChanged(s: Editable?) {
+                    if(this@apply.validatePositiveNumericInputDouble())
+                        priceDialogBinding.acceptButton.setAcceptButtonEnabled(true)
+                    else
+                        priceDialogBinding.acceptButton.setAcceptButtonEnabled(false)
+                }
+
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    if (!error.isNullOrEmpty())
+                        error = null
+                    removeTextChangedListener(this)
+                    CurrencyFormatter.formatInput(this@apply)
+                    addTextChangedListener(this)
+                }
+            })
+
+            isLongClickable = false
+            filters = arrayOf(InputFilter.LengthFilter(9))
+        }
+
+        priceDialogBinding.acceptButton.setOnClickListener {
+            val newPrice = priceDialogBinding.addPriceEdittext.text.toString().toDouble()
+            priceDialog.dismiss()
+            detailFragmentBinding.product!!.updatePrice(newPrice)
+            viewModel.updateProduct(detailFragmentBinding.product!!)
+            detailDialog.dismiss()
+            Toast.makeText(context,resources.getString(R.string.price_updated_msg),Toast.LENGTH_SHORT).show()
+        }
+
+        priceDialog.show()
+        priceDialog.window?.setBackgroundDrawableResource(R.color.transparent)
     }
 }

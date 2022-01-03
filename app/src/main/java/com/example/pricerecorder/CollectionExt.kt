@@ -13,11 +13,13 @@ fun MaterialButton.setAcceptButtonEnabled(enabled:Boolean){
         0.7F
 }
 
-fun EditText.validateNumericInputDouble() : Boolean{
+/*Returns true when the editText contains a valid double value greater than 0.0*/
+fun EditText.validatePositiveNumericInputDouble() : Boolean{
     if(!this.text.isNullOrEmpty()){
         try{
-            this.text.toString().toDouble()
-            return true
+            val value = this.text.toString().toDouble()
+            if(value > 0.0)
+                return true
         }catch (e:Exception){
             this.error = "Valor Invalido"
         }
