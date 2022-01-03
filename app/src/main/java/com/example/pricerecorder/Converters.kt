@@ -1,6 +1,7 @@
 package com.example.pricerecorder
 
 import androidx.room.TypeConverter
+import java.lang.StringBuilder
 
 /*Class used to convert from a list of pairs that represent a price and a date, to a string and vice versa*/
 class Converters {
@@ -8,7 +9,7 @@ class Converters {
     fun fromString(a : String) : MutableList<Pair<Double,String>>{
         var start = 0  //inclusive
         var end : Int  //exclusive
-        val list : MutableList<Pair<Double,String>> = ArrayList()
+        val list : MutableList<Pair<Double,String>> = mutableListOf()
 
         if(a.contains(";")){
             var counter = 0
@@ -29,11 +30,11 @@ class Converters {
 
     @TypeConverter
     fun fromPairList(list : MutableList<Pair<Double,String>>) : String{
-        var sequence = ""
+        val builder = StringBuilder()
         list.forEach{
-            sequence += "${it.first}:${it.second};"
+            builder.append("${it.first}:${it.second};")
         }
-        return sequence
+        return builder.toString()
     }
 
     private fun stringToPair(a:String) : Pair<Double,String>{

@@ -16,21 +16,23 @@
 
             <ImageView
                 android:id="@+id/add_product_image"
-                android:layout_width="75dp"
-                android:layout_height="75dp"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="@drawable/bg_prod_img"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:srcCompat="@drawable/ic_add_photo_alternate"
                 android:layout_margin="@dimen/spacing_xbig"
-                android:src="@drawable/ic_add_photo_alternate"/>
+                android:src="@drawable/ic_add_photo_alternate"
+                android:padding="2dp"/>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/description_input"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/spacing_big"
+                android:layout_marginTop="@dimen/spacing_normal"
                 android:layout_marginStart="@dimen/spacing_big"
                 android:layout_marginEnd="@dimen/spacing_big"
                 android:layout_marginLeft="@dimen/spacing_big"
