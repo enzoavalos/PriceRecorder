@@ -10,4 +10,5 @@
     <dimen name="spacing_big">24dp</dimen>
     <dimen name="spacing_xbig">40dp</dimen>
     <dimen name="detail_frgmnt_img_top_margin">32dp</dimen>
+    <dimen name="empty_bg_size">120dp</dimen>
 </resources>

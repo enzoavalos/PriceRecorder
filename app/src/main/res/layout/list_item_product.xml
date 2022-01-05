@@ -39,29 +39,39 @@
 
             <TextView
                 android:id="@+id/product_description_text"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/spacing_small"
                 android:layout_marginLeft="@dimen/spacing_small"
                 android:layout_marginTop="@dimen/spacing_small"
+                android:layout_marginEnd="@dimen/spacing_small"
+                android:ellipsize="end"
                 android:fontFamily="sans-serif-black"
+                android:maxLines="1"
                 android:text="@{product.component1()}"
                 android:textSize="@dimen/decription_text_size"
+                app:layout_constrainedWidth="true"
+                app:layout_constraintEnd_toStartOf="@+id/product_price_text"
                 app:layout_constraintStart_toEndOf="@+id/product_image"
                 app:layout_constraintTop_toTopOf="@+id/product_image"
                 tools:text="Aceite Marolio 950cc" />
 
             <TextView
                 android:id="@+id/purchase_place_text"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/spacing_small"
                 android:layout_marginLeft="@dimen/spacing_small"
                 android:layout_marginBottom="@dimen/spacing_small"
+                android:layout_marginEnd="@dimen/spacing_small"
                 android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
                 android:text="@{product.component3()}"
                 app:layout_constraintBottom_toBottomOf="@+id/product_image"
+                app:layout_constraintEnd_toStartOf="@+id/update_date_text"
                 app:layout_constraintStart_toEndOf="@+id/product_image"
+                app:layout_constrainedWidth="true"
+                android:ellipsize="end"
                 tools:text="Carrefour Market" />
 
             <TextView

@@ -3,7 +3,6 @@ package com.example.pricerecorder.editFragment
 import android.app.Application
 import android.os.Bundle
 import android.text.Editable
-import android.text.InputFilter
 import android.text.TextWatcher
 import android.view.*
 import android.widget.AdapterView
@@ -79,7 +78,9 @@ class EditFragment : Fragment() {
     /*Validates the inputs of each edit text*/
     private fun validateInputs(){
         binding.includedLayout.apply {
-            if(descriptionEditText.validateTextInput() and placeEditText.validateTextInput())
+            if(descriptionEditText.validateTextInput() and placeEditText.validateTextInput()
+                and (descriptionEditText.text!!.length <= AddFragment.DESCRIPTION_MAX_LENGTH)
+                and (placeEditText.text!!.length <= AddFragment.PLACE_MAX_LENGTH))
                 binding.includedLayout.acceptButton.setAcceptButtonEnabled(true)
             else
                 binding.includedLayout.acceptButton.setAcceptButtonEnabled(false)
@@ -95,16 +96,11 @@ class EditFragment : Fragment() {
 
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                     validateInputs()
-                    if(s!!.length >= AddFragment.DESCRIPTION_MAX_LENGTH)
-                        binding.includedLayout.descriptionEditText.clearFocus()
                 }
 
                 override fun afterTextChanged(s: Editable?) {
                 }
-
             })
-
-            filters = arrayOf(InputFilter.LengthFilter(AddFragment.DESCRIPTION_MAX_LENGTH))
         }
 
         binding.includedLayout.placeEditText.apply {
@@ -114,15 +110,11 @@ class EditFragment : Fragment() {
 
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                     validateInputs()
-                    if(s!!.length >= AddFragment.PLACE_MAX_LENGTH)
-                        binding.includedLayout.placeEditText.clearFocus()
                 }
 
                 override fun afterTextChanged(s: Editable?) {
                 }
             })
-
-            filters = arrayOf(InputFilter.LengthFilter(AddFragment.PLACE_MAX_LENGTH))
         }
 
         binding.includedLayout.categoryAutoCompleteTextView.onItemClickListener =
