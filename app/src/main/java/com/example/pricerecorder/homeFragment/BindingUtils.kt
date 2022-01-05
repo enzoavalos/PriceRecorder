@@ -5,7 +5,7 @@ import android.widget.TextView
 import androidx.databinding.BindingAdapter
 import com.example.pricerecorder.database.Product
 
-/*Metodo responsable de realizar las llamadas de framework necesarias para establecer valores*/
+/*Method responsible for making the right framework calls to establish certain values*/
 @SuppressLint("SetTextI18n")
 @BindingAdapter("productPriceString")
 fun TextView.setProductPriceString(item : Product?){

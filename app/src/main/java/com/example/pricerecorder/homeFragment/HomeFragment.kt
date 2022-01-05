@@ -34,6 +34,7 @@ class HomeFragment:Fragment() {
     private lateinit var adapter: ProductAdapter
     private lateinit var binding: HomeFragmentBinding
     private lateinit var mainMenu: Menu
+    private lateinit var searchView: SearchView
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = DataBindingUtil.inflate(inflater,
@@ -61,6 +62,8 @@ class HomeFragment:Fragment() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val swipedItem = adapter.getItemProduct(viewHolder as ProductAdapter.ProductViewHolder)
                 viewModel.deleteProduct(swipedItem!!)
+                if(!searchView.isIconified)
+                    collapseSearchView()
                 Snackbar.make(view!!,resources.getString(R.string.product_deleted_msg),Snackbar.LENGTH_SHORT)
                     .setAction(resources.getString(R.string.undo_action_msg)){
                         viewModel.addProduct(swipedItem)
@@ -83,6 +86,7 @@ class HomeFragment:Fragment() {
         })
 
         viewModel.products.observe(viewLifecycleOwner, {
+            showEmptyLayout(it.isNullOrEmpty())
             adapter.submitList(it)
         })
 
@@ -145,7 +149,8 @@ class HomeFragment:Fragment() {
 
         //Sets the functionality for the search view in the toolbar
         val menuItem = menu.findItem(R.id.op_search)
-        val searchView = menuItem.actionView as SearchView
+        searchView = menuItem.actionView as SearchView
+        searchView.queryHint = resources.getString(R.string.search_view_hint)
         searchView.maxWidth = Int.MAX_VALUE
 
         searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
@@ -171,6 +176,8 @@ class HomeFragment:Fragment() {
                 }else{
                     adapter.submitList(viewModel.products.value)
                 }
+                showNoResultsFoundLayout((tempList.isNullOrEmpty() and searchText.isNotEmpty() and
+                        !viewModel.products.value.isNullOrEmpty()))
                 return true
             }
         })
@@ -258,6 +265,8 @@ class HomeFragment:Fragment() {
                         viewModel.deleteProduct(b.product!!)
                         dialog!!.dismiss()
                         detailDialog.dismiss()
+                        if(!searchView.isIconified)
+                            collapseSearchView()
                         Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
                     }
                     .show()
@@ -301,6 +310,8 @@ class HomeFragment:Fragment() {
         }
 
         priceDialogBinding.acceptButton.setOnClickListener {
+            if(!searchView.isIconified)
+                collapseSearchView()
             val newPrice = priceDialogBinding.addPriceEdittext.text.toString().toDouble()
             priceDialog.dismiss()
             detailFragmentBinding.product!!.updatePrice(newPrice)
@@ -311,5 +322,20 @@ class HomeFragment:Fragment() {
 
         priceDialog.show()
         priceDialog.window?.setBackgroundDrawableResource(R.color.transparent)
+    }
+
+    /*Called when the searchView is attached to the window in order to collapse it*/
+    private fun collapseSearchView(){
+        mainMenu.findItem(R.id.op_search).collapseActionView()
+    }
+
+    /*Sets the visibility for the layout shown when there are no elements to show in the recycler view*/
+    private fun showEmptyLayout(show:Boolean){
+        binding.emptyLayout.visibility = if(show) View.VISIBLE else View.GONE
+    }
+
+    /*Sets the visibility for the layout shown when there are no matches for the user search*/
+    private fun showNoResultsFoundLayout(show: Boolean){
+        binding.emptySearchLayout.visibility = if(show) View.VISIBLE else View.GONE
     }
 }

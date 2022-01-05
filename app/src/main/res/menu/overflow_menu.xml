@@ -4,7 +4,7 @@
     <group
         android:id="@+id/menu_group">
         <item android:id="@+id/op_delete_all"
-            android:title="Eliminar todos"/>
+            android:title="@string/delete_all_menu_option"/>
         <item android:id="@+id/op_settings"
             android:title="Ajustes"/>
     </group>
@@ -14,6 +14,5 @@
         android:title="Search"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="always|collapseActionView"
-        android:tooltipText="Buscar..."
         />
 </menu>

@@ -24,4 +24,9 @@
     <string name="price_updated_msg">Precio actualizado</string>
     <string name="add_price_dialog_title">Ingrese el nuevo precio</string>
     <string name="edit_fragment_title">Editar Producto</string>
+    <string name="search_view_hint">Buscar</string>
+    <string name="delete_all_menu_option">Eliminar todos</string>
+    <string name="uncategorized_product">Sin categoria</string>
+    <string name="helper_text_optional">Opcional</string>
+    <string name="no_elements_string">Nada por aquí!</string>
 </resources>

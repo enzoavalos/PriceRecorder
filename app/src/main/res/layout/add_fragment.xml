@@ -94,7 +94,8 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/place_input"
-                app:startIconDrawable="@drawable/ic_category">
+                app:startIconDrawable="@drawable/ic_category"
+                app:helperText="@string/helper_text_optional">
 
                 <AutoCompleteTextView
                     android:id="@+id/category_autoComplete_textView"

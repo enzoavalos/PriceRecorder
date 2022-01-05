@@ -12,18 +12,29 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
         <androidx.core.widget.NestedScrollView
             android:id="@+id/nestedScrollView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            >
+            android:layout_height="match_parent">
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/product_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                tools:listitem="@layout/list_item_product"
-                />
+                tools:listitem="@layout/list_item_product" />
         </androidx.core.widget.NestedScrollView>
+
+        <include
+            android:id="@+id/empty_layout"
+            layout="@layout/empty_layout"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/empty_search_layout"
+            layout="@layout/no_results_found_layout"
+            android:visibility="gone" />
+
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/add_fab"
             android:layout_width="wrap_content"
