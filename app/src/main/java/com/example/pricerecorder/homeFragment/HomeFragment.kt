@@ -265,8 +265,6 @@ class HomeFragment:Fragment() {
                         viewModel.deleteProduct(b.product!!)
                         dialog!!.dismiss()
                         detailDialog.dismiss()
-                        if(!searchView.isIconified)
-                            collapseSearchView()
                         Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
                     }
                     .show()

@@ -16,16 +16,16 @@
 
             <ImageView
                 android:id="@+id/add_product_image"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="@dimen/icon_bg_size"
+                android:layout_height="@dimen/icon_bg_size"
                 android:background="@drawable/bg_prod_img"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:srcCompat="@drawable/ic_add_photo_alternate"
-                android:layout_margin="@dimen/spacing_xbig"
+                android:layout_margin="@dimen/spacing_big"
                 android:src="@drawable/ic_add_photo_alternate"
-                android:padding="2dp"/>
+                android:padding="3dp"/>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/description_input"

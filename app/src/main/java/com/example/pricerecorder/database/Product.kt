@@ -21,7 +21,7 @@ data class Product(
     var category : String?,
 
     @ColumnInfo(name = "update_date")
-    var updateDate : String = "",
+    var updateDate : String,
 
     @ColumnInfo(name = "price_history")
     var priceHistory : MutableList<Pair<Double,String>> = mutableListOf(),
@@ -30,12 +30,7 @@ data class Product(
     var productId : Long =0L
 ){
     init {
-        updateDate = setUpdateDate()
         priceHistory.add(Pair(price,updateDate))
-    }
-
-    private fun setUpdateDate(): String {
-        return DateFormat.getDateInstance().format(Calendar.getInstance().time)
     }
 
     fun updatePrice(newPrice:Double){
@@ -51,6 +46,10 @@ data class Product(
     }
 
     companion object{
+        fun setUpdateDate(): String {
+            return DateFormat.getDateInstance().format(Calendar.getInstance().time)
+        }
+
         val categories = listOf("Comestibles","Limpieza","Hogar","Bebidas","Mascotas","Jardineria","Cuidado personal",
             "Verduleria","Lacteos","Panaderia")
     }
