@@ -1,7 +1,6 @@
 package com.example.pricerecorder.addFragment
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pricerecorder.database.Product

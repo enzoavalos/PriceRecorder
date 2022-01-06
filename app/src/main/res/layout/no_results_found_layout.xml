@@ -7,8 +7,8 @@
 
     <ImageView
         android:id="@+id/imageView2"
-        android:layout_width="@dimen/empty_bg_size"
-        android:layout_height="@dimen/empty_bg_size"
+        android:layout_width="@dimen/icon_bg_size"
+        android:layout_height="@dimen/icon_bg_size"
         android:src="@mipmap/ic_no_results_found"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
