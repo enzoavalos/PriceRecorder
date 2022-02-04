@@ -250,6 +250,7 @@ class HomeFragment:Fragment() {
             priceIncreaseTextview.text = resources.getString(R.string.price_increase_string,increase.first)
             priceIncreaseNumeric.text = resources.getString(R.string.price_increase_numeric,increase.second)
             categoryTextview.isVisible = !product!!.category.isNullOrEmpty()
+            product!!.image?.let { productDetailImg.setImageBitmap(it) }
 
             buttonAddPrice.setOnClickListener {
                 createCustomPriceDialog(detailDialog,b)

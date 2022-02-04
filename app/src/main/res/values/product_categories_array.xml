@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="product_categories">
+        <item>Comestibles</item>
+        <item>Limpieza</item>
+        <item>Hogar</item>
+        <item>Bebidas</item>
+        <item>Mascotas</item>
+        <item>Jardineria</item>
+        <item>Cuidado personal</item>
+        <item>Verduleria</item>
+        <item>Lacteos</item>
+        <item>Panaderia</item>
+    </string-array>
+</resources>

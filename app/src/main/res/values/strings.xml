@@ -29,4 +29,7 @@
     <string name="uncategorized_product">Sin categoria</string>
     <string name="helper_text_optional">Opcional</string>
     <string name="no_elements_string">Nada por aquí!</string>
+    <string name="camera_access_error">No es posible acceder a la camara</string>
+    <string name="add_image_dialog_title">Agregar foto</string>
+    <string name="delete_image_button_text">Eliminar Foto</string>
 </resources>

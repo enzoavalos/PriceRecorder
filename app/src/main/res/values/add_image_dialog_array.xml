@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="add_image_dialog_items">
+        <item>Tomar foto</item>
+        <item>Elegir de galeria</item>
+    </string-array>
+</resources>
