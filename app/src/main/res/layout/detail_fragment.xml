@@ -34,15 +34,15 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
+                    android:layout_marginStart="@dimen/spacing_small"
+                    android:layout_marginTop="@dimen/spacing_small"
+                    android:layout_marginEnd="@dimen/spacing_small"
                     android:text="@{product.component1()}"
                     android:textSize="@dimen/decription_text_size"
                     android:textStyle="bold"
-                    android:layout_marginTop="@dimen/spacing_small"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    android:layout_marginStart="@dimen/spacing_small"
-                    android:layout_marginEnd="@dimen/spacing_small"
                     tools:text="Arvejas Inalpa" />
 
                 <TextView
@@ -50,17 +50,17 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_marginTop="@dimen/spacing_xsmall"
-                    android:layout_marginBottom="@dimen/spacing_xsmall"
                     android:layout_marginStart="@dimen/spacing_small"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
                     android:layout_marginEnd="@dimen/spacing_small"
+                    android:layout_marginBottom="@dimen/spacing_xsmall"
                     android:fontFamily="sans-serif-medium"
                     android:text="@{product.component3()}"
                     android:textSize="15sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/product_name_textview"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     tools:text="Carrefour Market" />
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -112,15 +112,15 @@
                             android:layout_marginStart="@dimen/spacing_normal"
                             android:layout_marginLeft="@dimen/spacing_normal"
                             android:layout_marginEnd="@dimen/spacing_normal"
+                            android:ellipsize="end"
                             android:fontFamily="sans-serif-medium"
+                            android:maxLines="1"
                             app:layout_constrainedWidth="true"
                             app:layout_constraintBottom_toBottomOf="@+id/product_price_textView"
                             app:layout_constraintEnd_toStartOf="@+id/product_price_textView"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="@+id/product_price_textView"
-                            tools:text="Precio al 25 sep 2021"
-                            android:maxLines="1"
-                            android:ellipsize="end"/>
+                            tools:text="Precio al 25 sep 2021" />
 
                         <TextView
                             android:id="@+id/price_increase_numeric"
@@ -143,15 +143,15 @@
                             android:layout_marginStart="@dimen/spacing_normal"
                             android:layout_marginLeft="@dimen/spacing_normal"
                             android:layout_marginEnd="@dimen/spacing_normal"
-                            app:layout_constrainedWidth="true"
+                            android:ellipsize="end"
                             android:fontFamily="sans-serif-medium"
+                            android:maxLines="1"
+                            app:layout_constrainedWidth="true"
                             app:layout_constraintBottom_toBottomOf="@+id/price_increase_numeric"
                             app:layout_constraintEnd_toStartOf="@+id/price_increase_numeric"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toTopOf="@+id/price_increase_numeric"
-                            tools:text="Aumento desde 5 may 2021"
-                            android:maxLines="1"
-                            android:ellipsize="end"/>
+                            tools:text="Aumento desde 5 may 2021" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
                 </androidx.core.widget.NestedScrollView>
             </androidx.coordinatorlayout.widget.CoordinatorLayout>
@@ -210,12 +210,15 @@
         </LinearLayout>
 
         <ImageView
-            android:layout_width="@dimen/icon_width"
-            android:layout_height="@dimen/icon_width"
+            android:id="@+id/product_detail_img"
+            android:layout_width="@dimen/detail_icon_size"
+            android:layout_height="@dimen/detail_icon_size"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
             android:background="@drawable/bg_prod_img"
-            android:padding="5dp"
+            android:cropToPadding="true"
+            android:padding="3dp"
+            android:scaleType="centerCrop"
             android:src="@drawable/ic_fastfood"
             tools:srcCompat="@drawable/ic_fastfood" />
     </RelativeLayout>

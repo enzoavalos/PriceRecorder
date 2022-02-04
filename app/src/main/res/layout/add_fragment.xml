@@ -25,7 +25,10 @@
                 tools:srcCompat="@drawable/ic_add_photo_alternate"
                 android:layout_margin="@dimen/spacing_big"
                 android:src="@drawable/ic_add_photo_alternate"
-                android:padding="3dp"/>
+                android:padding="3dp"
+                android:cropToPadding="true"
+                android:scaleType="centerCrop"
+                />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/description_input"

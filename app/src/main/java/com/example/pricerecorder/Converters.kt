@@ -1,6 +1,9 @@
 package com.example.pricerecorder
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.room.TypeConverter
+import java.io.ByteArrayOutputStream
 import java.lang.StringBuilder
 
 /*Class used to convert from a list of pairs that represent a price and a date, to a string and vice versa*/
@@ -54,5 +57,20 @@ class Converters {
             counter +=1
         }
         return Pair(subString.toDouble(),b)
+    }
+
+    /*Function to convert from a bitmap to a byte array*/
+    @TypeConverter
+    fun fromBitmap(bitmap: Bitmap?):ByteArray{
+        if(bitmap == null)
+            return ByteArray(0)
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG,85,outputStream)
+        return outputStream.toByteArray()
+    }
+
+    @TypeConverter
+    fun fromByteArray(array: ByteArray) : Bitmap?{
+        return if(array.isNotEmpty()) BitmapFactory.decodeByteArray(array,0,array.size) else null
     }
 }

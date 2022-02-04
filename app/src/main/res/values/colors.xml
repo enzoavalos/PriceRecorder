@@ -20,4 +20,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="transparent">#00FFFFFF</color>
     <color name="grey_text">#95A5A6</color>
+    <color name="red_delete_button">#e53935</color>
 </resources>

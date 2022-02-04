@@ -1,5 +1,6 @@
 package com.example.pricerecorder.database
 
+import android.graphics.Bitmap
 import androidx.room.*
 import com.example.pricerecorder.Converters
 import java.text.DateFormat
@@ -23,6 +24,9 @@ data class Product(
     @ColumnInfo(name = "update_date")
     var updateDate : String,
 
+    @ColumnInfo(name = "product_img")
+    var image : Bitmap? = null,
+
     @ColumnInfo(name = "price_history")
     var priceHistory : MutableList<Pair<Double,String>> = mutableListOf(),
 
@@ -39,18 +43,16 @@ data class Product(
         priceHistory.add(Pair(newPrice,updateDate))
     }
 
-    fun updateData(des:String,place:String,cat:String){
+    fun updateData(des:String,place:String,cat:String,img:Bitmap?){
         description = des
         placeOfPurchase = place
         category = cat
+        image = img
     }
 
     companion object{
         fun setUpdateDate(): String {
             return DateFormat.getDateInstance().format(Calendar.getInstance().time)
         }
-
-        val categories = listOf("Comestibles","Limpieza","Hogar","Bebidas","Mascotas","Jardineria","Cuidado personal",
-            "Verduleria","Lacteos","Panaderia")
     }
 }
