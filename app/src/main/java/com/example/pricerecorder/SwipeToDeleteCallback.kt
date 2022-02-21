@@ -36,6 +36,8 @@ abstract class SwipeToDeleteCallback(context: Context) : ItemTouchHelper.SimpleC
             .addBackgroundColor(backgroundColor)
             .addActionIcon(R.drawable.ic_delete)
             .setSwipeLeftActionIconTint(R.color.white)
+            .setSwipeLeftLabelColor(R.color.white)
+            .setActionIconTint(R.color.white)
             .create()
             .decorate()
 

@@ -25,7 +25,7 @@ class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Pr
         }
     }
 
-    //Returns the object binded to the given view holder
+    //Returns the object bound to the given view holder
     fun getItemProduct(viewHolder: ProductViewHolder) : Product?{
         return getItem(viewHolder.bindingAdapterPosition)
     }
@@ -48,6 +48,8 @@ class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Pr
         fun bind(product: Product,clickListener: ProductListener){
             binding.product = product
             binding.clickListener = clickListener
+            if(binding.product!!.image != null)
+                binding.productImage.setImageBitmap(binding.product!!.image)
             binding.executePendingBindings()
         }
 

@@ -13,27 +13,72 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/nestedScrollView"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/product_recycler_view"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/filter_by_view"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                tools:listitem="@layout/list_item_product" />
-        </androidx.core.widget.NestedScrollView>
+                android:layout_height="wrap_content"
+                android:background="?attr/colorPrimaryVariant"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/filter_by_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_marginBottom="@dimen/spacing_xsmall"
+                    android:layout_marginStart="@dimen/spacing_normal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="Filtrar por: Carrefour"/>
+
+                <ImageButton
+                    android:id="@+id/cancel_filter_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/colorPrimaryVariant"
+                    android:src="@drawable/ic_baseline_cancel"
+                    android:layout_marginEnd="@dimen/spacing_normal"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_marginBottom="@dimen/spacing_xsmall"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/nestedScrollView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/product_recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    tools:listitem="@layout/list_item_product" />
+            </androidx.core.widget.NestedScrollView>
+        </LinearLayout>
 
         <include
             android:id="@+id/empty_layout"
             layout="@layout/empty_layout"
-            android:visibility="gone" />
+            android:visibility="gone"/>
 
         <include
             android:id="@+id/empty_search_layout"
             layout="@layout/no_results_found_layout"
-            android:visibility="gone" />
+            android:visibility="gone"/>
+
+        <include
+            android:id="@+id/progress_bar"
+            layout="@layout/loading_anim_icon"
+            android:visibility="visible"/>
 
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/add_fab"
@@ -62,8 +107,7 @@
             android:src="@drawable/ic_filter_list"
             app:background="?attr/colorSecondary"
             app:tint="@color/white"
-            android:visibility="visible"
-            android:onClick="@{(view) -> viewModel.onFabClicked(view)}"
-            android:layout_marginRight="@dimen/spacing_xsmall" />
+            android:visibility="gone"
+            android:onClick="@{(view) -> viewModel.onFabClicked(view)}"/>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

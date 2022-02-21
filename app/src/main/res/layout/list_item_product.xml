@@ -31,11 +31,16 @@
                 android:layout_width="@dimen/icon_width"
                 android:layout_height="@dimen/icon_width"
                 android:layout_marginStart="@dimen/spacing_small"
+                android:background="@drawable/bg_list_item"
                 android:src="@drawable/ic_fastfood"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 tools:srcCompat="@drawable/ic_fastfood"
-                android:layout_marginLeft="@dimen/spacing_small" />
+                android:layout_marginLeft="@dimen/spacing_small"
+                android:padding="2dp"
+                android:cropToPadding="true"
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true"/>
 
             <TextView
                 android:id="@+id/product_description_text"

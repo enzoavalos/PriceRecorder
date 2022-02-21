@@ -3,15 +3,15 @@ package com.example.pricerecorder
 import android.widget.EditText
 import com.example.pricerecorder.addFragment.AddFragment
 
+/*Class responsible for formatting a text numeric input into a valid currency format*/
 class CurrencyFormatter {
     companion object{
-        //Formats the price input
         fun formatInput(editText: EditText){
             var sequence:String = editText.text.toString()
             var cursorPosition = editText.selectionStart
 
             if(sequence.isNotEmpty()){
-                //Allows only 7 integral digits
+                //Allows only 5 integral digits
                 if((!sequence.contains('.')) and (sequence.length > AddFragment.MAX_INTEGRAL_DIGITS)) {
                     sequence = sequence.dropLast(1)
                     cursorPosition -= 1
