@@ -12,7 +12,7 @@ abstract class ProductDatabase:RoomDatabase() {
 
     companion object {
         /*Instance keeps a reference to any DB returned by getInstance, that way, unless needed, the DB will be instantiated only once.
-        * Being volatile, the value of the variable will never be cached, meaning al writes and reads will be performed from the main
+        * Being volatile, the value of the variable will never be cached, meaning all writes and reads will be performed from the main
         * memory, so all changes made by one thread, will be visible to other threads*/
         @Volatile
         private var INSTANCE: ProductDatabase? = null

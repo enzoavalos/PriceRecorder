@@ -2,22 +2,22 @@
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/parent_view"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
         android:layout_marginStart="@dimen/spacing_normal"
         android:layout_marginEnd="@dimen/spacing_normal"
-        android:layout_marginTop="@dimen/spacing_normal"
-        android:layout_marginBottom="@dimen/spacing_normal">
+        android:layout_marginTop="@dimen/spacing_xbig"
+        android:layout_marginBottom="@dimen/spacing_xbig">
         <ImageView
             android:id="@+id/dialog_imageView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/button_delete_image"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            android:cropToPadding="true"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop"
+            android:adjustViewBounds="true"/>
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_delete_image"
             android:layout_width="match_parent"
@@ -25,6 +25,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/dialog_imageView"
             style="?android:attr/borderlessButtonStyle"
             android:textColor="@color/white"
             app:backgroundTint="@color/red_delete_button"

@@ -28,19 +28,15 @@ data class Product(
     var image : Bitmap? = null,
 
     @ColumnInfo(name = "price_history")
-    var priceHistory : MutableList<Pair<Double,String>> = mutableListOf(),
+    var priceHistory : Pair<Double,String> = Pair(price,updateDate),
 
     @PrimaryKey(autoGenerate = true)
     var productId : Long =0L
 ){
-    init {
-        priceHistory.add(Pair(price,updateDate))
-    }
-
     fun updatePrice(newPrice:Double){
+        priceHistory = Pair(price,updateDate)
         price = newPrice
-        updateDate = setUpdateDate()
-        priceHistory.add(Pair(newPrice,updateDate))
+        updateDate = getCurrentDate()
     }
 
     fun updateData(des:String,place:String,cat:String,img:Bitmap?){
@@ -51,7 +47,7 @@ data class Product(
     }
 
     companion object{
-        fun setUpdateDate(): String {
+        fun getCurrentDate(): String {
             return DateFormat.getDateInstance().format(Calendar.getInstance().time)
         }
     }

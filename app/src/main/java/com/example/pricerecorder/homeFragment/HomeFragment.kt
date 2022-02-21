@@ -6,6 +6,8 @@ import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
 import android.view.*
+import android.widget.ArrayAdapter
+import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +26,7 @@ import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
 import com.example.pricerecorder.databinding.AddPriceDialogBinding
 import com.example.pricerecorder.databinding.DetailFragmentBinding
+import com.example.pricerecorder.databinding.FilterMenuDialogBinding
 import com.example.pricerecorder.databinding.HomeFragmentBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -35,6 +38,13 @@ class HomeFragment:Fragment() {
     private lateinit var binding: HomeFragmentBinding
     private lateinit var mainMenu: Menu
     private lateinit var searchView: SearchView
+    /*Used to prevent multiple dialogs from appearing*/
+    private var detailDialogDisplayed = false
+    private var priceDialogDisplayed = false
+    private var filterDialogDisplayed = false
+
+    private var filterOptionSelected : CompoundButton? = null
+    private var filterBy : String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = DataBindingUtil.inflate(inflater,
@@ -53,7 +63,8 @@ class HomeFragment:Fragment() {
         //Recycler view adapter, a click listener is passed as a lambda expression
         val manager = LinearLayoutManager(context)
         adapter = ProductAdapter(ProductListener {
-            createCustomDetailDialog(it)
+            if(!detailDialogDisplayed)
+                createCustomDetailDialog(it)
         })
 
         //Callback created to implement swipe to delete behaviour
@@ -79,14 +90,36 @@ class HomeFragment:Fragment() {
                 it?.let {
                     when(it){
                         R.id.add_fab -> navigateToAddFragment()
-                        R.id.filter_fab -> Toast.makeText(context,"Filtrar",Toast.LENGTH_SHORT).show()
+                        R.id.filter_fab -> {
+                            if(!filterDialogDisplayed and (filterOptionSelected == null))
+                                createCustomFilterDialog()
+                        }
                     }
                     viewModel.onNavigated()
                 }
         })
 
+        binding.cancelFilterButton.setOnClickListener {
+            binding.filterByView.visibility = View.GONE
+            viewModel.filteredList = null
+            if(!searchView.isIconified and !searchView.query.isNullOrEmpty()){
+                val queryResult = viewModel.filterByUserSearch(searchView.query.toString())
+                showNoResultsFoundLayout(queryResult.isEmpty())
+                adapter.submitList(queryResult)
+            }
+            else{
+                adapter.submitList(viewModel.products.value)
+                binding.filterFab.visibility = View.VISIBLE
+            }
+            filterOptionSelected = null
+        }
+
         viewModel.products.observe(viewLifecycleOwner, {
+            binding.filterFab.visibility = if(!it.isNullOrEmpty()) View.VISIBLE else View.GONE
+            showProgressBar(false)
             showEmptyLayout(it.isNullOrEmpty())
+            filterOptionSelected = null
+            binding.filterByView.visibility = View.GONE
             adapter.submitList(it)
         })
 
@@ -94,6 +127,98 @@ class HomeFragment:Fragment() {
         setHasOptionsMenu(true)
         setFabOnScrollBehaviour()
         return binding.root
+    }
+
+    /*Creates a dialog box that allows users to filter from all products based on determined criteria*/
+    private fun createCustomFilterDialog(){
+        filterDialogDisplayed = true
+        val filterBinding = FilterMenuDialogBinding.inflate(layoutInflater)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(filterBinding.root)
+            .setNegativeButton(resources.getString(R.string.cancel_button_string)) { dialog, _ -> dialog.dismiss() }
+            .setPositiveButton(resources.getString(R.string.accept_button_string)) {dialog,_ ->
+                filterOptionSelected = getFilterCheckedSwitch(filterBinding)
+                if(filterOptionSelected != null){
+                    when(filterOptionSelected){
+                        filterBinding.placeSwitch -> {
+                            filterBy = filterBinding.placeAutoComplete.text.toString()
+                            viewModel.filterByPlace(filterBy!!)
+                            adapter.submitList(viewModel.filteredList)
+                        }
+                        filterBinding.categorySwitch -> {
+                            filterBy = filterBinding.categoryAutoComplete.text.toString()
+                            if(filterBy == resources.getString(R.string.option_uncategorized))
+                                viewModel.filterByCategory(null)
+                            else
+                                viewModel.filterByCategory(filterBy)
+                            adapter.submitList(viewModel.filteredList)
+                        }
+                    }
+
+                    binding.filterByTextview.text = resources.getString(R.string.filter_by_string,filterBy)
+                    binding.filterFab.visibility = View.GONE
+                    binding.filterByView.visibility = View.VISIBLE
+                }
+                dialog.dismiss()}
+            .create()
+
+        val changeChecker = CompoundButton.OnCheckedChangeListener { selected, isChecked ->
+            filterBinding.also { f ->
+                if(isChecked){
+                    if(selected != f.categorySwitch) {
+                        f.categorySwitch.isChecked = false
+                        f.categoryInput.visibility = View.GONE
+                    }else{
+                        f.progressBar.visibility = View.VISIBLE
+                        val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
+                            viewModel.getListOfCategories(resources))
+                        f.categoryAutoComplete.setAdapter(arrayAdapter)
+                        f.progressBar.visibility = View.GONE
+                        f.categoryInput.visibility = View.VISIBLE
+                    }
+                    if(selected != f.placeSwitch) {
+                        f.placeSwitch.isChecked = false
+                        f.placeInput.visibility = View.GONE
+                    }else{
+                        f.progressBar.visibility = View.VISIBLE
+                        val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
+                            viewModel.getListOfPlaces())
+                        f.placeAutoComplete.setAdapter(arrayAdapter)
+                        f.progressBar.visibility = View.GONE
+                        f.placeInput.visibility = View.VISIBLE
+                    }
+                    if(selected != f.priceSwitch){ f.priceSwitch.isChecked = false }
+                    if(selected != f.dateSwitch){ f.dateSwitch.isChecked = false }
+                }else{
+                    when(selected){
+                        f.categorySwitch -> f.categoryInput.visibility = View.GONE
+                        f.placeSwitch -> f.placeInput.visibility = View.GONE
+                    }
+                }
+            }
+        }
+
+        filterBinding.apply {
+            categorySwitch.setOnCheckedChangeListener(changeChecker)
+            placeSwitch.setOnCheckedChangeListener(changeChecker)
+            priceSwitch.setOnCheckedChangeListener(changeChecker)
+            dateSwitch.setOnCheckedChangeListener(changeChecker)
+        }
+
+        dialog.setOnDismissListener { filterDialogDisplayed = false }
+        dialog.show()
+    }
+
+    /*Returns the switch checked by the user in the filter dialog*/
+    private fun getFilterCheckedSwitch(f:FilterMenuDialogBinding) : CompoundButton?{
+        when{
+            f.placeSwitch.isChecked -> return f.placeSwitch
+            f.categorySwitch.isChecked -> return f.categorySwitch
+            f.dateSwitch.isChecked -> return f.dateSwitch
+            f.priceSwitch.isChecked -> return f.priceSwitch
+        }
+        return null
     }
 
     private fun navigateToAddFragment(){
@@ -130,7 +255,7 @@ class HomeFragment:Fragment() {
                                  adapter: ProductAdapter){
         binding.productRecyclerView.apply {
             layoutManager = manager
-            addItemDecoration(SpacingItemDecoration(4))
+            addItemDecoration(SpacingItemDecoration(3))
             this.adapter = adapter
         }
     }
@@ -161,22 +286,23 @@ class HomeFragment:Fragment() {
 
             //Invoked when the searchView text is changed
             override fun onQueryTextChange(newText: String?): Boolean {
-                val tempList : MutableList<Product> = mutableListOf()
+                showProgressBar(true)
                 val searchText = newText!!.lowercase(Locale.getDefault())
+                var resultList = mutableListOf<Product>()
 
                 //Creates a temporary list with the elements that match with the search
                 if(searchText.isNotEmpty()){
-                    viewModel.products.value!!.forEach {
-                        if(it.description.lowercase(Locale.getDefault()).contains(searchText)){
-                            tempList.add(it)
-                        }
-                    }
-                    val resultList : List<Product> = tempList
+                    resultList = viewModel.filterByUserSearch(searchText)
+                    showProgressBar(false)
                     adapter.submitList(resultList)
                 }else{
-                    adapter.submitList(viewModel.products.value)
+                    showProgressBar(false)
+                    if(viewModel.filteredList != null)
+                        adapter.submitList(viewModel.filteredList)
+                    else
+                        adapter.submitList(viewModel.products.value)
                 }
-                showNoResultsFoundLayout((tempList.isNullOrEmpty() and searchText.isNotEmpty() and
+                showNoResultsFoundLayout((resultList.isNullOrEmpty() and searchText.isNotEmpty() and
                         !viewModel.products.value.isNullOrEmpty()))
                 return true
             }
@@ -231,6 +357,7 @@ class HomeFragment:Fragment() {
 
     /*Creates a custom dialog that displays the details of the product associated*/
     private fun createCustomDetailDialog(p:Product){
+        detailDialogDisplayed = true
         val dialogBinding : DetailFragmentBinding = DetailFragmentBinding.inflate(layoutInflater)
         dialogBinding.product = p
         val dialog = AlertDialog.Builder(requireContext())
@@ -240,24 +367,30 @@ class HomeFragment:Fragment() {
             show()
             window?.setBackgroundDrawableResource(R.color.transparent)
         }
+
+        dialog.setOnDismissListener { detailDialogDisplayed = false }
     }
 
     /*Sets the content of the views and certain behaviours of the detail fragment used as a custom dialog box*/
     private fun onCreateCustomDetailDialog(b:DetailFragmentBinding, detailDialog: AlertDialog){
+        var deleteDialogDisplayed = false
         b.apply {
             priceToDateText.text = resources.getString(R.string.current_price_string,product!!.updateDate)
             val increase = viewModel.getPriceIncrease(product!!)
-            priceIncreaseTextview.text = resources.getString(R.string.price_increase_string,increase.first)
-            priceIncreaseNumeric.text = resources.getString(R.string.price_increase_numeric,increase.second)
+            priceIncreaseTextview.text = resources.getString(R.string.price_increase_string,increase.second)
+            priceIncreaseNumeric.text = resources.getString(R.string.price_increase_numeric,increase.first)
             categoryTextview.isVisible = !product!!.category.isNullOrEmpty()
             product!!.image?.let { productDetailImg.setImageBitmap(it) }
 
             buttonAddPrice.setOnClickListener {
-                createCustomPriceDialog(detailDialog,b)
+                if(!priceDialogDisplayed)
+                    createCustomPriceDialog(detailDialog, b)
             }
 
             buttonDeleteProduct.setOnClickListener {
-                MaterialAlertDialogBuilder(requireContext())
+                if(deleteDialogDisplayed)
+                    return@setOnClickListener
+                val deleteDialog = MaterialAlertDialogBuilder(requireContext())
                     .setTitle(resources.getString(R.string.delete_product_string))
                     .setMessage(resources.getString(R.string.delete_product_dialog_msg))
                     .setNegativeButton(resources.getString(R.string.button_cancel_string))
@@ -268,7 +401,11 @@ class HomeFragment:Fragment() {
                         detailDialog.dismiss()
                         Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
                     }
-                    .show()
+                    .create()
+                deleteDialogDisplayed = true
+                deleteDialog.show()
+
+                deleteDialog.setOnDismissListener { deleteDialogDisplayed = false }
             }
 
             buttonEditProduct.setOnClickListener {
@@ -280,6 +417,7 @@ class HomeFragment:Fragment() {
 
     /*Creates a custom dialog box for the users to update the price of a given product*/
     private fun createCustomPriceDialog(detailDialog: AlertDialog,detailFragmentBinding: DetailFragmentBinding){
+        priceDialogDisplayed = true
         val priceDialogBinding = AddPriceDialogBinding.inflate(layoutInflater)
         val priceDialog = AlertDialog.Builder(requireContext())
             .setView(priceDialogBinding.root).create()
@@ -319,6 +457,8 @@ class HomeFragment:Fragment() {
             Toast.makeText(context,resources.getString(R.string.price_updated_msg),Toast.LENGTH_SHORT).show()
         }
 
+        priceDialog.setOnDismissListener { priceDialogDisplayed = false }
+
         priceDialog.show()
         priceDialog.window?.setBackgroundDrawableResource(R.color.transparent)
     }
@@ -336,5 +476,11 @@ class HomeFragment:Fragment() {
     /*Sets the visibility for the layout shown when there are no matches for the user search*/
     private fun showNoResultsFoundLayout(show: Boolean){
         binding.emptySearchLayout.visibility = if(show) View.VISIBLE else View.GONE
+    }
+
+    /*Sets the visibility for the progress bar shown whenever there are operations running on the data used by
+    the recycler view, such as loading and filtering*/
+    private fun showProgressBar(show: Boolean){
+        binding.progressBar.visibility = if(show) View.VISIBLE else View.GONE
     }
 }

@@ -1,16 +1,12 @@
 package com.example.pricerecorder
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
-import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
 
@@ -73,10 +69,10 @@ interface ImageUtils {
             return rotated
         }
 
-        /*Resizes a given bitmap to 80% of its original size if the latter surpasses 0.5MB*/
+        /*Resizes a given bitmap to 90% of its original size if the latter surpasses 0.5MB*/
         private fun scaleDownBitmapIfNecessary(bitmap: Bitmap) : Bitmap {
             return if(bitmap.byteCount >= MAX_BITMAP_SIZE)
-                Bitmap.createScaledBitmap(bitmap,(bitmap.width * 0.8).toInt(),(bitmap.height * 0.8).toInt(),true)
+                Bitmap.createScaledBitmap(bitmap,(bitmap.width * 0.75).toInt(),(bitmap.height * 0.75).toInt(),true)
             else
                 bitmap
         }

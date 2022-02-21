@@ -11,6 +11,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
@@ -21,6 +22,7 @@ import androidx.navigation.fragment.navArgs
 import com.example.pricerecorder.*
 import com.example.pricerecorder.addFragment.AddFragment
 import com.example.pricerecorder.database.ProductDatabase
+import com.example.pricerecorder.databinding.DialogProductImageBigBinding
 import com.example.pricerecorder.databinding.EditFragmentBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.*
@@ -30,6 +32,7 @@ class EditFragment : Fragment() {
     private lateinit var viewModel: EditFragmentViewModel
     private  var productImage : Bitmap? = null
     private var modified = MutableLiveData(false)
+    private var imgDialogDisplayed = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -70,7 +73,7 @@ class EditFragment : Fragment() {
         /*Creates a dialog that gives the user th option to select an image from the gallery or take a picture*/
         binding.includedLayout.addProductImage.setOnClickListener {
             val items = resources.getStringArray(R.array.add_image_dialog_items)
-            if(binding.product!!.image == null){
+            if(productImage == null){
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle(resources.getString(R.string.add_image_dialog_title))
                     .setItems(items
@@ -89,6 +92,26 @@ class EditFragment : Fragment() {
                     }
                     .setNegativeButton(resources.getString(R.string.cancel_button_string)) { dialog, _ -> dialog.dismiss() }
                     .show()
+            }else{
+                if(!imgDialogDisplayed) {
+                    imgDialogDisplayed = true
+                    val dialogBinding = DialogProductImageBigBinding.inflate(layoutInflater)
+                    dialogBinding.dialogImageView.setImageBitmap(productImage)
+                    val dialog = AlertDialog.Builder(requireContext())
+                        .setView(dialogBinding.root).create()
+                    dialogBinding.buttonDeleteImage.setOnClickListener {
+                        productImage = null
+                        modified.value = true
+                        binding.includedLayout.addProductImage.setImageResource(R.drawable.ic_add_photo_alternate)
+                        Toast.makeText(context,
+                            getString(R.string.image_deleted_succes),
+                            Toast.LENGTH_SHORT).show()
+                        dialog.dismiss()
+                    }
+                    dialog.show()
+
+                    dialog.setOnDismissListener { imgDialogDisplayed = false }
+                }
             }
         }
 
@@ -132,8 +155,7 @@ class EditFragment : Fragment() {
             ImageUtils.getBitmapFromUri(requireContext(),uri)?.let {
                 productImage = ImageUtils.getModifiedBitmap(requireContext(),it,uri)
                 binding.includedLayout.addProductImage.setImageBitmap(productImage)
-                if(binding.product!!.image != productImage)
-                    modified.value = true
+                modified.value = true
             }
         }
     }
@@ -145,8 +167,7 @@ class EditFragment : Fragment() {
             ImageUtils.getBitmapFromUri(requireContext(),tempImageUri!!)?.let {
                 productImage = ImageUtils.getModifiedBitmap(requireContext(),it,tempImageUri!!)
                 binding.includedLayout.addProductImage.setImageBitmap(productImage)
-                if(binding.product!!.image != productImage)
-                    modified.value = true
+                modified.value = true
             }
         }
     }
@@ -157,7 +178,7 @@ class EditFragment : Fragment() {
         val cat = binding.includedLayout.categoryAutoCompleteTextView.text.toString()
         binding.product!!.updateData(des,p,cat,productImage)
         viewModel.updateProduct(binding.product!!)
-        Toast.makeText(context,"${binding.product!!.description} fue actualizado",Toast.LENGTH_SHORT).show()
+        Toast.makeText(context,resources.getString(R.string.product_updated_string,binding.product!!.description),Toast.LENGTH_SHORT).show()
         navigateUp()
     }
 
@@ -213,6 +234,7 @@ class EditFragment : Fragment() {
 
     /*Sets the content of the different views of the root layout*/
     private fun setViewsContent(){
+        productImage = binding.product!!.image
         binding.includedLayout.apply {
             priceEditText.setText(binding.product!!.price.toString())
             priceEditText.isEnabled = false

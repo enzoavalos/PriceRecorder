@@ -1,8 +1,10 @@
 package com.example.pricerecorder.homeFragment
 
 import android.app.Application
+import android.content.res.Resources
 import android.view.View
 import androidx.lifecycle.*
+import com.example.pricerecorder.R
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabaseDao
 import kotlinx.coroutines.Job
@@ -12,6 +14,7 @@ import java.util.*
 class HomeViewModel(private val database: ProductDatabaseDao,application: Application): AndroidViewModel(application){
     private var viewModelJob = Job()
     val products : LiveData<List<Product>> = database.getAllProducts()
+    var filteredList : MutableList<Product>? = null
 
     private val _fabClicked = MutableLiveData<Int?>()
     val fabClicked : LiveData<Int?>
@@ -54,23 +57,71 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
 
     fun updateProduct(p:Product){
         viewModelScope.launch {
-            database.update(p)
+            database.update(p.productId,p.price,p.updateDate,p.priceHistory)
         }
     }
 
     /*Calculates the increase in the price of the product since the last time it was updated*/
     fun getPriceIncrease(p:Product) : Pair<String,String>{
-        var i = p.priceHistory.lastIndex
-        i = if(i > 1) i-2 else 0
-        var pair = Pair(p.updateDate,"+0.0")
-        if(i != 0){
-            val oldPrice = p.priceHistory[i].first
-            val diff = p.price - oldPrice
-            var percentage : Double = (diff * 100) / oldPrice
-            percentage = "%.${1}f".format(Locale.ENGLISH,percentage).toDouble()
-            val increase = if(percentage >= 0.0) "+${percentage}" else percentage.toString()
-            pair = Pair(p.priceHistory[i].second,increase)
+        val oldPrice = p.priceHistory.first
+        val diff = p.price - oldPrice
+        var percentage : Double = (diff * 100) / oldPrice
+        percentage = "%.${1}f".format(Locale.ENGLISH,percentage).toDouble()
+        val increase = if(percentage >= 0.0) "+${percentage}" else percentage.toString()
+        return Pair(increase,p.priceHistory.second)
+    }
+
+    /*Returns a list with all the categories associated to the products the user has registered*/
+    fun getListOfCategories(resources:Resources) : MutableList<String>{
+        val list = mutableListOf<String>()
+        var noCategory = false
+        products.value?.let {
+            it.forEach { p ->
+                if(!list.contains(p.category) and (p.category != null))
+                    list.add(p.category!!)
+                else if(p.category == null)
+                    noCategory = true
+            }
         }
-        return pair
+        if(list.isNotEmpty())
+            list.sortBy { it }
+        if(noCategory)
+            list.add(0,resources.getString(R.string.option_uncategorized))
+        return list
+    }
+
+    /*Returns a list with all the purchase places associated to the products the user has registered*/
+    fun getListOfPlaces() : MutableList<String>{
+        val list = mutableListOf<String>()
+        products.value?.let {
+            it.forEach { p ->
+                if(!list.contains(p.placeOfPurchase))
+                    list.add(p.placeOfPurchase)
+            }
+        }
+        if(list.isNotEmpty())
+            list.sortBy { it }
+        return list
+    }
+
+    fun filterByPlace(place:String){
+        val list = products.value?.filter { it.placeOfPurchase == place }
+        filteredList = list as MutableList<Product>
+    }
+
+    fun filterByCategory(cat:String?){
+        val list = products.value?.filter { it.category == cat }
+        filteredList = list as MutableList<Product>
+    }
+
+    fun filterByUserSearch(query:String) : MutableList<Product>{
+        val tempList : MutableList<Product> = mutableListOf()
+        val list = filteredList ?: products.value!!
+        list.forEach {
+            if(it.description.lowercase(Locale.getDefault()).contains(query)){
+                tempList.add(it)
+            }
+        }
+        return tempList
     }
 }

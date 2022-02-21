@@ -4,7 +4,7 @@ import android.widget.EditText
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
-//Enables accept button when all editTexts inputs are valid
+/*Responsible for enabling the accept buttons and changing its ui*/
 fun MaterialButton.setAcceptButtonEnabled(enabled:Boolean){
     this.isEnabled = enabled
     alpha = if(enabled)

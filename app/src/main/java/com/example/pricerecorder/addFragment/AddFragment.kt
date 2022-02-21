@@ -54,7 +54,8 @@ class AddFragment:Fragment(){
                 createNewProduct()
         }
 
-        /*Creates a dialog that gives the user th option to select an image from the gallery or take a picture*/
+        /*Creates a dialog that gives the user th option to select an image from the gallery or take a picture in case it has
+        * not already done it, in this case a dialog is shown with the current image where the user can delete it if wanted*/
         binding.addProductImage.setOnClickListener {
             val items = resources.getStringArray(R.array.add_image_dialog_items)
             if(productImage == null){
@@ -78,13 +79,15 @@ class AddFragment:Fragment(){
                     .show()
             }else{
                 val dialogBinding = DialogProductImageBigBinding.inflate(layoutInflater)
+                dialogBinding.dialogImageView.setImageBitmap(productImage)
                 val dialog = AlertDialog.Builder(requireContext())
                     .setView(dialogBinding.root).create()
-                dialogBinding.dialogImageView.setImageBitmap(productImage)
-                /*dialogBinding.buttonDeleteImage.setOnClickListener {
-                    Toast.makeText(context,"press",Toast.LENGTH_SHORT).show()
+                dialogBinding.buttonDeleteImage.setOnClickListener {
+                    productImage = null
+                    binding.addProductImage.setImageResource(R.drawable.ic_add_photo_alternate)
+                    Toast.makeText(context,getString(R.string.image_deleted_succes),Toast.LENGTH_SHORT).show()
                     dialog.dismiss()
-                }*/
+                }
                 dialog.show()
             }
         }
@@ -155,7 +158,7 @@ class AddFragment:Fragment(){
         else
             binding.categoryAutoCompleteTextView.text.toString()
 
-        val newProduct = Product(desc,price,place,category,Product.setUpdateDate(),productImage)
+        val newProduct = Product(desc,price,place,category,Product.getCurrentDate(),productImage)
         productImage = null
         viewModel.addProduct(newProduct)
         Toast.makeText(context,resources.getString(R.string.new_product_added),Toast.LENGTH_SHORT).show()
