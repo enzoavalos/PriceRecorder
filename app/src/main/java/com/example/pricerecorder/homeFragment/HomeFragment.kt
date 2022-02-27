@@ -28,8 +28,10 @@ import com.example.pricerecorder.databinding.AddPriceDialogBinding
 import com.example.pricerecorder.databinding.DetailFragmentBinding
 import com.example.pricerecorder.databinding.FilterMenuDialogBinding
 import com.example.pricerecorder.databinding.HomeFragmentBinding
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import java.text.DateFormat
 import java.util.*
 
 class HomeFragment:Fragment() {
@@ -102,20 +104,25 @@ class HomeFragment:Fragment() {
         binding.cancelFilterButton.setOnClickListener {
             binding.filterByView.visibility = View.GONE
             viewModel.filteredList = null
-            if(!searchView.isIconified and !searchView.query.isNullOrEmpty()){
-                val queryResult = viewModel.filterByUserSearch(searchView.query.toString())
-                showNoResultsFoundLayout(queryResult.isEmpty())
-                adapter.submitList(queryResult)
+            filterOptionSelected = null
+            if(!searchView.isIconified){
+                if(!searchView.query.isNullOrEmpty()){
+                    val queryResult = viewModel.filterByUserSearch(searchView.query.toString())
+                    showNoResultsFoundLayout(queryResult.isEmpty())
+                    adapter.submitList(queryResult)
+                }else{
+                    showNoResultsFoundLayout(viewModel.products.value.isNullOrEmpty())
+                    adapter.submitList(viewModel.products.value)
+                }
             }
             else{
                 adapter.submitList(viewModel.products.value)
-                binding.filterFab.visibility = View.VISIBLE
+                binding.filterFab.show()
             }
-            filterOptionSelected = null
         }
 
         viewModel.products.observe(viewLifecycleOwner, {
-            binding.filterFab.visibility = if(!it.isNullOrEmpty()) View.VISIBLE else View.GONE
+            binding.filterFab.visibility = if(!it.isNullOrEmpty() and (filterOptionSelected == null)) View.VISIBLE else View.GONE
             showProgressBar(false)
             showEmptyLayout(it.isNullOrEmpty())
             filterOptionSelected = null
@@ -129,41 +136,47 @@ class HomeFragment:Fragment() {
         return binding.root
     }
 
-    /*Creates a dialog box that allows users to filter from all products based on determined criteria*/
-    private fun createCustomFilterDialog(){
-        filterDialogDisplayed = true
-        val filterBinding = FilterMenuDialogBinding.inflate(layoutInflater)
+    private fun onFilterProducts(filterBinding:FilterMenuDialogBinding):Boolean{
+        when(filterOptionSelected){
+            filterBinding.placeSwitch -> {
+                filterBy = filterBinding.placeAutoComplete.text.toString()
+                if(filterBy.isNullOrEmpty())
+                    return false
+                viewModel.filterByPlace(filterBy!!)
+                adapter.submitList(viewModel.filteredList)
+            }
+            filterBinding.categorySwitch -> {
+                filterBy = filterBinding.categoryAutoComplete.text.toString()
+                if(filterBy.isNullOrEmpty())
+                    return false
+                if(filterBy == resources.getString(R.string.option_uncategorized))
+                    viewModel.filterByCategory("")
+                else
+                    viewModel.filterByCategory(filterBy)
+                adapter.submitList(viewModel.filteredList)
+            }
+            filterBinding.dateSwitch -> {
+                viewModel.filterByDate(filterBy!!)
+                adapter.submitList(viewModel.filteredList)
+            }
+            filterBinding.priceSwitch -> {
+                val values = filterBinding.priceSliderView.values
+                filterBy = "$${values[0].toInt()} - $${values[1].toInt()}"
+                viewModel.filterByPriceRange(values[0],values[1])
+                adapter.submitList(viewModel.filteredList)
+            }
+        }
+        return true
+    }
 
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(filterBinding.root)
-            .setNegativeButton(resources.getString(R.string.cancel_button_string)) { dialog, _ -> dialog.dismiss() }
-            .setPositiveButton(resources.getString(R.string.accept_button_string)) {dialog,_ ->
-                filterOptionSelected = getFilterCheckedSwitch(filterBinding)
-                if(filterOptionSelected != null){
-                    when(filterOptionSelected){
-                        filterBinding.placeSwitch -> {
-                            filterBy = filterBinding.placeAutoComplete.text.toString()
-                            viewModel.filterByPlace(filterBy!!)
-                            adapter.submitList(viewModel.filteredList)
-                        }
-                        filterBinding.categorySwitch -> {
-                            filterBy = filterBinding.categoryAutoComplete.text.toString()
-                            if(filterBy == resources.getString(R.string.option_uncategorized))
-                                viewModel.filterByCategory(null)
-                            else
-                                viewModel.filterByCategory(filterBy)
-                            adapter.submitList(viewModel.filteredList)
-                        }
-                    }
+    /*Receives a date represented as a Long value and returns the date in string format*/
+    private fun formatDate(date:Long) : String{
+        return DateFormat.getDateInstance().format(Date(date))
+    }
 
-                    binding.filterByTextview.text = resources.getString(R.string.filter_by_string,filterBy)
-                    binding.filterFab.visibility = View.GONE
-                    binding.filterByView.visibility = View.VISIBLE
-                }
-                dialog.dismiss()}
-            .create()
-
-        val changeChecker = CompoundButton.OnCheckedChangeListener { selected, isChecked ->
+    /*Implements an OnCheckedChangeListener applied to every and each one of the switches of the filter dialog*/
+    private fun changeChecker(filterBinding: FilterMenuDialogBinding) : CompoundButton.OnCheckedChangeListener{
+        return CompoundButton.OnCheckedChangeListener { selected, isChecked ->
             filterBinding.also { f ->
                 if(isChecked){
                     if(selected != f.categorySwitch) {
@@ -177,6 +190,7 @@ class HomeFragment:Fragment() {
                         f.progressBar.visibility = View.GONE
                         f.categoryInput.visibility = View.VISIBLE
                     }
+
                     if(selected != f.placeSwitch) {
                         f.placeSwitch.isChecked = false
                         f.placeInput.visibility = View.GONE
@@ -188,22 +202,78 @@ class HomeFragment:Fragment() {
                         f.progressBar.visibility = View.GONE
                         f.placeInput.visibility = View.VISIBLE
                     }
-                    if(selected != f.priceSwitch){ f.priceSwitch.isChecked = false }
-                    if(selected != f.dateSwitch){ f.dateSwitch.isChecked = false }
+
+                    if(selected != f.dateSwitch){
+                        f.dateSwitch.isChecked = false
+                        f.dateInput.visibility = View.GONE
+                    }else{
+                        val today = formatDate(Calendar.getInstance().timeInMillis)
+                        filterBinding.dateInput.setText(today)
+                        filterBy = today
+                        filterBinding.dateInput.visibility = View.VISIBLE
+                        filterBinding.dateInput.setOnClickListener {
+                            val datePicker = MaterialDatePicker.Builder.datePicker()
+                                .setTitleText(getString(R.string.date_picker_title))
+                                .setTheme(R.style.CustomDatePicker)
+                                .build()
+                            datePicker.addOnPositiveButtonClickListener {
+                                filterBy = formatDate(it)
+                                filterBinding.dateInput.setText(filterBy)
+                            }
+                            datePicker.show(parentFragmentManager,null)
+                        }
+                    }
+
+                    if(selected != f.priceSwitch){
+                        f.priceSwitch.isChecked = false
+                        f.priceSliderView.visibility = View.GONE
+                    }else{
+                        f.priceSliderView.apply {
+                            valueFrom = 0f
+                            valueTo = viewModel.getMaxPrice()
+                            values = mutableListOf(valueFrom,valueTo)
+                            setLabelFormatter { value -> return@setLabelFormatter "$${value.toInt()}" }
+                            visibility = View.VISIBLE
+                        }
+                    }
                 }else{
                     when(selected){
                         f.categorySwitch -> f.categoryInput.visibility = View.GONE
                         f.placeSwitch -> f.placeInput.visibility = View.GONE
+                        f.dateSwitch -> f.dateInput.visibility = View.GONE
+                        f.priceSwitch -> f.priceSliderView.visibility = View.GONE
                     }
                 }
             }
         }
+    }
 
-        filterBinding.apply {
-            categorySwitch.setOnCheckedChangeListener(changeChecker)
-            placeSwitch.setOnCheckedChangeListener(changeChecker)
-            priceSwitch.setOnCheckedChangeListener(changeChecker)
-            dateSwitch.setOnCheckedChangeListener(changeChecker)
+    /*Creates a dialog box that allows users to filter from all products based on determined criteria*/
+    private fun createCustomFilterDialog(){
+        filterDialogDisplayed = true
+        val filterBinding = FilterMenuDialogBinding.inflate(layoutInflater)
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(filterBinding.root)
+            .setNegativeButton(resources.getString(R.string.cancel_button_string)) { dialog, _ -> dialog.dismiss() }
+            .setPositiveButton(resources.getString(R.string.accept_button_string)) {dialog,_ ->
+                filterOptionSelected = getFilterCheckedSwitch(filterBinding)
+                if(filterOptionSelected != null){
+                    if(onFilterProducts(filterBinding)){
+                        binding.filterByTextview.text = resources.getString(R.string.filter_by_string,filterBy)
+                        binding.filterFab.hide()
+                        binding.filterByView.visibility = View.VISIBLE
+                    }else
+                        filterOptionSelected = null
+                }
+                dialog.dismiss()}
+            .create()
+
+        changeChecker(filterBinding).also {
+            filterBinding.categorySwitch.setOnCheckedChangeListener(it)
+            filterBinding.placeSwitch.setOnCheckedChangeListener(it)
+            filterBinding.priceSwitch.setOnCheckedChangeListener(it)
+            filterBinding.dateSwitch.setOnCheckedChangeListener(it)
         }
 
         dialog.setOnDismissListener { filterDialogDisplayed = false }
@@ -235,15 +305,9 @@ class HomeFragment:Fragment() {
             NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, _ ->
             if(binding.addFab.isVisible){
                 if(scrollY != 0){
-                    binding.apply {
-                        addFab.shrink()
-                        filterFab.hide()
-                    }
+                    binding.addFab.shrink()
                 }else{
-                    binding.apply {
-                        addFab.extend()
-                        filterFab.show()
-                    }
+                    binding.addFab.extend()
                 }
             }
         })
@@ -325,7 +389,8 @@ class HomeFragment:Fragment() {
                 if(binding.nestedScrollView.scrollY == 0) {
                     binding.apply {
                         addFab.extend()
-                        filterFab.show()
+                        if(filterOptionSelected == null)
+                            filterFab.show()
                     }
                 }
             }
@@ -379,7 +444,7 @@ class HomeFragment:Fragment() {
             val increase = viewModel.getPriceIncrease(product!!)
             priceIncreaseTextview.text = resources.getString(R.string.price_increase_string,increase.second)
             priceIncreaseNumeric.text = resources.getString(R.string.price_increase_numeric,increase.first)
-            categoryTextview.isVisible = !product!!.category.isNullOrEmpty()
+            categoryTextview.isVisible = product!!.category.isNotEmpty()
             product!!.image?.let { productDetailImg.setImageBitmap(it) }
 
             buttonAddPrice.setOnClickListener {

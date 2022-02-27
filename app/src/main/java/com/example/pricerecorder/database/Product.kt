@@ -19,7 +19,7 @@ data class Product(
     var placeOfPurchase : String,
 
     @ColumnInfo(name = "category")
-    var category : String?,
+    var category : String,
 
     @ColumnInfo(name = "update_date")
     var updateDate : String,
