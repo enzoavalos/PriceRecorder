@@ -153,10 +153,7 @@ class AddFragment:Fragment(){
         val desc = binding.descriptionEditText.text.toString()
         val price = binding.priceEditText.text.toString().toDouble()
         val place = binding.placeEditText.text.toString()
-        val category = if(binding.categoryAutoCompleteTextView.text.isNullOrEmpty())
-            null
-        else
-            binding.categoryAutoCompleteTextView.text.toString()
+        val category = binding.categoryAutoCompleteTextView.text.toString()
 
         val newProduct = Product(desc,price,place,category,Product.getCurrentDate(),productImage)
         productImage = null

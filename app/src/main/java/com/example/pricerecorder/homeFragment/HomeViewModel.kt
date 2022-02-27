@@ -10,6 +10,7 @@ import com.example.pricerecorder.database.ProductDatabaseDao
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.*
+import kotlin.math.ceil
 
 class HomeViewModel(private val database: ProductDatabaseDao,application: Application): AndroidViewModel(application){
     private var viewModelJob = Job()
@@ -77,9 +78,10 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
         var noCategory = false
         products.value?.let {
             it.forEach { p ->
-                if(!list.contains(p.category) and (p.category != null))
-                    list.add(p.category!!)
-                else if(p.category == null)
+                if(p.category.isNotEmpty()){
+                    if(!list.contains(p.category))
+                        list.add(p.category)
+                }else
                     noCategory = true
             }
         }
@@ -123,5 +125,23 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
             }
         }
         return tempList
+    }
+
+    fun filterByDate(date:String){
+        val list = products.value?.filter { it.updateDate == date }
+        filteredList = list as MutableList<Product>
+    }
+
+    /*Returns the maximum price the user has registered rounded up*/
+    fun getMaxPrice() : Float{
+        products.value!!.let{
+            val list = it.sortedByDescending { p -> p.price }
+            return ceil(list[0].price).toFloat()
+        }
+    }
+
+    fun filterByPriceRange(min:Float,max:Float){
+        val list = products.value?.filter { (it.price >= min.toDouble()) and (it.price <= max.toDouble()) }
+        filteredList = list as MutableList<Product>
     }
 }

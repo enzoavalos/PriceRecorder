@@ -127,6 +127,39 @@
                         android:hint="@string/place_hint"
                         />
                 </com.google.android.material.textfield.TextInputLayout>
+
+                <EditText
+                    style="@style/Widget.AppCompat.EditText"
+                    android:id="@+id/date_input"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:layout_marginTop="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_big"
+                    android:layout_marginEnd="@dimen/spacing_big"
+                    android:ems="10"
+                    android:inputType="text|date"
+                    android:singleLine="true"
+                    android:hint="@string/date_filter_text"
+                    android:gravity="center_horizontal"
+                    android:layout_gravity="center_horizontal"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:visibility="gone"/>
+
+                <com.google.android.material.slider.RangeSlider
+                    android:id="@+id/price_slider_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_xbig"
+                    android:layout_marginEnd="@dimen/spacing_xbig"
+                    android:valueFrom="0"
+                    android:valueTo="100"
+                    app:values="@array/range_slider_values"
+                    app:labelStyle="@style/Widget.App.Tooltip"
+                    app:tickColor="?attr/colorPrimaryVariant"
+                    android:visibility="gone"/>
             </LinearLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>

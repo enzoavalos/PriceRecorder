@@ -241,7 +241,7 @@ class EditFragment : Fragment() {
             priceEditText.isFocusable = false
             descriptionEditText.setText(binding.product!!.description)
             placeEditText.setText(binding.product!!.placeOfPurchase)
-            if(!binding.product!!.category.isNullOrEmpty())
+            if(binding.product!!.category.isNotEmpty())
                 categoryAutoCompleteTextView.setText(binding.product!!.category)
             binding.product!!.image?.let {
                 binding.includedLayout.addProductImage.setImageBitmap(it)
