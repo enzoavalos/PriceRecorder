@@ -227,7 +227,7 @@ class AddFragment:Fragment(){
             })
 
             isLongClickable = false
-            filters = arrayOf(InputFilter.LengthFilter(7))
+            filters = arrayOf(InputFilter.LengthFilter(8))
         }
     }
 
@@ -244,7 +244,7 @@ class AddFragment:Fragment(){
     }
 
     companion object {
-        const val MAX_INTEGRAL_DIGITS = 5
+        const val MAX_INTEGRAL_DIGITS = 6
         const val DESCRIPTION_MAX_LENGTH = 40
         const val PLACE_MAX_LENGTH = 25
     }

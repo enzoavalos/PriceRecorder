@@ -32,7 +32,9 @@ import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.ceil
 
 class HomeFragment:Fragment() {
     private lateinit var viewModel: HomeViewModel
@@ -116,6 +118,7 @@ class HomeFragment:Fragment() {
                 }
             }
             else{
+                showNoResultsFoundLayout(viewModel.products.value.isNullOrEmpty())
                 adapter.submitList(viewModel.products.value)
                 binding.filterFab.show()
             }
@@ -139,39 +142,44 @@ class HomeFragment:Fragment() {
     private fun onFilterProducts(filterBinding:FilterMenuDialogBinding):Boolean{
         when(filterOptionSelected){
             filterBinding.placeSwitch -> {
-                filterBy = filterBinding.placeAutoComplete.text.toString()
                 if(filterBy.isNullOrEmpty())
                     return false
+                filterBy = filterBinding.placeAutoComplete.text.toString()
                 viewModel.filterByPlace(filterBy!!)
-                adapter.submitList(viewModel.filteredList)
             }
             filterBinding.categorySwitch -> {
-                filterBy = filterBinding.categoryAutoComplete.text.toString()
                 if(filterBy.isNullOrEmpty())
                     return false
+                filterBy = filterBinding.categoryAutoComplete.text.toString()
                 if(filterBy == resources.getString(R.string.option_uncategorized))
                     viewModel.filterByCategory("")
                 else
                     viewModel.filterByCategory(filterBy)
-                adapter.submitList(viewModel.filteredList)
             }
             filterBinding.dateSwitch -> {
+                if(filterBy.isNullOrEmpty())
+                    return false
                 viewModel.filterByDate(filterBy!!)
-                adapter.submitList(viewModel.filteredList)
             }
             filterBinding.priceSwitch -> {
                 val values = filterBinding.priceSliderView.values
                 filterBy = "$${values[0].toInt()} - $${values[1].toInt()}"
                 viewModel.filterByPriceRange(values[0],values[1])
-                adapter.submitList(viewModel.filteredList)
             }
         }
+        adapter.submitList(viewModel.filteredList)
+        showNoResultsFoundLayout(viewModel.filteredList.isNullOrEmpty())
         return true
     }
 
     /*Receives a date represented as a Long value and returns the date in string format*/
-    private fun formatDate(date:Long) : String{
-        return DateFormat.getDateInstance().format(Date(date))
+    private fun formatDate(dateInMillis:Long) : String{
+        val utcTime = Date(dateInMillis)
+        val format = "yyy/MM/dd HH:mm:ss"
+        val sdf = SimpleDateFormat(format, Locale.getDefault())
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        val gmtTime = SimpleDateFormat(format, Locale.getDefault()).parse(sdf.format(utcTime))
+        return if(gmtTime != null) DateFormat.getDateInstance().format(gmtTime) else ""
     }
 
     /*Implements an OnCheckedChangeListener applied to every and each one of the switches of the filter dialog*/
@@ -232,6 +240,7 @@ class HomeFragment:Fragment() {
                             valueFrom = 0f
                             valueTo = viewModel.getMaxPrice()
                             values = mutableListOf(valueFrom,valueTo)
+                            stepSize = adaptStepSize(valueTo)
                             setLabelFormatter { value -> return@setLabelFormatter "$${value.toInt()}" }
                             visibility = View.VISIBLE
                         }
@@ -246,6 +255,11 @@ class HomeFragment:Fragment() {
                 }
             }
         }
+    }
+
+    /*Adapts the range slider step size according to its maximum value*/
+    private fun adaptStepSize(value: Float): Float {
+        return ceil(value * 0.01f)
     }
 
     /*Creates a dialog box that allows users to filter from all products based on determined criteria*/
