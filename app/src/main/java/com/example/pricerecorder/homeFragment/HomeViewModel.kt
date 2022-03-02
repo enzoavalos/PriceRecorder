@@ -136,7 +136,7 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
     fun getMaxPrice() : Float{
         products.value!!.let{
             val list = it.sortedByDescending { p -> p.price }
-            return ceil(list[0].price).toFloat()
+            return if(list.isNotEmpty()) ceil(list[0].price).toFloat() else 100f
         }
     }
 
