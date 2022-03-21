@@ -12,4 +12,6 @@
     <dimen name="spacing_xbig">40dp</dimen>
     <dimen name="detail_frgmnt_img_top_margin">40dp</dimen>
     <dimen name="icon_bg_size">120dp</dimen>
+    <dimen name="setting_options_title_text_size">18sp</dimen>
+    <dimen name="setting_section_text_size">16sp</dimen>
 </resources>

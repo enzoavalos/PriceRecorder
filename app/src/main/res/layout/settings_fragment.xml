@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <variable
+            name="viewModel"
+            type="com.example.pricerecorder.settingsFragment.SettingsFragmentViewModel" />
+    </data>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_small"
+            android:layout_marginBottom="@dimen/spacing_small">
+
+            <LinearLayout
+                android:id="@+id/account_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:orientation="vertical"
+                android:onClick="@{(view) -> viewModel.onViewClicked(view)}">
+                <TextView
+                    android:id="@+id/account_section_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/account_section_title"
+                    android:textColor="?attr/colorPrimaryDark"
+                    android:textSize="@dimen/setting_section_text_size"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+                <View style="@style/Divider"
+                    android:id="@+id/divider_account"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"
+                    android:background="?attr/colorPrimary"/>
+                <TextView
+                    android:id="@+id/account_name_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sign_in_string"
+                    android:textSize="@dimen/setting_options_title_text_size"
+                    android:layout_marginTop="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+                <TextView
+                    android:id="@+id/account_email_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sign_in_description"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/general_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/account_section"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/general_section_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/general_section_title"
+                    android:textColor="?attr/colorPrimaryDark"
+                    android:textSize="@dimen/setting_section_text_size"
+                    android:layout_marginStart="@dimen/spacing_normal"
+                    android:layout_marginTop="@dimen/spacing_normal"/>
+                <View style="@style/Divider"
+                    android:id="@+id/divider_general"
+                    android:background="?attr/colorPrimary"/>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/currency_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="@{(view) -> viewModel.onViewClicked(view)}">
+                    <ImageView
+                        android:id="@+id/currency_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/ic_money_sign_full"
+                        app:layout_constraintStart_toStartOf="parent"
+                        android:layout_marginStart="@dimen/spacing_normal"
+                        app:layout_constraintTop_toTopOf="@+id/currency_title_textview"
+                        app:layout_constraintBottom_toBottomOf="@+id/current_currency_textview"
+                        />
+                    <TextView
+                        android:id="@+id/currency_title_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/currency_title_string"
+                        android:textSize="@dimen/setting_options_title_text_size"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/currency_icon"
+                        android:layout_marginTop="@dimen/spacing_small"
+                        android:layout_marginStart="@dimen/spacing_normal"/>
+                    <TextView
+                        android:id="@+id/current_currency_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="United States Dollar ($)"
+                        tools:text="United States Dollar ($)"
+                        app:layout_constraintTop_toBottomOf="@id/currency_title_textview"
+                        app:layout_constraintStart_toStartOf="@+id/currency_title_textview"/>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <View style="@style/secondaryDivider"
+                    android:layout_marginTop="@dimen/spacing_xsmall"/>
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/pick_theme"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="@{(view) -> viewModel.onViewClicked(view)}">
+                    <ImageView
+                        android:id="@+id/theme_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/ic_theme"
+                        app:layout_constraintStart_toStartOf="parent"
+                        android:layout_marginStart="@dimen/spacing_normal"
+                        app:layout_constraintTop_toTopOf="@+id/theme_title_textview"
+                        app:layout_constraintBottom_toBottomOf="@+id/current_theme_textview"
+                        />
+                    <TextView
+                        android:id="@+id/theme_title_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pick_theme_title"
+                        android:textSize="@dimen/setting_options_title_text_size"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/theme_icon"
+                        android:layout_marginTop="@dimen/spacing_xsmall"
+                        android:layout_marginStart="@dimen/spacing_normal"/>
+                    <TextView
+                        android:id="@+id/current_theme_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/light_theme_string"
+                        app:layout_constraintTop_toBottomOf="@id/theme_title_textview"
+                        app:layout_constraintStart_toStartOf="@+id/theme_title_textview"/>
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/database_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/general_section"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/database_section_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/db_section_title"
+                    android:textColor="?attr/colorPrimaryDark"
+                    android:textSize="@dimen/setting_section_text_size"
+                    android:layout_marginTop="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+                <View style="@style/Divider"
+                    android:id="@+id/divider_db"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"
+                    android:background="?attr/colorPrimary"/>
+
+                <LinearLayout
+                    android:id="@+id/export_data_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:onClick="@{(view) -> viewModel.onViewClicked(view)}">
+                    <TextView
+                        android:id="@+id/export_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/export_data_string"
+                        android:textSize="@dimen/setting_options_title_text_size"
+                        android:layout_marginTop="@dimen/spacing_small"
+                        android:layout_marginStart="@dimen/spacing_normal"/>
+                    <TextView
+                        android:id="@+id/export_date_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ultimo backup: Nunca"
+                        tools:text="Ultimo backup: Nunca"
+                        android:layout_marginStart="@dimen/spacing_normal"/>
+                </LinearLayout>
+
+                <View style="@style/secondaryDivider"
+                    android:layout_marginTop="@dimen/spacing_xsmall"/>
+
+                <LinearLayout
+                    android:id="@+id/import_data_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:onClick="@{(view) -> viewModel.onViewClicked(view)}">
+                    <TextView
+                        android:id="@+id/import_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/import_data_string"
+                        android:textSize="@dimen/setting_options_title_text_size"
+                        android:layout_marginTop="@dimen/spacing_xsmall"
+                        android:layout_marginStart="@dimen/spacing_normal"/>
+                    <TextView
+                        android:id="@+id/import_date_textview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Ultima restauracion: Nunca"
+                        tools:text="Ultima restauracion: Nunca"
+                        android:layout_marginStart="@dimen/spacing_normal"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/info_section"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/database_section"
+                android:orientation="vertical"
+                android:onClick="@{(view) -> viewModel.onViewClicked(view)}">
+                <TextView
+                    android:id="@+id/info_section_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/info_section_title"
+                    android:textColor="?attr/colorPrimaryDark"
+                    android:textSize="@dimen/setting_section_text_size"
+                    android:layout_marginTop="@dimen/spacing_small"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+                <View style="@style/Divider"
+                    android:id="@+id/divider_info"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"
+                    android:background="?attr/colorPrimary"/>
+                <TextView
+                    android:id="@+id/version_title_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/version_title_string"
+                    android:textSize="@dimen/setting_options_title_text_size"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+                <TextView
+                    android:id="@+id/current_version_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1.0"
+                    tools:text="1.0"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+                <View style="@style/secondaryDivider"
+                    android:layout_marginTop="@dimen/spacing_xsmall"/>
+                <TextView
+                    android:id="@+id/help_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/help_and_faq_string"
+                    android:textSize="@dimen/setting_options_title_text_size"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+                <View style="@style/secondaryDivider"
+                    android:layout_marginTop="@dimen/spacing_xsmall"/>
+                <TextView
+                    android:id="@+id/about_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/about_title_string"
+                    android:textSize="@dimen/setting_options_title_text_size"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+                <View style="@style/secondaryDivider"
+                    android:layout_marginTop="@dimen/spacing_xsmall"/>
+                <TextView
+                    android:id="@+id/review_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/review_app_string"
+                    android:textSize="@dimen/setting_options_title_text_size"
+                    android:layout_marginTop="@dimen/spacing_xsmall"
+                    android:layout_marginStart="@dimen/spacing_normal"/>
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</layout>

@@ -305,6 +305,10 @@ class HomeFragment:Fragment() {
         return null
     }
 
+    private fun navigateToSettingsFragment(){
+        Navigation.findNavController(binding.root).navigate(HomeFragmentDirections.actionHomeFragmentToSettingsFragment())
+    }
+
     private fun navigateToAddFragment(){
         Navigation.findNavController(binding.root).navigate(HomeFragmentDirections.actionHomeFragmentToAddFragment())
     }
@@ -429,7 +433,7 @@ class HomeFragment:Fragment() {
                         .show()
                 }
             }
-            R.id.op_settings -> Toast.makeText(context,"Settings", Toast.LENGTH_SHORT).show()
+            R.id.op_settings -> navigateToSettingsFragment()
         }
         return true
     }
