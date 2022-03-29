@@ -65,13 +65,13 @@ class AddFragment:Fragment(){
                     ) { dialog, which ->
                         when(which){
                             0 -> PermissionChecker.checkForPermissions(requireContext(),android.Manifest.permission.CAMERA,
-                                ImageUtils.CAMERA_REQUEST_CODE,
-                                ::pickImageFromGallery,::takePictureFromCamera,
-                                listOf(readExternalFilesPermission,accessCameraPermission))
+                                PermissionChecker.CAMERA_REQUEST_CODE,
+                                ::takePictureFromCamera,
+                                accessCameraPermission)
                             1 -> PermissionChecker.checkForPermissions(requireContext(),android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                                ImageUtils.FILE_REQUEST_CODE,
-                                ::pickImageFromGallery,::takePictureFromCamera,
-                                listOf(readExternalFilesPermission,accessCameraPermission))
+                                PermissionChecker.FILE_REQUEST_CODE,
+                                ::pickImageFromGallery,
+                                readExternalFilesPermission)
                         }
                         dialog.dismiss()
                     }
@@ -158,7 +158,7 @@ class AddFragment:Fragment(){
         val newProduct = Product(desc,price,place,category,Product.getCurrentDate(),productImage)
         productImage = null
         viewModel.addProduct(newProduct)
-        Toast.makeText(context,resources.getString(R.string.new_product_added),Toast.LENGTH_SHORT).show()
+        Toast.makeText(context,resources.getString(R.string.new_product_added,desc),Toast.LENGTH_SHORT).show()
         navigateUp()
     }
 

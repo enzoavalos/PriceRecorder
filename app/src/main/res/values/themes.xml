@@ -55,4 +55,13 @@
         <item name="android:background">?attr/colorPrimaryVariant</item>
         <item name="android:layout_height">1dp</item>
     </style>
+
+    <style name="CircularImageView">
+        <item name="cornerSize">50%</item>
+    </style>
+    
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_in_bottom</item>
+        <item name="android:windowExitAnimation">@anim/slide_out_bottom</item>
+    </style>
 </resources>

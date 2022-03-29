@@ -29,6 +29,8 @@ abstract class ProductDatabase:RoomDatabase() {
                         ProductDatabase::class.java,
                         "products_database"
                     )
+                        /*This option makes the db to be stored in a single file*/
+                        .setJournalMode(JournalMode.TRUNCATE)
                         .fallbackToDestructiveMigration()
                         .build()
                     INSTANCE = instance

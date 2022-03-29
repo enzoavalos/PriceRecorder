@@ -13,13 +13,15 @@ class Converters {
         if(bitmap == null)
             return ByteArray(0)
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 60, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, outputStream)
         return outputStream.toByteArray()
     }
 
     @TypeConverter
     fun fromByteArray(array: ByteArray) : Bitmap?{
-        return if(array.isNotEmpty()) BitmapFactory.decodeByteArray(array,0,array.size) else null
+        val options = BitmapFactory.Options()
+        options.inPreferredConfig = Bitmap.Config.RGB_565
+        return if(array.isNotEmpty()) BitmapFactory.decodeByteArray(array,0,array.size,options) else null
     }
 
     @TypeConverter

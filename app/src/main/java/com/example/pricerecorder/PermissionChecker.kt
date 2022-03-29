@@ -8,14 +8,16 @@ import androidx.core.content.ContextCompat
 
 interface PermissionChecker {
     companion object{
+        const val FILE_REQUEST_CODE = 101
+        const val CAMERA_REQUEST_CODE = 102
         /*Check if permission has been granted to either access external files or the camera, and if its not
         * then it requests for it*/
-        fun checkForPermissions(context: Context, permission:String, requestCode:Int, galleryPicker: () -> Unit,
-                                photoTaker: () -> Unit, launchers:List<ActivityResultLauncher<String>>){
+        fun checkForPermissions(context: Context, permission:String, requestCode:Int, activityWithPermission: () -> Unit,
+                                launcher:ActivityResultLauncher<String>){
             fun launchActivityWithPermission(requestCode:Int){
                 when(requestCode){
-                    ImageUtils.FILE_REQUEST_CODE -> galleryPicker()
-                    ImageUtils.CAMERA_REQUEST_CODE -> photoTaker()
+                    FILE_REQUEST_CODE -> activityWithPermission()
+                    CAMERA_REQUEST_CODE -> activityWithPermission()
                 }
             }
 
@@ -26,8 +28,8 @@ interface PermissionChecker {
                     else -> {
                         /*Request for the user permission to access certain documents and features of the device*/
                         when(requestCode){
-                            ImageUtils.FILE_REQUEST_CODE -> launchers[0].launch(permission)
-                            ImageUtils.CAMERA_REQUEST_CODE -> launchers[1].launch(permission)
+                            FILE_REQUEST_CODE -> launcher.launch(permission)
+                            CAMERA_REQUEST_CODE -> launcher.launch(permission)
                         }
                     }
                 }

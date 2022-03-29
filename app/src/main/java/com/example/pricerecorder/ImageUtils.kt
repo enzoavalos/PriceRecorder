@@ -13,8 +13,6 @@ import java.io.File
 interface ImageUtils {
     companion object{
         private const val MAX_BITMAP_SIZE = 500000
-        const val FILE_REQUEST_CODE = 101
-        const val CAMERA_REQUEST_CODE = 102
 
         /*Receives an uri and returns the image corresponding to it in bitmap format*/
         fun getBitmapFromUri(context: Context, uri: Uri) : Bitmap?{
