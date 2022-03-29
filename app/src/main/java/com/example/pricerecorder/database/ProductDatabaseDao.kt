@@ -3,7 +3,9 @@ package com.example.pricerecorder.database
 import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.room.*
+import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.pricerecorder.Converters
+import io.reactivex.Single
 
 @Dao
 interface ProductDatabaseDao {
@@ -32,4 +34,9 @@ interface ProductDatabaseDao {
 
     @Query("SELECT * FROM products_table ORDER BY update_date desc,description asc")
     fun getAllProducts() : LiveData<List<Product>>
+
+    /*Query executed when the user chooses to backup the db. This checkpoint query ensures that all pending transactions are applied.
+    A Single is similar to an Observable, but it always emits one value or an error notification*/
+    @RawQuery
+    fun checkPoint(supportSQLiteQuery : SupportSQLiteQuery) : Single<Int>
 }

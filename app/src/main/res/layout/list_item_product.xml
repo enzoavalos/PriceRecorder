@@ -23,31 +23,15 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/spacing_small"
-            android:layout_marginBottom="@dimen/spacing_small">
-
-            <ImageView
-                android:id="@+id/product_image"
-                android:layout_width="@dimen/icon_width"
-                android:layout_height="@dimen/icon_width"
-                android:layout_marginStart="@dimen/spacing_small"
-                android:background="@drawable/bg_list_item"
-                android:src="@drawable/ic_fastfood"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:srcCompat="@drawable/ic_fastfood"
-                android:layout_marginLeft="@dimen/spacing_small"
-                android:padding="2dp"
-                android:cropToPadding="true"
-                android:scaleType="centerCrop"
-                android:adjustViewBounds="true"/>
+            android:layout_marginTop="@dimen/spacing_xsmall"
+            android:layout_marginBottom="@dimen/spacing_xsmall"
+            android:minHeight="@dimen/icon_width">
 
             <TextView
                 android:id="@+id/product_description_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_small"
-                android:layout_marginLeft="@dimen/spacing_small"
+                android:layout_marginStart="@dimen/spacing_normal"
                 android:layout_marginTop="@dimen/spacing_small"
                 android:layout_marginEnd="@dimen/spacing_small"
                 android:ellipsize="end"
@@ -57,24 +41,23 @@
                 android:textSize="@dimen/decription_text_size"
                 app:layout_constrainedWidth="true"
                 app:layout_constraintEnd_toStartOf="@+id/product_price_text"
-                app:layout_constraintStart_toEndOf="@+id/product_image"
-                app:layout_constraintTop_toTopOf="@+id/product_image"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
                 tools:text="Aceite Marolio 950cc" />
 
             <TextView
                 android:id="@+id/purchase_place_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/spacing_small"
-                android:layout_marginLeft="@dimen/spacing_small"
+                android:layout_marginStart="@dimen/spacing_normal"
                 android:layout_marginBottom="@dimen/spacing_small"
                 android:layout_marginEnd="@dimen/spacing_small"
                 android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
                 android:text="@{product.component3()}"
-                app:layout_constraintBottom_toBottomOf="@+id/product_image"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/update_date_text"
-                app:layout_constraintStart_toEndOf="@+id/product_image"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constrainedWidth="true"
                 android:ellipsize="end"
                 tools:text="Carrefour Market" />
@@ -85,7 +68,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/spacing_normal"
-                android:layout_marginRight="@dimen/spacing_normal"
                 android:textStyle="bold|italic"
                 android:textSize="@dimen/price_text_size"
                 app:layout_constraintBottom_toBottomOf="@+id/product_description_text"
@@ -98,11 +80,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/spacing_normal"
-                android:layout_marginRight="@dimen/spacing_normal"
-                android:layout_marginBottom="@dimen/spacing_small"
                 android:fontFamily="sans-serif-medium"
                 android:text="@{product.component5()}"
-                app:layout_constraintBottom_toBottomOf="@+id/product_image"
+                app:layout_constraintBottom_toBottomOf="@+id/purchase_place_text"
                 app:layout_constraintEnd_toEndOf="parent"
                 tools:text="8 sep 2021" />
         </androidx.constraintlayout.widget.ConstraintLayout>

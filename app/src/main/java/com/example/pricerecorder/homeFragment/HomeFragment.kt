@@ -1,6 +1,7 @@
 package com.example.pricerecorder.homeFragment
 
 import android.app.Application
+import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputFilter
@@ -11,6 +12,7 @@ import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
@@ -31,8 +33,6 @@ import com.example.pricerecorder.databinding.HomeFragmentBinding
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import java.text.DateFormat
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.ceil
 
@@ -53,6 +53,13 @@ class HomeFragment:Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = DataBindingUtil.inflate(inflater,
             R.layout.home_fragment,container,false)
+
+        /*Checks if the dark mode is enabled*/
+        val isNightModeOn = requireContext().getSharedPreferences("AppSettingPrefs", Context.MODE_PRIVATE).getBoolean("NightMode",false)
+        if(isNightModeOn)
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        else
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
         MainToolbar.show(activity as AppCompatActivity,getString(R.string.app_name),false)
 
@@ -172,16 +179,6 @@ class HomeFragment:Fragment() {
         return true
     }
 
-    /*Receives a date represented as a Long value and returns the date in string format*/
-    private fun formatDate(dateInMillis:Long) : String{
-        val utcTime = Date(dateInMillis)
-        val format = "yyy/MM/dd HH:mm:ss"
-        val sdf = SimpleDateFormat(format, Locale.getDefault())
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
-        val gmtTime = SimpleDateFormat(format, Locale.getDefault()).parse(sdf.format(utcTime))
-        return if(gmtTime != null) DateFormat.getDateInstance().format(gmtTime) else ""
-    }
-
     /*Implements an OnCheckedChangeListener applied to every and each one of the switches of the filter dialog*/
     private fun changeChecker(filterBinding: FilterMenuDialogBinding) : CompoundButton.OnCheckedChangeListener{
         return CompoundButton.OnCheckedChangeListener { selected, isChecked ->
@@ -215,7 +212,7 @@ class HomeFragment:Fragment() {
                         f.dateSwitch.isChecked = false
                         f.dateInput.visibility = View.GONE
                     }else{
-                        val today = formatDate(Calendar.getInstance().timeInMillis)
+                        val today = DateFormatter.formatDate(Calendar.getInstance().timeInMillis)
                         filterBinding.dateInput.setText(today)
                         filterBy = today
                         filterBinding.dateInput.visibility = View.VISIBLE
@@ -225,7 +222,7 @@ class HomeFragment:Fragment() {
                                 .setTheme(R.style.CustomDatePicker)
                                 .build()
                             datePicker.addOnPositiveButtonClickListener {
-                                filterBy = formatDate(it)
+                                filterBy = DateFormatter.formatDate(it)
                                 filterBinding.dateInput.setText(filterBy)
                             }
                             datePicker.show(parentFragmentManager,null)
@@ -407,7 +404,7 @@ class HomeFragment:Fragment() {
                 if(binding.nestedScrollView.scrollY == 0) {
                     binding.apply {
                         addFab.extend()
-                        if(filterOptionSelected == null)
+                        if((filterOptionSelected == null)and(!viewModel!!.products.value.isNullOrEmpty()))
                             filterFab.show()
                     }
                 }

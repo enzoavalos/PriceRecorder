@@ -11,7 +11,7 @@
     <string name="button_cancel_string">Cancelar</string>
     <string name="button_accept_string">Aceptar</string>
     <string name="delete_success_msg">Accion realizada correctamente</string>
-    <string name="new_product_added">Producto agregado</string>
+    <string name="new_product_added">%1$s agregado</string>
     <string name="add_fragment_title">Nuevo Producto</string>
     <string name="product_deleted_msg">Producto eliminado</string>
     <string name="undo_action_msg">Deshacer</string>
@@ -49,10 +49,11 @@
     <string name="currency_title_string">Moneda</string>
     <string name="pick_theme_title">Tema</string>
     <string name="light_theme_string">Claro</string>
+    <string name="dark_theme_string">Oscuro</string>
     <string name="export_data_string">Exportar datos</string>
     <string name="last_export_date">Ultimo backup: %1$s</string>
+    <string name="no_backups_found_msg">No se encontraron copias de seguridad</string>
     <string name="import_data_string">Importar datos</string>
-    <string name="last_import_date">Ultima restauración: %1$s</string>
     <string name="version_title_string">Version</string>
     <string name="help_and_faq_string">Ayuda y FAQs</string>
     <string name="about_title_string">Acerca de</string>
@@ -62,10 +63,29 @@
     <string name="db_section_title">Backup y restauración</string>
     <string name="info_section_title">Informacion</string>
     <string name="account_created_string">Cuenta creada %1$s</string>
-    <string name="logged_in_successfully">Bienvenido %1$s</string>
+    <string name="logged_in_successfully">Bienvenido %1$s!</string>
+    <string name="log_out_title_string">Cerrar sesion</string>
+    <string name="sign_in_error_message">Ha habido un error. Intentelo nuevamente.</string>
+    <string name="sign_in_to_enable_functions_string">Inicie sesión para habilitar función de backup y restauración en la nube.</string>
+    <string name="database_backup_error_msg">Error en la base de datos. Intente nuevamente.</string>
+    <string name="no_internet_signal_msg">Sin conexion a internet</string>
+    <string name="backup_dialog_title">Copia de seguridad</string>
+    <string name="cloud_backup_option">Subir a la nube</string>
+    <string name="backup_successful_msg">Copia subida exitosamente</string>
+    <string name="uploading_in_progress_msg">Subiendo…</string>
+    <string name="percentage_uploaded_msg">%1$s subido</string>
+    <string name="downloading_in_progress_title">Descargando copia de seguridad…</string>
+    <string name="dowloading_msg">Descargando</string>
+    <string name="restore_successful_msg">Restauración exitosa</string>
+    <string name="restore_data_description">Restaura tu datos de una copia de seguridad creada anteriormente</string>
 
     <string-array name="range_slider_values">
         <item>20</item>
         <item>80</item>
+    </string-array>
+
+    <string-array name="theme_dialog_options">
+        <item>Claro</item>
+        <item>Oscuro</item>
     </string-array>
 </resources>

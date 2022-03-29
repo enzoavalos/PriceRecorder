@@ -80,13 +80,13 @@ class EditFragment : Fragment() {
                     ) { dialog, which ->
                         when(which){
                             0 -> PermissionChecker.checkForPermissions(requireContext(),android.Manifest.permission.CAMERA,
-                                ImageUtils.CAMERA_REQUEST_CODE,
-                                ::pickImageFromGallery,::takePictureFromCamera,
-                                listOf(readExternalFilesPermission,accessCameraPermission))
+                                PermissionChecker.CAMERA_REQUEST_CODE,
+                                ::takePictureFromCamera,
+                                accessCameraPermission)
                             1 -> PermissionChecker.checkForPermissions(requireContext(),android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                                ImageUtils.FILE_REQUEST_CODE,
-                                ::pickImageFromGallery,::takePictureFromCamera,
-                                listOf(readExternalFilesPermission,accessCameraPermission))
+                                PermissionChecker.FILE_REQUEST_CODE,
+                                ::pickImageFromGallery,
+                                readExternalFilesPermission)
                         }
                         dialog.dismiss()
                     }
