@@ -4,7 +4,7 @@
     <string name="accept_button_string">Aceptar</string>
     <string name="cancel_button_string">Cancelar</string>
     <string name="place_hint">Lugar</string>
-    <string name="price_hint">$500.0</string>
+    <string name="price_hint" translatable="false">$500.0</string>
     <string name="description_string">Descripcion</string>
     <string name="delete_all_dialog_title">Eliminar todos los elementos?</string>
     <string name="delete_all_dialog_msg">Una vez eliminados no podran recuperarse</string>
@@ -17,8 +17,6 @@
     <string name="undo_action_msg">Deshacer</string>
     <string name="category_input_string">Categoria</string>
     <string name="current_price_string">Precio al %1$s</string>
-    <string name="price_increase_string">Aumento desde %1$s</string>
-    <string name="price_increase_numeric">%1$s%%</string>
     <string name="delete_product_string">Eliminar producto?</string>
     <string name="delete_product_dialog_msg">Una vez eliminado no podra ser recuperado</string>
     <string name="price_updated_msg">Precio actualizado</string>
@@ -46,10 +44,6 @@
     <string name="setting_fragment_title">Ajustes</string>
     <string name="sign_in_string">Ingresar</string>
     <string name="sign_in_description">Iniciar sesion con Google</string>
-    <string name="currency_title_string">Moneda</string>
-    <string name="pick_theme_title">Tema</string>
-    <string name="light_theme_string">Claro</string>
-    <string name="dark_theme_string">Oscuro</string>
     <string name="export_data_string">Exportar datos</string>
     <string name="last_export_date">Ultimo backup: %1$s</string>
     <string name="no_backups_found_msg">No se encontraron copias de seguridad</string>
@@ -78,14 +72,24 @@
     <string name="dowloading_msg">Descargando</string>
     <string name="restore_successful_msg">Restauración exitosa</string>
     <string name="restore_data_description">Restaura tu datos de una copia de seguridad creada anteriormente</string>
+    <string name="no_results_found_desc">No se encontraron resultados :(</string>
+    <string name="add_img_dialog_take_picture">Tomar foto</string>
+    <string name="add_img_dialog_pick_from_gallery">Elegir de galeria</string>
+    <string name="product_category_edibles">Comestibles</string>
+    <string name="product_category_cleaning">Limpieza</string>
+    <string name="product_category_home">Hogar</string>
+    <string name="product_category_drinks">Bebidas</string>
+    <string name="product_category_pets">Mascotas</string>
+    <string name="product_category_gardening">Jardineria</string>
+    <string name="product_category_self_care">Cuidado Personal</string>
+    <string name="product_category_greengrocery">Verduleria</string>
+    <string name="product_category_dairy">Lacteos</string>
+    <string name="product_category_bakery">Panaderia</string>
+    <string name="product_category_tech">Tecnologia</string>
+    <string name="product_category_perfumery">Perfumeria</string>
 
     <string-array name="range_slider_values">
         <item>20</item>
         <item>80</item>
-    </string-array>
-
-    <string-array name="theme_dialog_options">
-        <item>Claro</item>
-        <item>Oscuro</item>
     </string-array>
 </resources>

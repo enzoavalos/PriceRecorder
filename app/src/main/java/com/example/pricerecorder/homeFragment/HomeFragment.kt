@@ -1,7 +1,6 @@
 package com.example.pricerecorder.homeFragment
 
 import android.app.Application
-import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputFilter
@@ -12,7 +11,6 @@ import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
@@ -54,13 +52,6 @@ class HomeFragment:Fragment() {
         binding = DataBindingUtil.inflate(inflater,
             R.layout.home_fragment,container,false)
 
-        /*Checks if the dark mode is enabled*/
-        val isNightModeOn = requireContext().getSharedPreferences("AppSettingPrefs", Context.MODE_PRIVATE).getBoolean("NightMode",false)
-        if(isNightModeOn)
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-        else
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-
         MainToolbar.show(activity as AppCompatActivity,getString(R.string.app_name),false)
 
         val application: Application = requireNotNull(this.activity).application
@@ -97,18 +88,18 @@ class HomeFragment:Fragment() {
         touchHelper.attachToRecyclerView(binding.productRecyclerView)
 
         //Observers of both fab buttons of the home page
-        viewModel.fabClicked.observe(viewLifecycleOwner,{
-                it?.let {
-                    when(it){
-                        R.id.add_fab -> navigateToAddFragment()
-                        R.id.filter_fab -> {
-                            if(!filterDialogDisplayed and (filterOptionSelected == null))
-                                createCustomFilterDialog()
-                        }
+        viewModel.fabClicked.observe(viewLifecycleOwner) {
+            it?.let {
+                when (it) {
+                    R.id.add_fab -> navigateToAddFragment()
+                    R.id.filter_fab -> {
+                        if (!filterDialogDisplayed and (filterOptionSelected == null))
+                            createCustomFilterDialog()
                     }
-                    viewModel.onNavigated()
                 }
-        })
+                viewModel.onNavigated()
+            }
+        }
 
         binding.cancelFilterButton.setOnClickListener {
             binding.filterByView.visibility = View.GONE
@@ -131,14 +122,15 @@ class HomeFragment:Fragment() {
             }
         }
 
-        viewModel.products.observe(viewLifecycleOwner, {
-            binding.filterFab.visibility = if(!it.isNullOrEmpty() and (filterOptionSelected == null)) View.VISIBLE else View.GONE
+        viewModel.products.observe(viewLifecycleOwner) {
+            binding.filterFab.visibility =
+                if (!it.isNullOrEmpty() and (filterOptionSelected == null)) View.VISIBLE else View.GONE
             showProgressBar(false)
             showEmptyLayout(it.isNullOrEmpty())
             filterOptionSelected = null
             binding.filterByView.visibility = View.GONE
             adapter.submitList(it)
-        })
+        }
 
         initRecyclerView(binding,manager,adapter)
         setHasOptionsMenu(true)
@@ -149,15 +141,15 @@ class HomeFragment:Fragment() {
     private fun onFilterProducts(filterBinding:FilterMenuDialogBinding):Boolean{
         when(filterOptionSelected){
             filterBinding.placeSwitch -> {
+                filterBy = filterBinding.placeAutoComplete.text.toString()
                 if(filterBy.isNullOrEmpty())
                     return false
-                filterBy = filterBinding.placeAutoComplete.text.toString()
                 viewModel.filterByPlace(filterBy!!)
             }
             filterBinding.categorySwitch -> {
+                filterBy = filterBinding.categoryAutoComplete.text.toString()
                 if(filterBy.isNullOrEmpty())
                     return false
-                filterBy = filterBinding.categoryAutoComplete.text.toString()
                 if(filterBy == resources.getString(R.string.option_uncategorized))
                     viewModel.filterByCategory("")
                 else
@@ -212,7 +204,7 @@ class HomeFragment:Fragment() {
                         f.dateSwitch.isChecked = false
                         f.dateInput.visibility = View.GONE
                     }else{
-                        val today = DateFormatter.formatDate(Calendar.getInstance().timeInMillis)
+                        val today = DateUtils.formatDate(Calendar.getInstance().timeInMillis)
                         filterBinding.dateInput.setText(today)
                         filterBy = today
                         filterBinding.dateInput.visibility = View.VISIBLE
@@ -222,7 +214,7 @@ class HomeFragment:Fragment() {
                                 .setTheme(R.style.CustomDatePicker)
                                 .build()
                             datePicker.addOnPositiveButtonClickListener {
-                                filterBy = DateFormatter.formatDate(it)
+                                filterBy = DateUtils.formatDate(it)
                                 filterBinding.dateInput.setText(filterBy)
                             }
                             datePicker.show(parentFragmentManager,null)
@@ -347,9 +339,9 @@ class HomeFragment:Fragment() {
         /* Disables the option to delete all elements in the menu, when there are no elements.
         * Is automatically updated whenever there is a change in the list of products*/
         val deleteItem = menu.findItem(R.id.op_delete_all)
-        viewModel.products.observe(viewLifecycleOwner,{
+        viewModel.products.observe(viewLifecycleOwner) {
             deleteItem.isEnabled = !it.isNullOrEmpty()
-        })
+        }
 
         //Sets the functionality for the search view in the toolbar
         val menuItem = menu.findItem(R.id.op_search)
@@ -381,7 +373,7 @@ class HomeFragment:Fragment() {
                     else
                         adapter.submitList(viewModel.products.value)
                 }
-                showNoResultsFoundLayout((resultList.isNullOrEmpty() and searchText.isNotEmpty() and
+                showNoResultsFoundLayout((resultList.isEmpty() and searchText.isNotEmpty() and
                         !viewModel.products.value.isNullOrEmpty()))
                 return true
             }
@@ -455,12 +447,9 @@ class HomeFragment:Fragment() {
     private fun onCreateCustomDetailDialog(b:DetailFragmentBinding, detailDialog: AlertDialog){
         var deleteDialogDisplayed = false
         b.apply {
-            priceToDateText.text = resources.getString(R.string.current_price_string,product!!.updateDate)
-            val increase = viewModel.getPriceIncrease(product!!)
-            priceIncreaseTextview.text = resources.getString(R.string.price_increase_string,increase.second)
-            priceIncreaseNumeric.text = resources.getString(R.string.price_increase_numeric,increase.first)
-            categoryTextview.isVisible = product!!.category.isNotEmpty()
-            product!!.image?.let { productDetailImg.setImageBitmap(it) }
+            priceToDateText.text = resources.getString(R.string.current_price_string,product!!.getUpdateDate())
+            categoryTextview.isVisible = product!!.getCategory().isNotEmpty()
+            product!!.getImage()?.let { productDetailImg.setImageBitmap(it) }
 
             buttonAddPrice.setOnClickListener {
                 if(!priceDialogDisplayed)
@@ -490,7 +479,7 @@ class HomeFragment:Fragment() {
 
             buttonEditProduct.setOnClickListener {
                 detailDialog.dismiss()
-                navigateToEditFragment(product!!.productId)
+                navigateToEditFragment(product!!.getProductId())
             }
         }
     }

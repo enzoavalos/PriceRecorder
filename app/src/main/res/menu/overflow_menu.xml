@@ -6,7 +6,7 @@
         <item android:id="@+id/op_delete_all"
             android:title="@string/delete_all_menu_option"/>
         <item android:id="@+id/op_settings"
-            android:title="Ajustes"/>
+            android:title="@string/setting_fragment_title"/>
     </group>
     <item
         android:id="@+id/op_search"

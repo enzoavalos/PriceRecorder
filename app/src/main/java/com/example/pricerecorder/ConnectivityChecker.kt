@@ -7,7 +7,7 @@ import android.net.NetworkCapabilities
 import android.os.Build
 
 @Suppress("Deprecation")
-class ConnectivityChecker() {
+class ConnectivityChecker {
     /*Checks if the device currently has an internet connection available*/
     companion object{
         fun isOnline(application: Application) : Boolean{

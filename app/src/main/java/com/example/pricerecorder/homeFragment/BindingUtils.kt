@@ -10,6 +10,6 @@ import com.example.pricerecorder.database.Product
 @BindingAdapter("productPriceString")
 fun TextView.setProductPriceString(item : Product?){
     item?.let {
-        text = "$${item.price}"
+        text = "$${item.getPrice()}"
     }
 }

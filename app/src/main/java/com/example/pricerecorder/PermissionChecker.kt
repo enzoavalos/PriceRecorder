@@ -16,8 +16,7 @@ interface PermissionChecker {
                                 launcher:ActivityResultLauncher<String>){
             fun launchActivityWithPermission(requestCode:Int){
                 when(requestCode){
-                    FILE_REQUEST_CODE -> activityWithPermission()
-                    CAMERA_REQUEST_CODE -> activityWithPermission()
+                    FILE_REQUEST_CODE, CAMERA_REQUEST_CODE -> activityWithPermission()
                 }
             }
 
@@ -28,8 +27,7 @@ interface PermissionChecker {
                     else -> {
                         /*Request for the user permission to access certain documents and features of the device*/
                         when(requestCode){
-                            FILE_REQUEST_CODE -> launcher.launch(permission)
-                            CAMERA_REQUEST_CODE -> launcher.launch(permission)
+                            FILE_REQUEST_CODE, CAMERA_REQUEST_CODE -> launcher.launch(permission)
                         }
                     }
                 }

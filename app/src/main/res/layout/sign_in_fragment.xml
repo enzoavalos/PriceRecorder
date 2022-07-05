@@ -21,7 +21,7 @@
                 android:layout_height="wrap_content"
                 android:minWidth="@dimen/icon_bg_size"
                 android:minHeight="@dimen/icon_bg_size"
-                android:src="@mipmap/ic_launcher"
+                android:src="@mipmap/launcher_icon_round"
                 app:layout_constraintBottom_toTopOf="@+id/textView4"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
@@ -39,7 +39,7 @@
                 android:drawablePadding="7dp"
                 android:fontFamily="@font/varela_round"
                 android:text="@string/sign_in_to_enable_functions_string"
-                android:textSize="@dimen/decription_text_size"
+                android:textSize="@dimen/description_text_size"
                 app:drawableStartCompat="@drawable/ic_error"
                 app:layout_constraintBottom_toTopOf="@+id/sign_in_button"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -97,7 +97,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/profile_image"
                 android:layout_marginTop="@dimen/spacing_normal"
-                android:textSize="@dimen/decription_text_size"/>
+                android:textSize="@dimen/description_text_size"/>
 
             <TextView
                 android:id="@+id/user_email_textview"
@@ -124,7 +124,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/user_email_textview"
                 android:layout_marginTop="@dimen/spacing_normal"
                 android:layout_marginBottom="@dimen/spacing_normal"
-                android:textColor="@color/white"/>
+                style="@style/googleSignOutButtonStyle"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </LinearLayout>
 </layout>

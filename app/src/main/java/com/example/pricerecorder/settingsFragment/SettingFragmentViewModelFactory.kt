@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.pricerecorder.database.ProductDatabaseDao
-import com.example.pricerecorder.homeFragment.HomeViewModel
 
 class SettingFragmentViewModelFactory(private val dataSource: ProductDatabaseDao,
                                       private val application: Application) : ViewModelProvider.Factory {

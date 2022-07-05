@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="product_categories">
-        <item>Comestibles</item>
-        <item>Limpieza</item>
-        <item>Hogar</item>
-        <item>Bebidas</item>
-        <item>Mascotas</item>
-        <item>Jardineria</item>
-        <item>Cuidado personal</item>
-        <item>Verduleria</item>
-        <item>Lacteos</item>
-        <item>Panaderia</item>
-        <item>Tecnologia</item>
-        <item>Perfumeria</item>
+        <item>@string/product_category_edibles</item>
+        <item>@string/product_category_cleaning</item>
+        <item>@string/product_category_home</item>
+        <item>@string/product_category_cleaning</item>
+        <item>@string/product_category_pets</item>
+        <item>@string/product_category_gardening</item>
+        <item>@string/product_category_self_care</item>
+        <item>@string/product_category_greengrocery</item>
+        <item>@string/product_category_dairy</item>
+        <item>@string/product_category_bakery</item>
+        <item>@string/product_category_tech</item>
+        <item>@string/product_category_perfumery</item>
     </string-array>
 </resources>
