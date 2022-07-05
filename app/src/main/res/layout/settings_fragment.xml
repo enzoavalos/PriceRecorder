@@ -31,14 +31,12 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/account_section_title"
-                    android:textColor="?attr/colorPrimaryDark"
-                    android:textSize="@dimen/setting_section_text_size"
+                    style="@style/settingsSectionsTitle"
                     android:layout_marginStart="@dimen/spacing_normal"/>
                 <View style="@style/Divider"
                     android:id="@+id/divider_account"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"
-                    android:background="?attr/colorPrimary"/>
+                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"/>
                 <TextView
                     android:id="@+id/account_name_textview"
                     android:layout_width="wrap_content"
@@ -57,83 +55,25 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/general_section"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/account_section"
-                android:orientation="vertical">
-                <TextView
-                    android:id="@+id/general_section_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/general_section_title"
-                    android:textColor="?attr/colorPrimaryDark"
-                    android:textSize="@dimen/setting_section_text_size"
-                    android:layout_marginStart="@dimen/spacing_normal"
-                    android:layout_marginTop="@dimen/spacing_normal"/>
-                <View style="@style/Divider"
-                    android:id="@+id/divider_general"
-                    android:background="?attr/colorPrimary"/>
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/pick_theme"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:onClick="@{(view) -> viewModel.onViewClicked(view)}">
-                    <ImageView
-                        android:id="@+id/theme_icon"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/ic_theme"
-                        app:layout_constraintStart_toStartOf="parent"
-                        android:layout_marginStart="@dimen/spacing_normal"
-                        app:layout_constraintTop_toTopOf="@+id/theme_title_textview"
-                        app:layout_constraintBottom_toBottomOf="@+id/current_theme_textview"
-                        />
-                    <TextView
-                        android:id="@+id/theme_title_textview"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/pick_theme_title"
-                        android:textSize="@dimen/setting_options_title_text_size"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/theme_icon"
-                        android:layout_marginTop="@dimen/spacing_xsmall"
-                        android:layout_marginStart="@dimen/spacing_normal"/>
-                    <TextView
-                        android:id="@+id/current_theme_textview"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        tools:text="@string/light_theme_string"
-                        app:layout_constraintTop_toBottomOf="@id/theme_title_textview"
-                        app:layout_constraintStart_toStartOf="@+id/theme_title_textview"/>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </LinearLayout>
-
-            <LinearLayout
                 android:id="@+id/database_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/general_section"
+                app:layout_constraintTop_toBottomOf="@+id/account_section"
                 android:orientation="vertical">
                 <TextView
                     android:id="@+id/database_section_textview"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/db_section_title"
-                    android:textColor="?attr/colorPrimaryDark"
-                    android:textSize="@dimen/setting_section_text_size"
+                    style="@style/settingsSectionsTitle"
                     android:layout_marginTop="@dimen/spacing_small"
                     android:layout_marginStart="@dimen/spacing_normal"/>
                 <View style="@style/Divider"
                     android:id="@+id/divider_db"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"
-                    android:background="?attr/colorPrimary"/>
+                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"/>
 
                 <LinearLayout
                     android:id="@+id/export_data_view"
@@ -159,7 +99,7 @@
                 </LinearLayout>
 
                 <View style="@style/secondaryDivider"
-                    android:layout_marginTop="@dimen/spacing_xsmall"/>
+                    android:layout_marginTop="@dimen/spacing_small"/>
 
                 <LinearLayout
                     android:id="@+id/import_data_view"
@@ -198,15 +138,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/info_section_title"
-                    android:textColor="?attr/colorPrimaryDark"
-                    android:textSize="@dimen/setting_section_text_size"
+                    style="@style/settingsSectionsTitle"
                     android:layout_marginTop="@dimen/spacing_small"
                     android:layout_marginStart="@dimen/spacing_normal"/>
                 <View style="@style/Divider"
                     android:id="@+id/divider_info"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"
-                    android:background="?attr/colorPrimary"/>
+                    app:layout_constraintTop_toBottomOf="@+id/account_section_textview"/>
                 <TextView
                     android:id="@+id/version_title_textview"
                     android:layout_width="wrap_content"

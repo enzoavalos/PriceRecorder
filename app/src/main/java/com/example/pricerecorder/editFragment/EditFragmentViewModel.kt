@@ -13,7 +13,8 @@ class EditFragmentViewModel(private val databaseDao: ProductDatabaseDao) : ViewM
 
     fun updateProduct(p: Product){
         viewModelScope.launch {
-            databaseDao.update(p.productId,p.description,p.placeOfPurchase,p.category,p.image)
+            databaseDao.update(p.getProductId(),p.getDescription(),p.getPlaceOfPurchase(),p.getCategory()
+                ,p.getImage())
         }
     }
 }

@@ -34,11 +34,11 @@ class ProductAdapter(private val clickListener: ProductListener): ListAdapter<Pr
     needed to convert the first list into the second one in an efficient way*/
     object ProductDiffCallback : DiffUtil.ItemCallback<Product>(){
         override fun areItemsTheSame(oldItem: Product, newItem: Product): Boolean {
-            return oldItem.productId == newItem.productId
+            return (oldItem.getProductId() == newItem.getProductId())
         }
 
         override fun areContentsTheSame(oldItem: Product, newItem: Product): Boolean {
-            return oldItem == newItem
+            return (oldItem == newItem)
         }
     }
 

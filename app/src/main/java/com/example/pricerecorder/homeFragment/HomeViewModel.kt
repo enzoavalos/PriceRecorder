@@ -58,18 +58,8 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
 
     fun updateProduct(p:Product){
         viewModelScope.launch {
-            database.update(p.productId,p.price,p.updateDate,p.priceHistory)
+            database.update(p.getProductId(),p.getPrice(),p.getUpdateDate())
         }
-    }
-
-    /*Calculates the increase in the price of the product since the last time it was updated*/
-    fun getPriceIncrease(p:Product) : Pair<String,String>{
-        val oldPrice = p.priceHistory.first
-        val diff = p.price - oldPrice
-        var percentage : Double = (diff * 100) / oldPrice
-        percentage = "%.${1}f".format(Locale.ENGLISH,percentage).toDouble()
-        val increase = if(percentage >= 0.0) "+${percentage}" else percentage.toString()
-        return Pair(increase,p.priceHistory.second)
     }
 
     /*Returns a list with all the categories associated to the products the user has registered*/
@@ -78,9 +68,9 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
         var noCategory = false
         products.value?.let {
             it.forEach { p ->
-                if(p.category.isNotEmpty()){
-                    if(!list.contains(p.category))
-                        list.add(p.category)
+                if(p.getCategory().isNotEmpty()){
+                    if(!list.contains(p.getCategory()))
+                        list.add(p.getCategory())
                 }else
                     noCategory = true
             }
@@ -97,8 +87,8 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
         val list = mutableListOf<String>()
         products.value?.let {
             it.forEach { p ->
-                if(!list.contains(p.placeOfPurchase))
-                    list.add(p.placeOfPurchase)
+                if(!list.contains(p.getPlaceOfPurchase()))
+                    list.add(p.getPlaceOfPurchase())
             }
         }
         if(list.isNotEmpty())
@@ -107,12 +97,12 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
     }
 
     fun filterByPlace(place:String){
-        val list = products.value?.filter { it.placeOfPurchase == place }
+        val list = products.value?.filter { it.getPlaceOfPurchase() == place }
         filteredList = list as MutableList<Product>
     }
 
     fun filterByCategory(cat:String?){
-        val list = products.value?.filter { it.category == cat }
+        val list = products.value?.filter { it.getCategory() == cat }
         filteredList = list as MutableList<Product>
     }
 
@@ -120,7 +110,7 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
         val tempList : MutableList<Product> = mutableListOf()
         val list = filteredList ?: products.value!!
         list.forEach {
-            if(it.description.lowercase(Locale.getDefault()).contains(query)){
+            if(it.getDescription().lowercase(Locale.getDefault()).contains(query)){
                 tempList.add(it)
             }
         }
@@ -128,20 +118,20 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
     }
 
     fun filterByDate(date:String){
-        val list = products.value?.filter { it.updateDate == date }
+        val list = products.value?.filter { it.getUpdateDate() == date }
         filteredList = list as MutableList<Product>
     }
 
     /*Returns the maximum price the user has registered rounded up*/
     fun getMaxPrice() : Float{
         products.value!!.let{
-            val list = it.sortedByDescending { p -> p.price }
-            return if(list.isNotEmpty()) ceil(list[0].price).toFloat() else 100f
+            val list = it.sortedByDescending { p -> p.getPrice() }
+            return if(list.isNotEmpty()) ceil(list[0].getPrice()).toFloat() else 100f
         }
     }
 
     fun filterByPriceRange(min:Float,max:Float){
-        val list = products.value?.filter { (it.price >= min.toDouble()) and (it.price <= max.toDouble()) }
+        val list = products.value?.filter { (it.getPrice() >= min.toDouble()) and (it.getPrice() <= max.toDouble()) }
         filteredList = list as MutableList<Product>
     }
 }

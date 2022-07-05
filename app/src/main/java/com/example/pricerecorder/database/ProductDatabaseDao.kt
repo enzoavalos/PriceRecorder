@@ -12,12 +12,9 @@ interface ProductDatabaseDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(product: Product)
 
-    @Update(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun update(product: Product)
-
     @TypeConverters(Converters::class)
-    @Query("UPDATE products_table SET update_date = :date, price = :price, price_history = :hist WHERE productId = :id")
-    suspend fun update(id:Long,price:Double,date:String,hist:Pair<Double,String>) : Int
+    @Query("UPDATE products_table SET update_date = :date, price = :price WHERE productId = :id")
+    suspend fun update(id:Long,price:Double,date:String) : Int
 
     @TypeConverters(Converters::class)
     @Query("UPDATE products_table SET description=:des,place_of_purchase=:place,category=:cat,product_img=:img WHERE productId = :id")

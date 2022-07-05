@@ -3,40 +3,36 @@ package com.example.pricerecorder.database
 import android.graphics.Bitmap
 import androidx.room.*
 import com.example.pricerecorder.Converters
-import java.text.DateFormat
-import java.util.*
+import com.example.pricerecorder.DateUtils
+import java.lang.Exception
 
 @Entity(tableName = "products_table")
 @TypeConverters(Converters::class)
 data class Product(
     @ColumnInfo(name = "description")
-    var description : String,
+    private var description : String,
 
     @ColumnInfo(name = "price")
-    var price : Double,
+    private var price : Double,
 
     @ColumnInfo(name = "place_of_purchase")
-    var placeOfPurchase : String,
+    private var placeOfPurchase : String,
 
     @ColumnInfo(name = "category")
-    var category : String,
+    private var category : String,
 
     @ColumnInfo(name = "update_date")
-    var updateDate : String,
+    private var updateDate : String,
 
     @ColumnInfo(name = "product_img")
-    var image : Bitmap? = null,
-
-    @ColumnInfo(name = "price_history")
-    var priceHistory : Pair<Double,String> = Pair(price,updateDate),
+    private var image : Bitmap? = null,
 
     @PrimaryKey(autoGenerate = true)
-    var productId : Long =0L
+    private var productId : Long =0L
 ){
     fun updatePrice(newPrice:Double){
-        priceHistory = Pair(price,updateDate)
         price = newPrice
-        updateDate = getCurrentDate()
+        updateDate = DateUtils.getCurrentDate()
     }
 
     fun updateData(des:String,place:String,cat:String,img:Bitmap?){
@@ -46,9 +42,52 @@ data class Product(
         image = img
     }
 
-    companion object{
-        fun getCurrentDate(): String {
-            return DateFormat.getDateInstance().format(Calendar.getInstance().time)
+    fun getProductId() : Long{
+        return  this.productId
+    }
+
+    fun getPlaceOfPurchase(): String {
+        return this.placeOfPurchase
+    }
+
+    fun getPrice(): Double {
+        return this.price
+    }
+
+    fun getDescription(): String {
+        return this.description
+    }
+
+    fun getCategory(): String {
+        return this.category
+    }
+
+    fun getUpdateDate(): String {
+        return this.updateDate
+    }
+
+    fun getImage() : Bitmap?{
+        return this.image
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return try {
+            val aux = other as Product
+            ((this.description == aux.getDescription()) and (this.placeOfPurchase == aux.getPlaceOfPurchase()) and
+                    (this.price == aux.getPrice()))
+        }catch (e : Exception){
+            false
         }
+    }
+
+    override fun hashCode(): Int {
+        var result = description.hashCode()
+        result = 31 * result + price.hashCode()
+        result = 31 * result + placeOfPurchase.hashCode()
+        result = 31 * result + category.hashCode()
+        result = 31 * result + updateDate.hashCode()
+        result = 31 * result + (image?.hashCode() ?: 0)
+        result = 31 * result + productId.hashCode()
+        return result
     }
 }

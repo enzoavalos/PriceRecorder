@@ -58,17 +58,17 @@ class EditFragment : Fragment() {
         }
         setViewsContent()
         setLayoutBehaviour()
-        productImage = binding.product!!.image
+        productImage = binding.product!!.getImage()
 
         binding.includedLayout.acceptButton.setOnClickListener {
             if(it.id == binding.includedLayout.acceptButton.id)
                 updateProduct()
         }
 
-        modified.observe(viewLifecycleOwner,{
-            if(it)
+        modified.observe(viewLifecycleOwner) {
+            if (it)
                 validateInputs()
-        })
+        }
 
         /*Creates a dialog that gives the user th option to select an image from the gallery or take a picture*/
         binding.includedLayout.addProductImage.setOnClickListener {
@@ -178,7 +178,8 @@ class EditFragment : Fragment() {
         val cat = binding.includedLayout.categoryAutoCompleteTextView.text.toString()
         binding.product!!.updateData(des,p,cat,productImage)
         viewModel.updateProduct(binding.product!!)
-        Toast.makeText(context,resources.getString(R.string.product_updated_string,binding.product!!.description),Toast.LENGTH_SHORT).show()
+        Toast.makeText(context,resources.getString(R.string.product_updated_string,binding.product!!.getDescription()),
+            Toast.LENGTH_SHORT).show()
         navigateUp()
     }
 
@@ -226,7 +227,7 @@ class EditFragment : Fragment() {
 
         binding.includedLayout.categoryAutoCompleteTextView.let {
             it.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
-                if(it.adapter.getItem(position) != binding.product!!.category)
+                if(it.adapter.getItem(position) != binding.product!!.getCategory())
                     modified.value = true
             }
         }
@@ -234,16 +235,16 @@ class EditFragment : Fragment() {
 
     /*Sets the content of the different views of the root layout*/
     private fun setViewsContent(){
-        productImage = binding.product!!.image
+        productImage = binding.product!!.getImage()
         binding.includedLayout.apply {
-            priceEditText.setText(binding.product!!.price.toString())
+            priceEditText.setText(binding.product!!.getPrice().toString())
             priceEditText.isEnabled = false
             priceEditText.isFocusable = false
-            descriptionEditText.setText(binding.product!!.description)
-            placeEditText.setText(binding.product!!.placeOfPurchase)
-            if(binding.product!!.category.isNotEmpty())
-                categoryAutoCompleteTextView.setText(binding.product!!.category)
-            binding.product!!.image?.let {
+            descriptionEditText.setText(binding.product!!.getDescription())
+            placeEditText.setText(binding.product!!.getPlaceOfPurchase())
+            if(binding.product!!.getCategory().isNotEmpty())
+                categoryAutoCompleteTextView.setText(binding.product!!.getCategory())
+            binding.product!!.getImage()?.let {
                 binding.includedLayout.addProductImage.setImageBitmap(it)
             }
         }

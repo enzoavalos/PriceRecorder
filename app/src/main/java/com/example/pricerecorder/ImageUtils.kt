@@ -19,7 +19,11 @@ interface ImageUtils {
             var bitmap : Bitmap? = null
             try {
                 val inputStream = context.contentResolver.openInputStream(uri)
-                bitmap = BitmapFactory.decodeStream(inputStream)
+                val options = BitmapFactory.Options()
+                options.inPreferredConfig = Bitmap.Config.RGB_565
+                /*Returns a bitmap that is 1/4 the width/height of the original, and 1/16 the number of pixels*/
+                options.inSampleSize = 4
+                bitmap = BitmapFactory.decodeStream(inputStream,null,options)
                 inputStream?.close()
             }catch (e:Exception){
                 Log.v("AddFragment",e.toString())
@@ -67,10 +71,10 @@ interface ImageUtils {
             return rotated
         }
 
-        /*Resizes a given bitmap to 90% of its original size if the latter surpasses 0.5MB*/
+        /*Resizes a given bitmap to 70% of its original size if the latter surpasses 0.5MB*/
         private fun scaleDownBitmapIfNecessary(bitmap: Bitmap) : Bitmap {
             return if(bitmap.byteCount >= MAX_BITMAP_SIZE)
-                Bitmap.createScaledBitmap(bitmap,(bitmap.width * 0.75).toInt(),(bitmap.height * 0.75).toInt(),true)
+                Bitmap.createScaledBitmap(bitmap,(bitmap.width * 0.7).toInt(),(bitmap.height * 0.7).toInt(),true)
             else
                 bitmap
         }

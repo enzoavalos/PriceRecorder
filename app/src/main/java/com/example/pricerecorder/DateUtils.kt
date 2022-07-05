@@ -4,7 +4,7 @@ import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
-interface DateFormatter {
+interface DateUtils {
     companion object{
         /*Receives a date represented as a Long value and returns the date in string format*/
         fun formatDate(dateInMillis:Long) : String{
@@ -14,6 +14,10 @@ interface DateFormatter {
             sdf.timeZone = TimeZone.getTimeZone("UTC")
             val gmtTime = SimpleDateFormat(format, Locale.getDefault()).parse(sdf.format(utcTime))
             return if(gmtTime != null) DateFormat.getDateInstance().format(gmtTime) else ""
+        }
+
+        fun getCurrentDate(): String {
+            return DateFormat.getDateInstance().format(Calendar.getInstance().time)
         }
     }
 }

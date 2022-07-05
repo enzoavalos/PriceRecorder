@@ -2,20 +2,17 @@ package com.example.pricerecorder.settingsFragment
 
 import android.app.Application
 import android.app.Dialog
-import android.content.Context
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.Navigation
 import com.example.pricerecorder.ConnectivityChecker
-import com.example.pricerecorder.DateFormatter
+import com.example.pricerecorder.DateUtils
 import com.example.pricerecorder.MainToolbar
 import com.example.pricerecorder.R
 import com.example.pricerecorder.database.ProductDatabase
@@ -40,10 +37,6 @@ class SettingsFragment : Fragment(){
         const val MAX_DOWNLOAD_SIZE = 1L * 1024 * 1024 * 1024
     }
 
-    private lateinit var appSettingPrefs : SharedPreferences
-    private lateinit var sharedPrefsEditor : SharedPreferences.Editor
-    private var isNightModeOn : Boolean = false
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -59,17 +52,16 @@ class SettingsFragment : Fragment(){
         binding.viewModel = viewModel
         MainToolbar.show(activity as AppCompatActivity,getString(R.string.setting_fragment_title),true)
 
-        viewModel.viewClicked.observe(viewLifecycleOwner,{
+        viewModel.viewClicked.observe(viewLifecycleOwner) {
             it?.let {
-                when(it){
+                when (it) {
                     R.id.account_section -> navigateToSignInFragment()
-                    R.id.pick_theme -> selectAppTheme()
                     R.id.export_data_view -> saveBackupToCloudStorage()
                     R.id.import_data_view -> getBackupFromCloudStorage()
                 }
                 viewModel.onClickEventHandled()
             }
-        })
+        }
 
         /*Handles the back device button pressed event. In this case is used to navigate back to the home fragment.
         It is explicitly added because otherwise, after restoring the db, the changes are not shown in the hme fragment*/
@@ -85,23 +77,9 @@ class SettingsFragment : Fragment(){
         val user = mAuth.currentUser
         if(user != null)
             setUserInfo(user)
-        /*Creates a reference to upload,download or delete files. It can be tought as a pointer to a file in the cloud*/
+        /*Creates a reference to upload,download or delete files. It can be thought as a pointer to a file in the cloud*/
         storageRef = FirebaseStorage.getInstance().reference
         setLastBackupDate()
-
-        /*SharedPreferences is an interface for accessing and modifying preference data. The first argument is the desired file
-        * and the second is the mode of operation*/
-        appSettingPrefs = requireContext().getSharedPreferences("AppSettingPrefs",Context.MODE_PRIVATE)
-        /*Editor is an interface used for modifying vales in a shared preferences object. All changes made are not copied back to the
-        original SharedPreferences until commit() or apply() is called*/
-        sharedPrefsEditor = appSettingPrefs.edit()
-        /*Retrieve a boolean value from the preferences. In case the preference does not exist then the default value is returned*/
-        isNightModeOn = appSettingPrefs.getBoolean("NightMode",false)
-
-        if(isNightModeOn)
-            binding.currentThemeTextview.setText(R.string.dark_theme_string)
-        else
-            binding.currentThemeTextview.setText(R.string.light_theme_string)
 
         setHasOptionsMenu(true)
         return binding.root
@@ -115,7 +93,7 @@ class SettingsFragment : Fragment(){
             else -> {
                 val fileRef = storageRef.child("room_backups/" + mAuth.currentUser!!.uid)
                 fileRef.metadata.addOnSuccessListener {
-                    val modifiedDate = DateFormatter.formatDate(it.creationTimeMillis)
+                    val modifiedDate = DateUtils.formatDate(it.creationTimeMillis)
                     binding.exportDateTextview.text = resources.getString(R.string.last_export_date,modifiedDate)
                 }
             }
@@ -234,37 +212,6 @@ class SettingsFragment : Fragment(){
         dialog.window!!.attributes.windowAnimations = R.style.DialogAnimation
         dialog.window!!.setGravity(Gravity.BOTTOM)
         return Pair(dialog,dialogBinding)
-    }
-
-    /*Creates a dialog where the user can select a theme to be applied throughout the app*/
-    private fun selectAppTheme(){
-        val items = resources.getStringArray(R.array.theme_dialog_options)
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(resources.getString(R.string.pick_theme_title))
-            .setItems(items
-            ) { dialog, item ->
-                when(item){
-                    //Light theme
-                    0 -> {
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                        //Set a boolean value in the preferences editor, to be written back once apply() is called.
-                        sharedPrefsEditor.putBoolean("NightMode",false)
-                        sharedPrefsEditor.apply()
-                        binding.currentThemeTextview.setText(R.string.light_theme_string)
-                    }
-                    //Dark theme
-                    1 -> {
-                        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                        sharedPrefsEditor.putBoolean("NightMode",true)
-                        sharedPrefsEditor.apply()
-                        binding.currentThemeTextview.setText(R.string.dark_theme_string)
-                    }
-                }
-                dialog.dismiss()
-            }
-            .setNegativeButton(R.string.cancel_button_string
-            ) { dialog, _ -> dialog.dismiss() }
-            .show()
     }
 
     private fun setUserInfo(user: FirebaseUser) {

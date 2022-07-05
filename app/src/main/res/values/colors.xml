@@ -9,6 +9,12 @@
     <color name="primaryTextColor">#ffffff</color>
     <color name="secondaryTextColor">#000000</color>
 
+    <color name="primaryColorDarkTheme">#E668FB</color>
+    <color name="primaryLightColorDarkTheme">#EB91FA</color>
+    <color name="secondaryColorDarkTheme">#49C4FB</color>
+    <color name="secondaryLightColorDarkTheme">#83D9FF</color>
+    <color name="elevatedSurfaceColor">#404040</color>
+
     <color name="light_pink">#FEF5E7</color>
     <color name="red">#FB0F0F</color>
     <color name="purple_200">#DABDFF</color>

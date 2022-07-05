@@ -29,20 +29,20 @@
             android:id="@+id/user_name_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Juan Gonzalez"
+            tools:text="Juan Gonzalez"
             app:layout_constraintBottom_toTopOf="@+id/user_email_textview"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/profile_image"
             android:layout_marginTop="@dimen/spacing_normal"
-            android:textSize="@dimen/decription_text_size"/>
+            android:textSize="@dimen/description_text_size"/>
 
         <TextView
             android:id="@+id/user_email_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="jgonzalez@gmail.com"
+            tools:text="jgonzalez@gmail.com"
             app:layout_constraintBottom_toTopOf="@+id/sign_out_button"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"

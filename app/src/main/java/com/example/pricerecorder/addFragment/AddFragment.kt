@@ -26,7 +26,6 @@ import com.example.pricerecorder.databinding.AddFragmentBinding
 import com.example.pricerecorder.databinding.DialogProductImageBigBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import java.util.*
 
 class AddFragment:Fragment(){
     private lateinit var binding : AddFragmentBinding
@@ -155,7 +154,7 @@ class AddFragment:Fragment(){
         val place = binding.placeEditText.text.toString()
         val category = binding.categoryAutoCompleteTextView.text.toString()
 
-        val newProduct = Product(desc,price,place,category,Product.getCurrentDate(),productImage)
+        val newProduct = Product(desc,price,place,category,DateUtils.getCurrentDate(),productImage)
         productImage = null
         viewModel.addProduct(newProduct)
         Toast.makeText(context,resources.getString(R.string.new_product_added,desc),Toast.LENGTH_SHORT).show()
