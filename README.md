@@ -8,4 +8,4 @@ App to record your list of best prices!
 - Firebase storage to store and retrieve backup information.
 - Permissions management (read/write external storage).
 - Possibility to both pick images from gallery and take pictures.
-- Image editing using exif info.
+- Image manipulation using exif info.
