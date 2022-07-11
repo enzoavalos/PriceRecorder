@@ -22,7 +22,7 @@ data class Product(
     private var category : String,
 
     @ColumnInfo(name = "update_date")
-    private var updateDate : String,
+    private var updateDate : Long,
 
     @ColumnInfo(name = "product_img")
     private var image : Bitmap? = null,
@@ -62,7 +62,7 @@ data class Product(
         return this.category
     }
 
-    fun getUpdateDate(): String {
+    fun getUpdateDate(): Long {
         return this.updateDate
     }
 

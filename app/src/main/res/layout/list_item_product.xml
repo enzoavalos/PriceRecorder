@@ -81,7 +81,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/spacing_normal"
                 android:fontFamily="sans-serif-medium"
-                android:text="@{product.getUpdateDate()}"
+                productUpdateDate="@{product}"
                 app:layout_constraintBottom_toBottomOf="@+id/purchase_place_text"
                 app:layout_constraintEnd_toEndOf="parent"
                 tools:text="8 sep 2021" />

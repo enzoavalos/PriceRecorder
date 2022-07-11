@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.res.Resources
 import android.view.View
 import androidx.lifecycle.*
+import com.example.pricerecorder.DateUtils
 import com.example.pricerecorder.R
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabaseDao
@@ -118,7 +119,7 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
     }
 
     fun filterByDate(date:String){
-        val list = products.value?.filter { it.getUpdateDate() == date }
+        val list = products.value?.filter { DateUtils.formatDate(it.getUpdateDate()) == date }
         filteredList = list as MutableList<Product>
     }
 

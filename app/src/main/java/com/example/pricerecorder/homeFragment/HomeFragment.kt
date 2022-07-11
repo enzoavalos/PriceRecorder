@@ -447,7 +447,7 @@ class HomeFragment:Fragment() {
     private fun onCreateCustomDetailDialog(b:DetailFragmentBinding, detailDialog: AlertDialog){
         var deleteDialogDisplayed = false
         b.apply {
-            priceToDateText.text = resources.getString(R.string.current_price_string,product!!.getUpdateDate())
+            priceToDateText.text = resources.getString(R.string.current_price_string,DateUtils.formatDate(product!!.getUpdateDate()))
             categoryTextview.isVisible = product!!.getCategory().isNotEmpty()
             product!!.getImage()?.let { productDetailImg.setImageBitmap(it) }
 

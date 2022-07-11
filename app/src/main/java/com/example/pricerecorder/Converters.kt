@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.room.TypeConverter
 import java.io.ByteArrayOutputStream
+import java.util.*
 
 class Converters {
     /*Function to convert from a bitmap to a byte array, used to store an image in the Room DB*/
@@ -24,5 +25,15 @@ class Converters {
     @TypeConverter
     fun fromByteArray(array: ByteArray) : Bitmap?{
         return if(array.isNotEmpty()) BitmapFactory.decodeByteArray(array,0,array.size) else null
+    }
+
+    @TypeConverter
+    fun fromLong(date:Long) : String{
+        return DateUtils.formatDate(date)
+    }
+
+    @TypeConverter
+    fun fromString(date:String) : Long{
+        return date.toLong()
     }
 }

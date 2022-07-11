@@ -3,6 +3,7 @@ package com.example.pricerecorder.homeFragment
 import android.annotation.SuppressLint
 import android.widget.TextView
 import androidx.databinding.BindingAdapter
+import com.example.pricerecorder.DateUtils
 import com.example.pricerecorder.database.Product
 
 /*Method responsible for making the right framework calls to establish certain values*/
@@ -11,5 +12,12 @@ import com.example.pricerecorder.database.Product
 fun TextView.setProductPriceString(item : Product?){
     item?.let {
         text = "$${item.getPrice()}"
+    }
+}
+
+@BindingAdapter("productUpdateDate")
+fun TextView.setProductUpdateDate(item : Product?){
+    item?.let {
+        text = DateUtils.formatDate(item.getUpdateDate())
     }
 }
