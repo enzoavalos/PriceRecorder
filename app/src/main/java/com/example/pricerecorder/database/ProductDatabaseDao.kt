@@ -7,16 +7,15 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import com.example.pricerecorder.Converters
 import io.reactivex.Single
 
+@TypeConverters(Converters::class)
 @Dao
 interface ProductDatabaseDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(product: Product)
 
-    @TypeConverters(Converters::class)
     @Query("UPDATE products_table SET update_date = :date, price = :price WHERE productId = :id")
-    suspend fun update(id:Long,price:Double,date:String) : Int
+    suspend fun update(id:Long,price:Double,date:Long) : Int
 
-    @TypeConverters(Converters::class)
     @Query("UPDATE products_table SET description=:des,place_of_purchase=:place,category=:cat,product_img=:img WHERE productId = :id")
     suspend fun update(id: Long,des:String,place:String,cat:String?,img:Bitmap?)
 
