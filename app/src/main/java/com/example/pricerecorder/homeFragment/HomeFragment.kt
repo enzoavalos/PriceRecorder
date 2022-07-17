@@ -1,6 +1,7 @@
 package com.example.pricerecorder.homeFragment
 
 import android.app.Application
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputFilter
@@ -9,28 +10,61 @@ import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.CompoundButton
 import android.widget.Toast
+import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
-import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.Navigation
-import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.pricerecorder.*
+import com.example.pricerecorder.R
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabase
 import com.example.pricerecorder.databinding.AddPriceDialogBinding
 import com.example.pricerecorder.databinding.DetailFragmentBinding
 import com.example.pricerecorder.databinding.FilterMenuDialogBinding
 import com.example.pricerecorder.databinding.HomeFragmentBinding
+import com.example.pricerecorder.theme.*
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.ceil
 
@@ -49,18 +83,32 @@ class HomeFragment:Fragment() {
     private var filterBy : String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        binding = DataBindingUtil.inflate(inflater,
-            R.layout.home_fragment,container,false)
-
-        MainToolbar.show(activity as AppCompatActivity,getString(R.string.app_name),false)
+        //binding = DataBindingUtil.inflate(inflater,R.layout.home_fragment,container,false)
 
         val application: Application = requireNotNull(this.activity).application
         val dataSource = ProductDatabase.getInstance(application).productDatabaseDao
         val viewModelFactory = HomeViewModelFactory(dataSource,application)
         viewModel = ViewModelProvider(this, viewModelFactory)[HomeViewModel::class.java]
 
-        binding.viewModel = viewModel
+        return ComposeView(requireContext()).apply {
+            setContent {
+                PriceRecorderTheme {
+                    homeScreen()
+                }
+            }
+        }
+
+        /*binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
+
+        binding.mainToolbar.setContent {
+            PriceRecorderTheme {
+                homeAppBar(onSearchClick = { Toast.makeText(requireContext(),"Buscar",Toast.LENGTH_SHORT).show() },
+                    onFilterClick = { createCustomFilterDialog() },
+                    onDeleteAllClicked = { createDeleteAllDialog() },
+                    onSettingsClicked = { navigateToSettingsFragment() })
+            }
+        }
 
         //Recycler view adapter, a click listener is passed as a lambda expression
         val manager = LinearLayoutManager(context)
@@ -75,8 +123,8 @@ class HomeFragment:Fragment() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val swipedItem = adapter.getItemProduct(viewHolder as ProductAdapter.ProductViewHolder)
                 viewModel.deleteProduct(swipedItem!!)
-                if(!searchView.isIconified)
-                    collapseSearchView()
+                /*if(!searchView.isIconified)
+                    collapseSearchView()*/
                 Snackbar.make(view!!,resources.getString(R.string.product_deleted_msg),Snackbar.LENGTH_SHORT)
                     .setAction(resources.getString(R.string.undo_action_msg)){
                         viewModel.addProduct(swipedItem)
@@ -133,9 +181,8 @@ class HomeFragment:Fragment() {
         }
 
         initRecyclerView(binding,manager,adapter)
-        setHasOptionsMenu(true)
         setFabOnScrollBehaviour()
-        return binding.root
+        return binding.root*/
     }
 
     private fun onFilterProducts(filterBinding:FilterMenuDialogBinding):Boolean{
@@ -294,18 +341,6 @@ class HomeFragment:Fragment() {
         return null
     }
 
-    private fun navigateToSettingsFragment(){
-        Navigation.findNavController(binding.root).navigate(HomeFragmentDirections.actionHomeFragmentToSettingsFragment())
-    }
-
-    private fun navigateToAddFragment(){
-        Navigation.findNavController(binding.root).navigate(HomeFragmentDirections.actionHomeFragmentToAddFragment())
-    }
-
-    private fun navigateToEditFragment(productId : Long){
-        Navigation.findNavController(binding.root).navigate(HomeFragmentDirections.actionHomeFragmentToEditFragment(productId))
-    }
-
     /* Configures the behaviour of the floating buttons when the screen is scrolled*/
     private fun setFabOnScrollBehaviour() {
         binding.nestedScrollView.setOnScrollChangeListener(
@@ -427,6 +462,23 @@ class HomeFragment:Fragment() {
         return true
     }
 
+    private fun createDeleteAllDialog(){
+        if(!viewModel.products.value.isNullOrEmpty()){
+            //Creates a dialog box that gives you the opportunity to cancel the operation
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(resources.getString(R.string.delete_all_dialog_title))
+                .setMessage(resources.getString(R.string.delete_all_dialog_msg))
+                .setNegativeButton(resources.getString(R.string.button_cancel_string))
+                { dialog, _ -> dialog!!.dismiss() }
+                .setPositiveButton(resources.getString(R.string.button_accept_string)) { dialog, _ ->
+                    viewModel.clear()
+                    Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
+                    dialog!!.dismiss()
+                }
+                .show()
+        }
+    }
+
     /*Creates a custom dialog that displays the details of the product associated*/
     private fun createCustomDetailDialog(p:Product){
         detailDialogDisplayed = true
@@ -516,8 +568,8 @@ class HomeFragment:Fragment() {
         }
 
         priceDialogBinding.acceptButton.setOnClickListener {
-            if(!searchView.isIconified)
-                collapseSearchView()
+            /*if(!searchView.isIconified)
+                collapseSearchView()*/
             val newPrice = priceDialogBinding.addPriceEdittext.text.toString().toDouble()
             priceDialog.dismiss()
             detailFragmentBinding.product!!.updatePrice(newPrice)
@@ -551,5 +603,388 @@ class HomeFragment:Fragment() {
     the recycler view, such as loading and filtering*/
     private fun showProgressBar(show: Boolean){
         binding.progressBar.visibility = if(show) View.VISIBLE else View.GONE
+    }
+
+    private fun navigateToSettingsFragment(){
+        findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToSettingsFragment())
+    }
+
+    private fun navigateToAddFragment(){
+        findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToAddFragment())
+    }
+
+    private fun navigateToEditFragment(productId : Long){
+        findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToEditFragment(productId))
+    }
+
+    @Composable
+    fun homeScreen() {
+        val searchWidgetState by viewModel.searchWidgetState
+        val searchTextState by viewModel.searchTextState
+
+        PriceRecorderTheme {
+            Scaffold(backgroundColor = MaterialTheme.colors.background
+                ,topBar = { mainAppBar(searchWidgetState,searchTextState) },
+                floatingActionButton = { addFloatingActionButton {navigateToAddFragment()} },
+                floatingActionButtonPosition = FabPosition.Center) {
+                productsList()
+            }
+        }
+    }
+
+    /*Determines the app bar to be displayed, either the deafult appbar or a search app bar*/
+    @Composable
+    private fun mainAppBar(searchWidgetState: SearchWidgetState,searchTextState:String){
+        when(searchWidgetState){
+            SearchWidgetState.CLOSED -> {
+                homeAppBar(onSearchClick = { viewModel.updateSearchWidgetState(SearchWidgetState.OPENED) },
+                    onFilterClick = {createCustomFilterDialog()},
+                    onDeleteAllClicked = {createDeleteAllDialog()},
+                    onSettingsClicked = {navigateToSettingsFragment()})
+            }
+            else -> {
+                searchAppBar(text = searchTextState,
+                    onTextChange = {},
+                    onCloseClicked = { viewModel.updateSearchWidgetState(SearchWidgetState.CLOSED) },
+                    onSearchClicked = {})
+            }
+        }
+    }
+
+    /*List displayed in the home screen with all stored products*/
+    @Composable
+    private fun productsList(modifier: Modifier = Modifier){
+        val items by viewModel.products.observeAsState(listOf())
+
+        if(items.isNotEmpty()){
+            Box(modifier = modifier) {
+                /*Used to remember the state of the list through recompositions*/
+                val state = rememberLazyListState()
+                val coroutineScope = rememberCoroutineScope()
+                /*Used to remember whether the button should be visible or not*/
+                val showScrollToTopButton by remember {
+                    derivedStateOf {
+                        state.firstVisibleItemIndex > 0
+                    }
+                }
+
+                LazyColumn(modifier = Modifier.fillMaxWidth(),
+                    state = state, contentPadding = PaddingValues(bottom = 44.dp)){
+                    items(items, key = {it.getId()}){
+                        listItemProduct(product = it, modifier = Modifier.fillMaxWidth())
+                    }
+                }
+
+                /*launches a coroutine to scroll to the first item in the list with animation*/
+                AnimatedVisibility(visible = showScrollToTopButton,
+                    enter = fadeIn(), exit = fadeOut(),
+                    modifier = Modifier.align(Alignment.BottomEnd)) {
+                    scrollToTopButton {
+                        coroutineScope.launch {
+                            state.animateScrollToItem(0)
+                        }
+                    }
+                }
+            }
+        }else
+            noElementsToShowScreen()
+    }
+
+    /*Button to scroll to top of list, enabled when the first item of the list is no longer shown in screen*/
+    @Composable
+    private fun scrollToTopButton(onClick: () -> Unit){
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+            contentAlignment = Alignment.BottomEnd){
+            IconButton(onClick = onClick,
+                modifier = Modifier
+                    .shadow(6.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colors.primary)) {
+                Icon(painter = painterResource(id = R.drawable.ic_keyboard_double_arrow_up), contentDescription = "",
+                    tint = MaterialTheme.colors.onSurface)
+            }
+        }
+    }
+
+    /*Layout shown when there are no elements stored yet*/
+    //@Preview(widthDp = 360, heightDp = 720, showBackground = true)
+    @Composable
+    private fun noElementsToShowScreen(modifier: Modifier = Modifier){
+        Column(modifier = modifier
+            .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Image(painter = painterResource(id = R.drawable.ic_connection_error), contentDescription = "",
+                modifier
+                    .widthIn(120.dp)
+                    .heightIn(120.dp))
+            Text(text = stringResource(id = R.string.no_elements_string),modifier.padding(8.dp),
+                style = MaterialTheme.typography.h5,
+                color = if(!isSystemInDarkTheme()) PetrolBlue else SilverGrey)
+        }
+    }
+
+    @Composable
+    private fun addFloatingActionButton(onClick: () -> Unit){
+        FloatingActionButton(onClick = onClick, contentColor = MaterialTheme.colors.secondary) {
+            Icon(imageVector = Icons.Filled.Add, contentDescription = null,
+                tint = MaterialTheme.colors.onSecondary)
+        }
+    }
+
+    @OptIn(ExperimentalMaterialApi::class)
+    @Composable
+    private fun listItemProduct(product: Product, modifier:Modifier = Modifier){
+        /*Keeps track of a state used to determine when the dialog should be shown*/
+        var showDetailDialog by remember {
+            mutableStateOf(false)
+        }
+        if(showDetailDialog)
+            showCustomDetailDialog(product = product) {
+                showDetailDialog = false
+            }
+
+        Surface(onClick = {showDetailDialog = true}, modifier = modifier,
+            color = MaterialTheme.colors.surface) {
+            Column {
+                Row(modifier = Modifier.padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.weight(1f)) {
+                        Text(text = product.getDescription(),
+                            style = MaterialTheme.typography.h6,
+                            color = MaterialTheme.colors.onSurface,
+                            modifier = Modifier.padding(start = 16.dp, end = 8.dp))
+                        Text(text = product.getPlaceOfPurchase(),
+                            style = MaterialTheme.typography.subtitle2,
+                            color = if(!isSystemInDarkTheme()) PetrolBlue else SilverGrey,
+                            modifier = Modifier.padding(start = 16.dp, end = 8.dp))
+                    }
+                    Text(text = "$${product.getPrice()}",
+                        style = MaterialTheme.typography.h5,
+                        color = MaterialTheme.colors.secondary,
+                        modifier = Modifier.padding(end = 8.dp))
+                }
+
+                Divider(thickness = 2.dp,
+                    color = MaterialTheme.colors.secondary.copy(0.7f),
+                    modifier = Modifier
+                        .paddingFromBaseline(top = 8.dp)
+                        .padding(start = 30.dp, end = 30.dp))
+            }
+        }
+    }
+
+    /*Creates a dialog with the product details*/
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Composable
+    private fun showCustomDetailDialog(product: Product,onDismiss:() -> Unit){
+        Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            productDetail(product = product, onDismiss = onDismiss)
+        }
+    }
+
+    @Composable
+    private fun productDetail(product:Product,onDismiss: () -> Unit, modifier: Modifier = Modifier){
+        Box(modifier = modifier
+            .background(White.copy(0f))
+            .padding(24.dp)
+            .fillMaxWidth()) {
+            Surface(modifier = Modifier
+                .padding(top = 45.dp)
+                .fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                border = BorderStroke(3.dp,MaterialTheme.colors.onSurface),
+                color = MaterialTheme.colors.surface){
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(modifier = Modifier.height(45.0.dp))
+                    Text(text = product.getDescription(), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp),
+                        style = MaterialTheme.typography.h6,color = MaterialTheme.colors.onSurface)
+                    Text(text = product.getPlaceOfPurchase(), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp),
+                        style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
+                    if(product.getCategory().isNotEmpty()){
+                        Text(text = product.getCategory(), modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+                            style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
+                    }
+                    
+                    Divider(thickness = 3.dp,
+                        color = MaterialTheme.colors.secondary,
+                        modifier = Modifier
+                            .paddingFromBaseline(top = 6.dp)
+                            .padding(start = 8.dp, end = 8.dp)
+                            .fillMaxWidth())
+                    
+                    Row(modifier = Modifier
+                        .padding(top = 4.dp, start = 16.dp, end = 16.dp)
+                        .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = stringResource(id = R.string.price_title), modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
+                        Text(text = "$${product.getPrice()}",
+                            style = MaterialTheme.typography.h6,color = MaterialTheme.colors.secondary)
+                    }
+                    
+                    Row(modifier = Modifier
+                        .padding(top = 4.dp, start = 16.dp, end = 16.dp)
+                        .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = stringResource(id = R.string.modified_date_desc), modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
+                        Text(text = DateUtils.formatDate(product.getUpdateDate()),
+                            style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.onSurface)
+                    }
+                    
+                    detailDialogBottomActionBar(product,onDismiss)
+                }
+            }
+            Surface(modifier = Modifier
+                .height(90.dp)
+                .width(90.dp)
+                .align(Alignment.TopCenter), shape = MaterialTheme.shapes.medium,
+                border = BorderStroke(3.dp,MaterialTheme.colors.onSurface)) {
+                Image(painter = painterResource(id = R.drawable.ic_connection_error), contentDescription = "",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(3.dp)
+                        .align(Alignment.Center))
+            }
+        }
+    }
+
+    @Composable
+    private fun detailDialogBottomActionBar(product: Product,onDismiss: () -> Unit){
+        /*Creates a dialog that provides the option to delete the current selected product*/
+        var showDeleteProductDialog by remember {
+            mutableStateOf(false)
+        }
+        if(showDeleteProductDialog){
+            customAlertDialog(title = stringResource(id = R.string.delete_product_string),
+                msg = stringResource(id = R.string.delete_product_dialog_msg),
+                confirmButtonText = stringResource(id = R.string.accept_button_string),
+                dismissButtonText = stringResource(id = R.string.cancel_button_string),
+                onConfirm = {
+                    showDeleteProductDialog = false
+                    onDismiss()
+                    viewModel.deleteProduct(product)
+                    Toast.makeText(requireContext(),getString(R.string.delete_success_msg,product.getDescription()),
+                        Toast.LENGTH_SHORT).show()
+                },
+                onDismiss = {
+                    showDeleteProductDialog = false
+                })
+        }
+
+        Row(modifier = Modifier
+            .padding(top = 8.dp, bottom = 3.dp)
+            .fillMaxWidth()
+            .background(MaterialTheme.colors.primary),
+            horizontalArrangement = Arrangement.End) {
+
+            val actions = listOf(
+                AppBarAction(stringResource(id = R.string.share_product_button_desc), icon = Icons.Outlined.Share,{}),
+                AppBarAction(stringResource(id = R.string.edit_fragment_title), icon = Icons.Outlined.Edit, action = {
+                    onDismiss()
+                    navigateToEditFragment(product.getId())
+                }),
+                AppBarAction(stringResource(id = R.string.delete_product_string), icon = Icons.Outlined.Delete, action = {
+                    showDeleteProductDialog = true
+                }),
+                AppBarAction(stringResource(id = R.string.update_price_button_desc),
+                    icon = ImageUtils.createImageVector(drawableRes = R.drawable.ic_add_price), action = {
+                        onDismiss()
+                        navigateToAddFragment()
+                    })
+            )
+
+            actions.forEach {
+                IconButton(onClick = it.action,
+                    modifier = Modifier
+                        .padding(end = 8.dp, bottom = 4.dp, top = 4.dp)
+                        .background(MaterialTheme.colors.primary)) {
+                    Icon(imageVector = it.icon!!, contentDescription = it.name,
+                        tint = Black, modifier = Modifier
+                            .width(44.dp)
+                            .height(44.dp))
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun customAlertDialog(title:String, msg:String?,confirmButtonText:String,
+          dismissButtonText:String?,onConfirm:() -> Unit, onDismiss:()->Unit){
+        AlertDialog(
+            onDismissRequest = {},
+            shape = MaterialTheme.shapes.medium.copy(CornerSize(10.dp)),
+            title = {
+                Text(text = title,
+                    color = MaterialTheme.colors.onSurface)
+            },
+            text = {
+                msg?.let {
+                    return@let Text(text = msg,
+                        color = MaterialTheme.colors.onSurface)
+                }
+            },
+            backgroundColor = MaterialTheme.colors.surface,
+            confirmButton = {
+                Button(onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary,
+                    contentColor = MaterialTheme.colors.onSecondary)) {
+                Text(text = confirmButtonText)
+            }},
+            dismissButton = {
+                dismissButtonText?.let {
+                    Button(onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error,
+                            contentColor = MaterialTheme.colors.onError)) {
+                        Text(text = dismissButtonText)
+                    }
+                }
+            },
+            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+        )
+    }
+
+    @Preview
+    @Composable
+    private fun deleteProductPreview(){
+        PriceRecorderTheme {
+            customAlertDialog(title = stringResource(id = R.string.delete_product_string),
+                msg = stringResource(id = R.string.delete_product_dialog_msg),
+                confirmButtonText = stringResource(id = R.string.accept_button_string),
+                dismissButtonText = stringResource(id = R.string.cancel_button_string),
+                onConfirm = {},
+                onDismiss = {})
+        }
+    }
+
+    //@Preview(heightDp = 450, widthDp = 360, uiMode = UI_MODE_NIGHT_YES)
+    @Composable
+    fun productDetailPreview(){
+        PriceRecorderTheme {
+            productDetail(product = Product("Leche La Serenisima",250.0,"Carrefour Market",
+                "Lacteos",DateUtils.getCurrentDate()),{})
+        }
+    }
+
+    //@Preview(widthDp = 360)
+    @Composable
+    private fun listItemProductPreview(){
+        PriceRecorderTheme {
+            listItemProduct(product = Product("Leche La Serenisima",250.0,"Carrefour Market",
+                "",DateUtils.getCurrentDate())
+            )
+        }
+    }
+
+    //@Preview(showBackground = true)
+    @Composable
+    private fun scrollToTopButtonPreview(){
+        PriceRecorderTheme {
+            scrollToTopButton {}
+        }
     }
 }

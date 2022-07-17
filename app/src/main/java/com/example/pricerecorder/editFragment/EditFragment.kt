@@ -39,12 +39,6 @@ class EditFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        MainToolbar.apply {
-            val activity = activity as AppCompatActivity
-            setUpButton(activity,true)
-            setTitle(activity,resources.getString(R.string.edit_fragment_title))
-        }
-
         val args : EditFragmentArgs by navArgs()
         val application: Application = requireNotNull(this.activity).application
         val dataSource = ProductDatabase.getInstance(application).productDatabaseDao

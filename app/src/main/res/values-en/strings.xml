@@ -12,7 +12,7 @@
     <string name="new_product_added">%1$s added</string>
     <string name="add_fragment_title">New Product</string>
     <string name="product_deleted_msg">Product deleted</string>
-    <string name="delete_success_msg">Operation performed correctly</string>
+    <string name="delete_success_msg">%1$s deleted successfully</string>
     <string name="undo_action_msg">Undo</string>
     <string name="category_input_string">Category</string>
     <string name="current_price_string">Price on %1$s</string>
@@ -43,7 +43,7 @@
     <string name="switch_category_text">Category</string>
     <string name="switch_purchase_place">Place of purchase</string>
     <string name="switch_date">Date</string>
-    <string name="switch_price">Price</string>
+    <string name="price_title">Price</string>
     <string name="filter_by_string">Filter by: %1$</string>
     <string name="date_filter_text">Date</string>
     <string name="date_picker_title">Pick date</string>

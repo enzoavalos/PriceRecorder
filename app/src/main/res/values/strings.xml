@@ -10,7 +10,7 @@
     <string name="delete_all_dialog_msg">Una vez eliminados no podran recuperarse</string>
     <string name="button_cancel_string">Cancelar</string>
     <string name="button_accept_string">Aceptar</string>
-    <string name="delete_success_msg">Accion realizada correctamente</string>
+    <string name="delete_success_msg">%1$s eliminado correctamente</string>
     <string name="new_product_added">%1$s agregado</string>
     <string name="add_fragment_title">Nuevo Producto</string>
     <string name="product_deleted_msg">Producto eliminado</string>
@@ -37,7 +37,6 @@
     <string name="switch_category_text">Categoria</string>
     <string name="switch_purchase_place">Lugar de compra</string>
     <string name="switch_date">Fecha</string>
-    <string name="switch_price">Precio</string>
     <string name="filter_by_string">Filtrar por: %1$s</string>
     <string name="date_filter_text">Fecha</string>
     <string name="date_picker_title">Elegir fecha</string>
@@ -87,6 +86,13 @@
     <string name="product_category_bakery">Panaderia</string>
     <string name="product_category_tech">Tecnologia</string>
     <string name="product_category_perfumery">Perfumeria</string>
+    <string name="up_button_description">Navegar atras</string>
+    <string name="overflow_menu_description">Menu desplegable</string>
+    <string name="update_price_button_desc">Modificar precio</string>
+    <string name="share_product_button_desc">Compartir producto</string>
+    <string name="modified_date_desc">Modificado</string>
+    <string name="price_title">Precio</string>
+    <string name="close_icon_desc">Cerrar</string>
 
     <string-array name="range_slider_values">
         <item>20</item>
