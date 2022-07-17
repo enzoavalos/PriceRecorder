@@ -42,12 +42,6 @@ class AddFragment:Fragment(){
         binding.viewModel = viewModel
         binding.lifecycleOwner = viewLifecycleOwner
 
-        MainToolbar.apply {
-            val activity = activity as AppCompatActivity
-            setUpButton(activity,true)
-            setTitle(activity,resources.getString(R.string.add_fragment_title))
-        }
-
         binding.acceptButton.setOnClickListener {
             if (it.id == binding.acceptButton.id)
                 createNewProduct()

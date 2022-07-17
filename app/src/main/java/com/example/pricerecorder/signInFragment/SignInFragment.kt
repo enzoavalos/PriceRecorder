@@ -14,7 +14,6 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
 import com.bumptech.glide.Glide
 import com.example.pricerecorder.ConnectivityChecker
-import com.example.pricerecorder.MainToolbar
 import com.example.pricerecorder.R
 import com.example.pricerecorder.databinding.SignInFragmentBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -41,7 +40,6 @@ class SignInFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = DataBindingUtil.inflate(inflater, R.layout.sign_in_fragment, container, false)
-        MainToolbar.show(activity as AppCompatActivity,resources.getString(R.string.account_section_title), true)
 
         // Configure Google Sign In
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)

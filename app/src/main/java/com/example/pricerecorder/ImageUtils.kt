@@ -7,6 +7,9 @@ import android.graphics.Matrix
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
 
@@ -77,6 +80,12 @@ interface ImageUtils {
                 Bitmap.createScaledBitmap(bitmap,(bitmap.width * 0.7).toInt(),(bitmap.height * 0.7).toInt(),true)
             else
                 bitmap
+        }
+
+        /*Returns an image vector given a drawable*/
+        @Composable
+        fun createImageVector(drawableRes: Int) : ImageVector{
+            return ImageVector.Companion.vectorResource(id = drawableRes)
         }
     }
 }

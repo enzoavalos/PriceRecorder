@@ -70,6 +70,10 @@ data class Product(
         return this.image
     }
 
+    fun getId(): Long{
+        return this.productId
+    }
+
     override fun equals(other: Any?): Boolean {
         return try {
             val aux = other as Product

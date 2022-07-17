@@ -13,7 +13,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.Navigation
 import com.example.pricerecorder.ConnectivityChecker
 import com.example.pricerecorder.DateUtils
-import com.example.pricerecorder.MainToolbar
 import com.example.pricerecorder.R
 import com.example.pricerecorder.database.ProductDatabase
 import com.example.pricerecorder.databinding.SettingsFragmentBinding
@@ -50,7 +49,6 @@ class SettingsFragment : Fragment(){
         val viewModelFactory = SettingFragmentViewModelFactory(dataSource,application)
         viewModel = ViewModelProvider(this, viewModelFactory)[SettingsFragmentViewModel::class.java]
         binding.viewModel = viewModel
-        MainToolbar.show(activity as AppCompatActivity,getString(R.string.setting_fragment_title),true)
 
         viewModel.viewClicked.observe(viewLifecycleOwner) {
             it?.let {
@@ -64,7 +62,7 @@ class SettingsFragment : Fragment(){
         }
 
         /*Handles the back device button pressed event. In this case is used to navigate back to the home fragment.
-        It is explicitly added because otherwise, after restoring the db, the changes are not shown in the hme fragment*/
+        It is explicitly added because otherwise, after restoring the db, the changes are not shown in the home fragment*/
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner,
         object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {

@@ -9,7 +9,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
-            <include layout="@layout/action_bar_toolbar"/>
             <androidx.fragment.app.FragmentContainerView
                 android:id="@+id/nav_host_fragment_container"
                 android:name="androidx.navigation.fragment.NavHostFragment"
