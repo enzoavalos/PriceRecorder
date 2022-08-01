@@ -1,14 +1,15 @@
 package com.example.pricerecorder.addFragment
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.pricerecorder.database.ProductDatabaseDao
 
-class AddViewModelFactory(private val dataSource: ProductDatabaseDao):ViewModelProvider.Factory {
+class AddViewModelFactory(private val application: Application) :
+    ViewModelProvider.Factory {
     @Suppress("unchecked_cast")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AddFragmentViewModel::class.java)) {
-            return AddFragmentViewModel(dataSource) as T
+            return AddFragmentViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

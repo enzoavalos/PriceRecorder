@@ -3,29 +3,26 @@ package com.example.pricerecorder.homeFragment
 import android.app.Application
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Bundle
-import android.text.Editable
-import android.text.InputFilter
-import android.text.TextWatcher
 import android.view.*
-import android.widget.ArrayAdapter
 import android.widget.CompoundButton
 import android.widget.Toast
 import androidx.annotation.DrawableRes
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.SearchView
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -38,29 +35,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.view.isVisible
-import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.pricerecorder.*
 import com.example.pricerecorder.R
 import com.example.pricerecorder.database.Product
-import com.example.pricerecorder.database.ProductDatabase
-import com.example.pricerecorder.databinding.AddPriceDialogBinding
-import com.example.pricerecorder.databinding.DetailFragmentBinding
-import com.example.pricerecorder.databinding.FilterMenuDialogBinding
-import com.example.pricerecorder.databinding.HomeFragmentBinding
+import com.example.pricerecorder.databinding.*
 import com.example.pricerecorder.theme.*
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -70,119 +69,25 @@ import kotlin.math.ceil
 
 class HomeFragment:Fragment() {
     private lateinit var viewModel: HomeViewModel
-    private lateinit var adapter: ProductAdapter
+
     private lateinit var binding: HomeFragmentBinding
-    private lateinit var mainMenu: Menu
-    private lateinit var searchView: SearchView
     /*Used to prevent multiple dialogs from appearing*/
-    private var detailDialogDisplayed = false
-    private var priceDialogDisplayed = false
     private var filterDialogDisplayed = false
 
     private var filterOptionSelected : CompoundButton? = null
     private var filterBy : String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        //binding = DataBindingUtil.inflate(inflater,R.layout.home_fragment,container,false)
-
         val application: Application = requireNotNull(this.activity).application
-        val dataSource = ProductDatabase.getInstance(application).productDatabaseDao
-        val viewModelFactory = HomeViewModelFactory(dataSource,application)
+        val viewModelFactory = HomeViewModelFactory(application)
         viewModel = ViewModelProvider(this, viewModelFactory)[HomeViewModel::class.java]
+        createNotificationChannel(requireContext())
 
         return ComposeView(requireContext()).apply {
             setContent {
-                PriceRecorderTheme {
-                    homeScreen()
-                }
+                HomeScreen()
             }
         }
-
-        /*binding.viewModel = viewModel
-        binding.lifecycleOwner = viewLifecycleOwner
-
-        binding.mainToolbar.setContent {
-            PriceRecorderTheme {
-                homeAppBar(onSearchClick = { Toast.makeText(requireContext(),"Buscar",Toast.LENGTH_SHORT).show() },
-                    onFilterClick = { createCustomFilterDialog() },
-                    onDeleteAllClicked = { createDeleteAllDialog() },
-                    onSettingsClicked = { navigateToSettingsFragment() })
-            }
-        }
-
-        //Recycler view adapter, a click listener is passed as a lambda expression
-        val manager = LinearLayoutManager(context)
-        adapter = ProductAdapter(ProductListener {
-            if(!detailDialogDisplayed)
-                createCustomDetailDialog(it)
-        })
-
-        //Callback created to implement swipe to delete behaviour
-        val swipeDelete = object : SwipeToDeleteCallback(requireContext()) {
-            //Called when a viewHolder is swiped by the user
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val swipedItem = adapter.getItemProduct(viewHolder as ProductAdapter.ProductViewHolder)
-                viewModel.deleteProduct(swipedItem!!)
-                /*if(!searchView.isIconified)
-                    collapseSearchView()*/
-                Snackbar.make(view!!,resources.getString(R.string.product_deleted_msg),Snackbar.LENGTH_SHORT)
-                    .setAction(resources.getString(R.string.undo_action_msg)){
-                        viewModel.addProduct(swipedItem)
-                    }
-                    .show()
-            }
-        }
-        val touchHelper = ItemTouchHelper(swipeDelete)
-        touchHelper.attachToRecyclerView(binding.productRecyclerView)
-
-        //Observers of both fab buttons of the home page
-        viewModel.fabClicked.observe(viewLifecycleOwner) {
-            it?.let {
-                when (it) {
-                    R.id.add_fab -> navigateToAddFragment()
-                    R.id.filter_fab -> {
-                        if (!filterDialogDisplayed and (filterOptionSelected == null))
-                            createCustomFilterDialog()
-                    }
-                }
-                viewModel.onNavigated()
-            }
-        }
-
-        binding.cancelFilterButton.setOnClickListener {
-            binding.filterByView.visibility = View.GONE
-            viewModel.filteredList = null
-            filterOptionSelected = null
-            if(!searchView.isIconified){
-                if(!searchView.query.isNullOrEmpty()){
-                    val queryResult = viewModel.filterByUserSearch(searchView.query.toString())
-                    showNoResultsFoundLayout(queryResult.isEmpty())
-                    adapter.submitList(queryResult)
-                }else{
-                    showNoResultsFoundLayout(viewModel.products.value.isNullOrEmpty())
-                    adapter.submitList(viewModel.products.value)
-                }
-            }
-            else{
-                showNoResultsFoundLayout(viewModel.products.value.isNullOrEmpty())
-                adapter.submitList(viewModel.products.value)
-                binding.filterFab.show()
-            }
-        }
-
-        viewModel.products.observe(viewLifecycleOwner) {
-            binding.filterFab.visibility =
-                if (!it.isNullOrEmpty() and (filterOptionSelected == null)) View.VISIBLE else View.GONE
-            showProgressBar(false)
-            showEmptyLayout(it.isNullOrEmpty())
-            filterOptionSelected = null
-            binding.filterByView.visibility = View.GONE
-            adapter.submitList(it)
-        }
-
-        initRecyclerView(binding,manager,adapter)
-        setFabOnScrollBehaviour()
-        return binding.root*/
     }
 
     private fun onFilterProducts(filterBinding:FilterMenuDialogBinding):Boolean{
@@ -213,8 +118,7 @@ class HomeFragment:Fragment() {
                 viewModel.filterByPriceRange(values[0],values[1])
             }
         }
-        adapter.submitList(viewModel.filteredList)
-        showNoResultsFoundLayout(viewModel.filteredList.isNullOrEmpty())
+        //adapter.submitList(viewModel.filteredList)
         return true
     }
 
@@ -227,11 +131,11 @@ class HomeFragment:Fragment() {
                         f.categorySwitch.isChecked = false
                         f.categoryInput.visibility = View.GONE
                     }else{
-                        f.progressBar.visibility = View.VISIBLE
-                        val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
-                            viewModel.getListOfCategories(resources))
-                        f.categoryAutoComplete.setAdapter(arrayAdapter)
-                        f.progressBar.visibility = View.GONE
+                        //f.progressBar.visibility = View.VISIBLE
+                        //val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
+                            //viewModel.getListOfCategories(resources))
+                        //f.categoryAutoComplete.setAdapter(arrayAdapter)
+                        //f.progressBar.visibility = View.GONE
                         f.categoryInput.visibility = View.VISIBLE
                     }
 
@@ -239,11 +143,11 @@ class HomeFragment:Fragment() {
                         f.placeSwitch.isChecked = false
                         f.placeInput.visibility = View.GONE
                     }else{
-                        f.progressBar.visibility = View.VISIBLE
-                        val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
-                            viewModel.getListOfPlaces())
-                        f.placeAutoComplete.setAdapter(arrayAdapter)
-                        f.progressBar.visibility = View.GONE
+                        //f.progressBar.visibility = View.VISIBLE
+                        //val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
+                            //viewModel.getListOfPlaces())
+                        //f.placeAutoComplete.setAdapter(arrayAdapter)
+                       // f.progressBar.visibility = View.GONE
                         f.placeInput.visibility = View.VISIBLE
                     }
 
@@ -310,9 +214,9 @@ class HomeFragment:Fragment() {
                 filterOptionSelected = getFilterCheckedSwitch(filterBinding)
                 if(filterOptionSelected != null){
                     if(onFilterProducts(filterBinding)){
-                        binding.filterByTextview.text = resources.getString(R.string.filter_by_string,filterBy)
-                        binding.filterFab.hide()
-                        binding.filterByView.visibility = View.VISIBLE
+                        //binding.filterByTextview.text = resources.getString(R.string.filter_by_string,filterBy)
+                        //binding.filterFab.hide()
+                        //binding.filterByView.visibility = View.VISIBLE
                     }else
                         filterOptionSelected = null
                 }
@@ -341,270 +245,6 @@ class HomeFragment:Fragment() {
         return null
     }
 
-    /* Configures the behaviour of the floating buttons when the screen is scrolled*/
-    private fun setFabOnScrollBehaviour() {
-        binding.nestedScrollView.setOnScrollChangeListener(
-            NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, _ ->
-            if(binding.addFab.isVisible){
-                if(scrollY != 0){
-                    binding.addFab.shrink()
-                }else{
-                    binding.addFab.extend()
-                }
-            }
-        })
-    }
-
-    // Initializes the recyclerview
-    private fun initRecyclerView(binding: HomeFragmentBinding,
-                                 manager: LinearLayoutManager,
-                                 adapter: ProductAdapter){
-        binding.productRecyclerView.apply {
-            layoutManager = manager
-            addItemDecoration(SpacingItemDecoration(3))
-            this.adapter = adapter
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.overflow_menu,menu)
-        mainMenu = menu
-
-        /* Disables the option to delete all elements in the menu, when there are no elements.
-        * Is automatically updated whenever there is a change in the list of products*/
-        val deleteItem = menu.findItem(R.id.op_delete_all)
-        viewModel.products.observe(viewLifecycleOwner) {
-            deleteItem.isEnabled = !it.isNullOrEmpty()
-        }
-
-        //Sets the functionality for the search view in the toolbar
-        val menuItem = menu.findItem(R.id.op_search)
-        searchView = menuItem.actionView as SearchView
-        searchView.queryHint = resources.getString(R.string.search_view_hint)
-        searchView.maxWidth = Int.MAX_VALUE
-
-        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener{
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                searchView.clearFocus()
-                return true
-            }
-
-            //Invoked when the searchView text is changed
-            override fun onQueryTextChange(newText: String?): Boolean {
-                showProgressBar(true)
-                val searchText = newText!!.lowercase(Locale.getDefault())
-                var resultList = mutableListOf<Product>()
-
-                //Creates a temporary list with the elements that match with the search
-                if(searchText.isNotEmpty()){
-                    resultList = viewModel.filterByUserSearch(searchText)
-                    showProgressBar(false)
-                    adapter.submitList(resultList)
-                }else{
-                    showProgressBar(false)
-                    if(viewModel.filteredList != null)
-                        adapter.submitList(viewModel.filteredList)
-                    else
-                        adapter.submitList(viewModel.products.value)
-                }
-                showNoResultsFoundLayout((resultList.isEmpty() and searchText.isNotEmpty() and
-                        !viewModel.products.value.isNullOrEmpty()))
-                return true
-            }
-        })
-
-        searchView.addOnAttachStateChangeListener(object:View.OnAttachStateChangeListener{
-            //Invoked when the search view is attached to the screen(search bar is opened)
-            override fun onViewAttachedToWindow(v: View?) {
-                binding.apply {
-                    addFab.hide()
-                    filterFab.hide()
-                    mainMenu.setGroupVisible(R.id.menu_group,false)
-                }
-            }
-
-            //Invoked when the searchView is detached from the screen
-            override fun onViewDetachedFromWindow(v: View?) {
-                mainMenu.setGroupVisible(R.id.menu_group,true)
-                binding.addFab.show()
-                if(binding.nestedScrollView.scrollY == 0) {
-                    binding.apply {
-                        addFab.extend()
-                        if((filterOptionSelected == null)and(!viewModel!!.products.value.isNullOrEmpty()))
-                            filterFab.show()
-                    }
-                }
-            }
-        })
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId){
-            R.id.op_delete_all -> {
-                if(!viewModel.products.value.isNullOrEmpty()){
-                    //Creates a dialog box that gives you the opportunity to cancel the operation
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setTitle(resources.getString(R.string.delete_all_dialog_title))
-                        .setMessage(resources.getString(R.string.delete_all_dialog_msg))
-                        .setNegativeButton(resources.getString(R.string.button_cancel_string))
-                        { dialog, _ -> dialog!!.dismiss() }
-                        .setPositiveButton(resources.getString(R.string.button_accept_string)) { dialog, _ ->
-                            viewModel.clear()
-                            Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
-                            dialog!!.dismiss()
-                        }
-                        .show()
-                }
-            }
-            R.id.op_settings -> navigateToSettingsFragment()
-        }
-        return true
-    }
-
-    private fun createDeleteAllDialog(){
-        if(!viewModel.products.value.isNullOrEmpty()){
-            //Creates a dialog box that gives you the opportunity to cancel the operation
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(resources.getString(R.string.delete_all_dialog_title))
-                .setMessage(resources.getString(R.string.delete_all_dialog_msg))
-                .setNegativeButton(resources.getString(R.string.button_cancel_string))
-                { dialog, _ -> dialog!!.dismiss() }
-                .setPositiveButton(resources.getString(R.string.button_accept_string)) { dialog, _ ->
-                    viewModel.clear()
-                    Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
-                    dialog!!.dismiss()
-                }
-                .show()
-        }
-    }
-
-    /*Creates a custom dialog that displays the details of the product associated*/
-    private fun createCustomDetailDialog(p:Product){
-        detailDialogDisplayed = true
-        val dialogBinding : DetailFragmentBinding = DetailFragmentBinding.inflate(layoutInflater)
-        dialogBinding.product = p
-        val dialog = AlertDialog.Builder(requireContext())
-            .setView(dialogBinding.root).create()
-        onCreateCustomDetailDialog(dialogBinding,dialog)
-        dialog.apply {
-            show()
-            window?.setBackgroundDrawableResource(R.color.transparent)
-        }
-
-        dialog.setOnDismissListener { detailDialogDisplayed = false }
-    }
-
-    /*Sets the content of the views and certain behaviours of the detail fragment used as a custom dialog box*/
-    private fun onCreateCustomDetailDialog(b:DetailFragmentBinding, detailDialog: AlertDialog){
-        var deleteDialogDisplayed = false
-        b.apply {
-            priceToDateText.text = resources.getString(R.string.current_price_string,DateUtils.formatDate(product!!.getUpdateDate()))
-            categoryTextview.isVisible = product!!.getCategory().isNotEmpty()
-            product!!.getImage()?.let { productDetailImg.setImageBitmap(it) }
-
-            buttonAddPrice.setOnClickListener {
-                if(!priceDialogDisplayed)
-                    createCustomPriceDialog(detailDialog, b)
-            }
-
-            buttonDeleteProduct.setOnClickListener {
-                if(deleteDialogDisplayed)
-                    return@setOnClickListener
-                val deleteDialog = MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(resources.getString(R.string.delete_product_string))
-                    .setMessage(resources.getString(R.string.delete_product_dialog_msg))
-                    .setNegativeButton(resources.getString(R.string.button_cancel_string))
-                    { dialog, _ -> dialog!!.dismiss() }
-                    .setPositiveButton(resources.getString(R.string.button_accept_string)) { dialog, _ ->
-                        viewModel.deleteProduct(b.product!!)
-                        dialog!!.dismiss()
-                        detailDialog.dismiss()
-                        Toast.makeText(context,resources.getString(R.string.delete_success_msg), Toast.LENGTH_SHORT).show()
-                    }
-                    .create()
-                deleteDialogDisplayed = true
-                deleteDialog.show()
-
-                deleteDialog.setOnDismissListener { deleteDialogDisplayed = false }
-            }
-
-            buttonEditProduct.setOnClickListener {
-                detailDialog.dismiss()
-                navigateToEditFragment(product!!.getProductId())
-            }
-        }
-    }
-
-    /*Creates a custom dialog box for the users to update the price of a given product*/
-    private fun createCustomPriceDialog(detailDialog: AlertDialog,detailFragmentBinding: DetailFragmentBinding){
-        priceDialogDisplayed = true
-        val priceDialogBinding = AddPriceDialogBinding.inflate(layoutInflater)
-        val priceDialog = AlertDialog.Builder(requireContext())
-            .setView(priceDialogBinding.root).create()
-
-        priceDialogBinding.addPriceEdittext.apply {
-            addTextChangedListener(object: TextWatcher {
-                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-                }
-                override fun afterTextChanged(s: Editable?) {
-                    if(this@apply.validatePositiveNumericInputDouble())
-                        priceDialogBinding.acceptButton.setAcceptButtonEnabled(true)
-                    else
-                        priceDialogBinding.acceptButton.setAcceptButtonEnabled(false)
-                }
-
-                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                    if (!error.isNullOrEmpty())
-                        error = null
-                    removeTextChangedListener(this)
-                    CurrencyFormatter.formatInput(this@apply)
-                    addTextChangedListener(this)
-                }
-            })
-
-            isLongClickable = false
-            filters = arrayOf(InputFilter.LengthFilter(9))
-        }
-
-        priceDialogBinding.acceptButton.setOnClickListener {
-            /*if(!searchView.isIconified)
-                collapseSearchView()*/
-            val newPrice = priceDialogBinding.addPriceEdittext.text.toString().toDouble()
-            priceDialog.dismiss()
-            detailFragmentBinding.product!!.updatePrice(newPrice)
-            viewModel.updateProduct(detailFragmentBinding.product!!)
-            detailDialog.dismiss()
-            Toast.makeText(context,resources.getString(R.string.price_updated_msg),Toast.LENGTH_SHORT).show()
-        }
-
-        priceDialog.setOnDismissListener { priceDialogDisplayed = false }
-
-        priceDialog.show()
-        priceDialog.window?.setBackgroundDrawableResource(R.color.transparent)
-    }
-
-    /*Called when the searchView is attached to the window in order to collapse it*/
-    private fun collapseSearchView(){
-        mainMenu.findItem(R.id.op_search).collapseActionView()
-    }
-
-    /*Sets the visibility for the layout shown when there are no elements to show in the recycler view*/
-    private fun showEmptyLayout(show:Boolean){
-        binding.emptyLayout.visibility = if(show) View.VISIBLE else View.GONE
-    }
-
-    /*Sets the visibility for the layout shown when there are no matches for the user search*/
-    private fun showNoResultsFoundLayout(show: Boolean){
-        binding.emptySearchLayout.visibility = if(show) View.VISIBLE else View.GONE
-    }
-
-    /*Sets the visibility for the progress bar shown whenever there are operations running on the data used by
-    the recycler view, such as loading and filtering*/
-    private fun showProgressBar(show: Boolean){
-        binding.progressBar.visibility = if(show) View.VISIBLE else View.GONE
-    }
-
     private fun navigateToSettingsFragment(){
         findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToSettingsFragment())
     }
@@ -618,45 +258,84 @@ class HomeFragment:Fragment() {
     }
 
     @Composable
-    fun homeScreen() {
+    fun HomeScreen() {
+        /*Observed states from the viewModel*/
         val searchWidgetState by viewModel.searchWidgetState
         val searchTextState by viewModel.searchTextState
+        val scaffoldState = rememberScaffoldState()
+        val coroutineScope = rememberCoroutineScope()
 
         PriceRecorderTheme {
-            Scaffold(backgroundColor = MaterialTheme.colors.background
-                ,topBar = { mainAppBar(searchWidgetState,searchTextState) },
-                floatingActionButton = { addFloatingActionButton {navigateToAddFragment()} },
+            Scaffold(scaffoldState = scaffoldState,
+                backgroundColor = MaterialTheme.colors.background
+                ,topBar = { MainAppBar(searchWidgetState,searchTextState) },
+                floatingActionButton = { AddFloatingActionButton(enabled = true,
+                    onClick = { navigateToAddFragment() }) },
                 floatingActionButtonPosition = FabPosition.Center) {
-                productsList()
+                ProductsList(showSnackbar = { msg, actionLabel, onActionPerformed ->
+                    coroutineScope.launch {
+                        /*Snackbar is shown on screen and when the action is clicked, onActionPerformed is invoked*/
+                        when(scaffoldState.snackbarHostState.showSnackbar(message = msg,actionLabel = actionLabel)){
+                            SnackbarResult.ActionPerformed -> onActionPerformed()
+                            else -> {}
+                        }
+                    }
+                },
+                modifier = Modifier.padding(it))
             }
         }
     }
 
-    /*Determines the app bar to be displayed, either the deafult appbar or a search app bar*/
+    /*Determines the app bar to be displayed, either the default appbar or a search app bar*/
     @Composable
-    private fun mainAppBar(searchWidgetState: SearchWidgetState,searchTextState:String){
+    private fun MainAppBar(searchWidgetState: SearchWidgetState, searchTextState:String){
+        var showDeleteAllDialog by remember {
+            mutableStateOf(false)
+        }
+
+        CustomAlertDialog(show = showDeleteAllDialog,
+            title = stringResource(id = R.string.delete_all_dialog_title),
+            msg ={
+                Text(text = stringResource(id = R.string.delete_all_dialog_msg),
+                    color = MaterialTheme.colors.onSurface)
+            },
+            confirmButtonText = stringResource(id = R.string.accept_button_string),
+            dismissButtonText = stringResource(id = R.string.cancel_button_string),
+            onConfirm = {
+                showDeleteAllDialog = false
+                viewModel.clear()
+                Toast.makeText(context,resources.getString(R.string.delete_all_success_msg), Toast.LENGTH_SHORT).show()
+                },
+            onDismiss = {
+                showDeleteAllDialog = false
+            })
+
         when(searchWidgetState){
             SearchWidgetState.CLOSED -> {
-                homeAppBar(onSearchClick = { viewModel.updateSearchWidgetState(SearchWidgetState.OPENED) },
-                    onFilterClick = {createCustomFilterDialog()},
-                    onDeleteAllClicked = {createDeleteAllDialog()},
-                    onSettingsClicked = {navigateToSettingsFragment()})
+                HomeAppBar(onSearchClick = { viewModel.updateSearchWidgetState(SearchWidgetState.OPENED) },
+                    onFilterClick = { createCustomFilterDialog() },
+                    onDeleteAllClicked = { showDeleteAllDialog = true },
+                    onSettingsClicked = { navigateToSettingsFragment() })
             }
             else -> {
-                searchAppBar(text = searchTextState,
-                    onTextChange = {},
-                    onCloseClicked = { viewModel.updateSearchWidgetState(SearchWidgetState.CLOSED) },
-                    onSearchClicked = {})
+                SearchAppBar(text = searchTextState,
+                    onTextChange = {
+                        viewModel.updateSearchTextState(it)
+                    },
+                    onCloseClicked = {
+                        viewModel.updateSearchTextState("")
+                        viewModel.updateSearchWidgetState(SearchWidgetState.CLOSED) })
             }
         }
     }
 
     /*List displayed in the home screen with all stored products*/
+    @OptIn(ExperimentalMaterialApi::class)
     @Composable
-    private fun productsList(modifier: Modifier = Modifier){
-        val items by viewModel.products.observeAsState(listOf())
+    private fun ProductsList(showSnackbar:(String, String, () -> Unit) -> Unit, modifier: Modifier = Modifier){
+        val list by viewModel.products.observeAsState(listOf())
 
-        if(items.isNotEmpty()){
+        if(list.isNotEmpty()){
             Box(modifier = modifier) {
                 /*Used to remember the state of the list through recompositions*/
                 val state = rememberLazyListState()
@@ -670,8 +349,56 @@ class HomeFragment:Fragment() {
 
                 LazyColumn(modifier = Modifier.fillMaxWidth(),
                     state = state, contentPadding = PaddingValues(bottom = 44.dp)){
-                    items(items, key = {it.getId()}){
-                        listItemProduct(product = it, modifier = Modifier.fillMaxWidth())
+                    items(list, key = {it.getId()}){ product ->
+                        val dismissState = rememberDismissState(
+                            confirmStateChange = {
+                                /*If item was swiped to start, then its deleted from the DB*/
+                                if(it == DismissValue.DismissedToStart){
+                                    viewModel.deleteProduct(product = product)
+                                    showSnackbar(getString(R.string.product_deleted_msg),getString(R.string.undo_action_msg)){
+                                        viewModel.addProduct(product)
+                                    }
+                                }
+                                true
+                            }
+                        )
+
+                        SwipeToDismiss(state = dismissState,
+                            directions = setOf(DismissDirection.EndToStart),
+                            background = {
+                                val color by animateColorAsState(
+                                    targetValue = when(dismissState.targetValue){
+                                        DismissValue.DismissedToStart -> Color.Red
+                                        else -> MaterialTheme.colors.background
+                                    })
+                                val icon = Icons.Default.Delete
+                                /*Used to animate the icon size as the item is being swiped*/
+                                val scale by animateFloatAsState(
+                                    targetValue = if(dismissState.targetValue == DismissValue.Default) 0.8f else 1.2f)
+                                val alignment = Alignment.CenterEnd
+
+                                Box(modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(color)
+                                    .padding(start = 12.dp, end = 12.dp),
+                                    contentAlignment = alignment) {
+                                    Icon(imageVector = icon, contentDescription = "",
+                                        modifier = Modifier.scale(scale))
+                                }
+                            },
+                            /*swipe fraction limit where the action is confirmed*/
+                            dismissThresholds = { FractionalThreshold(0.3f) },
+                            dismissContent = {
+                                /*swipeable content*/
+                                Card(modifier = Modifier.fillMaxWidth(),
+                                    shape = MaterialTheme.shapes.medium.copy(CornerSize(0.dp)),
+                                    /*Adds elevation to item as its beign swiped*/
+                                    elevation = animateDpAsState(
+                                        targetValue = if(dismissState.dismissDirection != null) 6.dp else 0.dp).value) {
+                                    ListItemProduct(product = product, modifier = Modifier.fillMaxWidth())
+                                }
+                            }
+                        )
                     }
                 }
 
@@ -679,20 +406,27 @@ class HomeFragment:Fragment() {
                 AnimatedVisibility(visible = showScrollToTopButton,
                     enter = fadeIn(), exit = fadeOut(),
                     modifier = Modifier.align(Alignment.BottomEnd)) {
-                    scrollToTopButton {
+                    ScrollToTopButton {
                         coroutineScope.launch {
                             state.animateScrollToItem(0)
                         }
                     }
                 }
             }
-        }else
-            noElementsToShowScreen()
+        }else{
+            when(viewModel.searching.value){
+                false -> HomeEmptyBackgroundScreen(drawableRes = R.drawable.ic_connection_error,
+                    R.string.no_elements_string)
+                true -> HomeEmptyBackgroundScreen(drawableRes = R.drawable.ic_broken_image,
+                    R.string.no_results_found_desc)
+            }
+
+        }
     }
 
     /*Button to scroll to top of list, enabled when the first item of the list is no longer shown in screen*/
     @Composable
-    private fun scrollToTopButton(onClick: () -> Unit){
+    private fun ScrollToTopButton(onClick: () -> Unit){
         Box(modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
@@ -709,42 +443,44 @@ class HomeFragment:Fragment() {
     }
 
     /*Layout shown when there are no elements stored yet*/
-    //@Preview(widthDp = 360, heightDp = 720, showBackground = true)
     @Composable
-    private fun noElementsToShowScreen(modifier: Modifier = Modifier){
+    private fun HomeEmptyBackgroundScreen(@DrawableRes drawableRes: Int,
+                                          @StringRes stringRes:Int, modifier: Modifier = Modifier){
         Column(modifier = modifier
             .fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(painter = painterResource(id = R.drawable.ic_connection_error), contentDescription = "",
+            Image(painter = painterResource(id = drawableRes), contentDescription = "",
                 modifier
                     .widthIn(120.dp)
                     .heightIn(120.dp))
-            Text(text = stringResource(id = R.string.no_elements_string),modifier.padding(8.dp),
+            Text(text = stringResource(id = stringRes),
+                modifier
+                    .padding(top = 8.dp, start = 32.dp, end = 32.dp)
+                    .align(Alignment.CenterHorizontally),
                 style = MaterialTheme.typography.h5,
                 color = if(!isSystemInDarkTheme()) PetrolBlue else SilverGrey)
         }
     }
 
+    @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
     @Composable
-    private fun addFloatingActionButton(onClick: () -> Unit){
-        FloatingActionButton(onClick = onClick, contentColor = MaterialTheme.colors.secondary) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = null,
-                tint = MaterialTheme.colors.onSecondary)
-        }
-    }
-
-    @OptIn(ExperimentalMaterialApi::class)
-    @Composable
-    private fun listItemProduct(product: Product, modifier:Modifier = Modifier){
+    private fun ListItemProduct(product: Product, modifier:Modifier = Modifier){
         /*Keeps track of a state used to determine when the dialog should be shown*/
         var showDetailDialog by remember {
             mutableStateOf(false)
         }
-        if(showDetailDialog)
-            showCustomDetailDialog(product = product) {
+        if(showDetailDialog) {
+            val onDismiss = {
                 showDetailDialog = false
+                viewModel.updatePriceEditTextState("")
             }
+            Dialog(properties = DialogProperties(usePlatformDefaultWidth = false),
+                onDismissRequest = onDismiss,
+                content = {
+                    ProductDetail(product = product, onDismiss = onDismiss)
+                })
+        }
 
         Surface(onClick = {showDetailDialog = true}, modifier = modifier,
             color = MaterialTheme.colors.surface) {
@@ -756,11 +492,13 @@ class HomeFragment:Fragment() {
                         Text(text = product.getDescription(),
                             style = MaterialTheme.typography.h6,
                             color = MaterialTheme.colors.onSurface,
-                            modifier = Modifier.padding(start = 16.dp, end = 8.dp))
+                            modifier = Modifier.padding(start = 16.dp, end = 8.dp),
+                            maxLines = 2)
                         Text(text = product.getPlaceOfPurchase(),
                             style = MaterialTheme.typography.subtitle2,
                             color = if(!isSystemInDarkTheme()) PetrolBlue else SilverGrey,
-                            modifier = Modifier.padding(start = 16.dp, end = 8.dp))
+                            modifier = Modifier.padding(start = 16.dp, end = 8.dp),
+                            maxLines = 1)
                     }
                     Text(text = "$${product.getPrice()}",
                         style = MaterialTheme.typography.h5,
@@ -777,19 +515,86 @@ class HomeFragment:Fragment() {
         }
     }
 
-    /*Creates a dialog with the product details*/
     @OptIn(ExperimentalComposeUiApi::class)
     @Composable
-    private fun showCustomDetailDialog(product: Product,onDismiss:() -> Unit){
-        Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            productDetail(product = product, onDismiss = onDismiss)
+    private fun DetailPriceSection(product: Product, editPrice:Boolean,
+                                   onEditCompleted:() -> Unit){
+        val focusRequester = remember { FocusRequester() }
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
+        val textState by viewModel.priceEditTextState
+        val errorState by viewModel.priceEditError
+
+        val onDoneClicked = {
+            keyboardController?.hide()
+            focusManager.clearFocus()
+            if(textState.isNotEmpty()){
+                product.updatePrice(textState.toDouble())
+                viewModel.updateProduct(product)
+                Toast.makeText(context,resources.getString(R.string.price_updated_msg),Toast.LENGTH_SHORT).show()
+            }
+            onEditCompleted()
+        }
+
+        Row(modifier = Modifier
+            .padding(top = 4.dp, start = 16.dp, end = 16.dp)
+            .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start) {
+            Text(text = stringResource(id = R.string.price_title), modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
+            if(!editPrice){
+                Text(text = "$${product.getPrice()}",
+                    style = MaterialTheme.typography.h6,color = MaterialTheme.colors.secondary)
+            }else{
+                /*TODO("asegurar que teclado muestra punto o coma, deshabilitar click largo")*/
+                OutlinedTextField(value = textState,
+                    isError = errorState,
+                    placeholder = {
+                        Text(text = "$${product.getPrice()}",
+                            style = MaterialTheme.typography.h6,
+                            color = MaterialTheme.colors.secondary.copy(alpha = 0.8f))
+                    },
+                    onValueChange = { viewModel.updatePriceEditTextState(it) },
+                    modifier = Modifier
+                        .weight(1.5f)
+                        .focusRequester(focusRequester),
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(onClick = { onDoneClicked() }, enabled = !errorState) {
+                            Icon(imageVector = Icons.Default.Done, contentDescription = "",
+                            tint = if(!errorState) MaterialTheme.colors.primaryVariant
+                                else MaterialTheme.colors.error)
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        imeAction = ImeAction.Done,
+                        keyboardType = KeyboardType.Number),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if(!errorState)
+                                onDoneClicked()
+                        }
+                    ),
+                    colors = TextFieldDefaults.textFieldColors(
+                        backgroundColor = Color.Transparent,
+                        cursorColor = MaterialTheme.colors.primaryVariant.copy(ContentAlpha.medium),
+                        textColor = MaterialTheme.colors.secondary
+                    ),
+                    textStyle = MaterialTheme.typography.h6)
+            }
         }
     }
 
+    /*Defines the content for a dialog that displays the details of a selected product*/
     @Composable
-    private fun productDetail(product:Product,onDismiss: () -> Unit, modifier: Modifier = Modifier){
+    private fun ProductDetail(product:Product, onDismiss: () -> Unit, modifier: Modifier = Modifier){
+        var editPrice by remember {
+            mutableStateOf(false)
+        }
+
         Box(modifier = modifier
-            .background(White.copy(0f))
+            .background(Color.Transparent)
             .padding(24.dp)
             .fillMaxWidth()) {
             Surface(modifier = Modifier
@@ -815,28 +620,27 @@ class HomeFragment:Fragment() {
                             .paddingFromBaseline(top = 6.dp)
                             .padding(start = 8.dp, end = 8.dp)
                             .fillMaxWidth())
+
+                    DetailPriceSection(product = product, editPrice = editPrice,
+                        onEditCompleted = {
+                            editPrice = false
+                            viewModel.updatePriceEditTextState("")
+                        })
                     
                     Row(modifier = Modifier
                         .padding(top = 4.dp, start = 16.dp, end = 16.dp)
                         .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = stringResource(id = R.string.price_title), modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
-                        Text(text = "$${product.getPrice()}",
-                            style = MaterialTheme.typography.h6,color = MaterialTheme.colors.secondary)
-                    }
-                    
-                    Row(modifier = Modifier
-                        .padding(top = 4.dp, start = 16.dp, end = 16.dp)
-                        .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically) {
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start) {
                         Text(text = stringResource(id = R.string.modified_date_desc), modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
                         Text(text = DateUtils.formatDate(product.getUpdateDate()),
                             style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.onSurface)
                     }
-                    
-                    detailDialogBottomActionBar(product,onDismiss)
+                    DetailDialogBottomActionBar(product,onDismiss,
+                        onEditPriceClicked = {
+                            editPrice = !editPrice
+                        })
                 }
             }
             Surface(modifier = Modifier
@@ -844,37 +648,46 @@ class HomeFragment:Fragment() {
                 .width(90.dp)
                 .align(Alignment.TopCenter), shape = MaterialTheme.shapes.medium,
                 border = BorderStroke(3.dp,MaterialTheme.colors.onSurface)) {
-                Image(painter = painterResource(id = R.drawable.ic_connection_error), contentDescription = "",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(3.dp)
-                        .align(Alignment.Center))
+                val imgModifier = Modifier
+                    .fillMaxSize()
+                    .padding(3.dp)
+                    .align(Alignment.Center)
+                product.getImage()?.let {
+                    Image(bitmap = it.asImageBitmap(), contentDescription = "",
+                        modifier = imgModifier, contentScale = ContentScale.Crop)
+                    return@Surface
+                }
+                Image(painter = painterResource(id = R.drawable.ic_image), contentDescription = "",
+                    modifier = imgModifier, contentScale = ContentScale.Crop)
             }
         }
     }
 
     @Composable
-    private fun detailDialogBottomActionBar(product: Product,onDismiss: () -> Unit){
+    private fun DetailDialogBottomActionBar(product: Product, onDismiss: () -> Unit,
+                                            onEditPriceClicked:() -> Unit){
         /*Creates a dialog that provides the option to delete the current selected product*/
         var showDeleteProductDialog by remember {
             mutableStateOf(false)
         }
-        if(showDeleteProductDialog){
-            customAlertDialog(title = stringResource(id = R.string.delete_product_string),
-                msg = stringResource(id = R.string.delete_product_dialog_msg),
-                confirmButtonText = stringResource(id = R.string.accept_button_string),
-                dismissButtonText = stringResource(id = R.string.cancel_button_string),
-                onConfirm = {
-                    showDeleteProductDialog = false
-                    onDismiss()
-                    viewModel.deleteProduct(product)
-                    Toast.makeText(requireContext(),getString(R.string.delete_success_msg,product.getDescription()),
-                        Toast.LENGTH_SHORT).show()
-                },
-                onDismiss = {
-                    showDeleteProductDialog = false
-                })
-        }
+        CustomAlertDialog(show = showDeleteProductDialog,
+            title = stringResource(id = R.string.delete_product_string),
+            msg = {
+                Text(text = stringResource(id = R.string.delete_product_dialog_msg),
+                    color = MaterialTheme.colors.onSurface)
+            },
+            confirmButtonText = stringResource(id = R.string.accept_button_string),
+            dismissButtonText = stringResource(id = R.string.cancel_button_string),
+            onConfirm = {
+                showDeleteProductDialog = false
+                onDismiss()
+                viewModel.deleteProduct(product)
+                Toast.makeText(requireContext(),getString(R.string.delete_success_msg,product.getDescription()),
+                    Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = {
+                showDeleteProductDialog = false
+            })
 
         Row(modifier = Modifier
             .padding(top = 8.dp, bottom = 3.dp)
@@ -893,8 +706,7 @@ class HomeFragment:Fragment() {
                 }),
                 AppBarAction(stringResource(id = R.string.update_price_button_desc),
                     icon = ImageUtils.createImageVector(drawableRes = R.drawable.ic_add_price), action = {
-                        onDismiss()
-                        navigateToAddFragment()
+                        onEditPriceClicked()
                     })
             )
 
@@ -912,79 +724,61 @@ class HomeFragment:Fragment() {
         }
     }
 
-    @Composable
-    private fun customAlertDialog(title:String, msg:String?,confirmButtonText:String,
-          dismissButtonText:String?,onConfirm:() -> Unit, onDismiss:()->Unit){
-        AlertDialog(
-            onDismissRequest = {},
-            shape = MaterialTheme.shapes.medium.copy(CornerSize(10.dp)),
-            title = {
-                Text(text = title,
-                    color = MaterialTheme.colors.onSurface)
-            },
-            text = {
-                msg?.let {
-                    return@let Text(text = msg,
-                        color = MaterialTheme.colors.onSurface)
-                }
-            },
-            backgroundColor = MaterialTheme.colors.surface,
-            confirmButton = {
-                Button(onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary,
-                    contentColor = MaterialTheme.colors.onSecondary)) {
-                Text(text = confirmButtonText)
-            }},
-            dismissButton = {
-                dismissButtonText?.let {
-                    Button(onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.error,
-                            contentColor = MaterialTheme.colors.onError)) {
-                        Text(text = dismissButtonText)
-                    }
-                }
-            },
-            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
-        )
-    }
+    /*@Composable
+    private fun filterProductsDialog(show:Boolean,onConfirm:(Double) -> Unit,onDismiss: () -> Unit,
+                                     modifier: Modifier = Modifier){
+        if(!show)
+            return
 
-    @Preview
-    @Composable
-    private fun deleteProductPreview(){
-        PriceRecorderTheme {
-            customAlertDialog(title = stringResource(id = R.string.delete_product_string),
-                msg = stringResource(id = R.string.delete_product_dialog_msg),
-                confirmButtonText = stringResource(id = R.string.accept_button_string),
-                dismissButtonText = stringResource(id = R.string.cancel_button_string),
-                onConfirm = {},
-                onDismiss = {})
+        var categorySwitchState by remember { mutableStateOf(false) }
+
+        Surface(modifier = modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+            border = BorderStroke(3.dp,MaterialTheme.colors.onSurface),
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colors.surface) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally){
+                Text(text = stringResource(id = R.string.filter_dialog_title),
+                    style = MaterialTheme.typography.h6, modifier = Modifier.padding(16.dp))
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
+                    Text(text = stringResource(id = R.string.category_input_string),
+                        style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.onSurface,
+                        modifier = Modifier.weight(1f))
+                    Switch(checked = categorySwitchState, onCheckedChange = { categorySwitchState = it })
+                }
+                Divider(thickness = 2.dp,
+                    color = MaterialTheme.colors.secondary.copy(0.7f),
+                    modifier = Modifier.padding(start = 30.dp, end = 30.dp))
+            }
         }
     }
 
-    //@Preview(heightDp = 450, widthDp = 360, uiMode = UI_MODE_NIGHT_YES)
+    @Preview(heightDp = 450, widthDp = 360)
     @Composable
-    fun productDetailPreview(){
+    fun filterDialogPreview(){
         PriceRecorderTheme {
-            productDetail(product = Product("Leche La Serenisima",250.0,"Carrefour Market",
+            filterProductsDialog(show = true, onConfirm = {}, onDismiss = {})
+        }
+    }*/
+
+    @Preview(heightDp = 450, widthDp = 360, uiMode = UI_MODE_NIGHT_YES)
+    @Composable
+    fun ProductDetailPreview(){
+        PriceRecorderTheme {
+            ProductDetail(product = Product("Leche La Serenisima",250.0,"Carrefour Market",
                 "Lacteos",DateUtils.getCurrentDate()),{})
         }
     }
 
     //@Preview(widthDp = 360)
     @Composable
-    private fun listItemProductPreview(){
+    private fun ListItemProductPreview(){
         PriceRecorderTheme {
-            listItemProduct(product = Product("Leche La Serenisima",250.0,"Carrefour Market",
+            ListItemProduct(product = Product("Leche La Serenisima",250.0,"Carrefour Market",
                 "",DateUtils.getCurrentDate())
             )
-        }
-    }
-
-    //@Preview(showBackground = true)
-    @Composable
-    private fun scrollToTopButtonPreview(){
-        PriceRecorderTheme {
-            scrollToTopButton {}
         }
     }
 }

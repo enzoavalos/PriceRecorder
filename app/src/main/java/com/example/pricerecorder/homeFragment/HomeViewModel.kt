@@ -2,68 +2,72 @@ package com.example.pricerecorder.homeFragment
 
 import android.app.Application
 import android.content.res.Resources
-import android.view.View
-import androidx.compose.runtime.MutableState
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.*
+import com.example.pricerecorder.CurrencyFormatter
 import com.example.pricerecorder.DateUtils
 import com.example.pricerecorder.R
 import com.example.pricerecorder.SearchWidgetState
 import com.example.pricerecorder.database.Product
-import com.example.pricerecorder.database.ProductDatabaseDao
-import kotlinx.coroutines.Job
+import com.example.pricerecorder.database.ProductsRepository
 import kotlinx.coroutines.launch
-import java.util.*
 import kotlin.math.ceil
 
-class HomeViewModel(private val database: ProductDatabaseDao,application: Application): AndroidViewModel(application){
-    private var viewModelJob = Job()
-    val products : LiveData<List<Product>> = database.getAllProducts()
+class HomeViewModel(application: Application): AndroidViewModel(application){
+    private val repository = ProductsRepository.getInstance(application)
+    val products : LiveData<List<Product>>
+        get() = repository.products
+    var searchWidgetState:State<SearchWidgetState> = repository.searchWidgetState
+    var searchTextState: State<String> = repository.searchTextState
+    var searching: State<Boolean> = repository.searching
+
     var filteredList : MutableList<Product>? = null
 
-    /*Both public val's will expose their values to composable functions, and ares used to track the state
-    * of the search bar and its text*/
-    private val _searchWidgetState: MutableState<SearchWidgetState> =
-        mutableStateOf(SearchWidgetState.CLOSED)
-    val searchWidgetState:State<SearchWidgetState> = _searchWidgetState
-    private val _searchTextState: MutableState<String> = mutableStateOf("")
-    val searchTextState: State<String> = _searchTextState
+    private val _priceEditTextState = mutableStateOf("")
+    val priceEditTextState : State<String> = _priceEditTextState
+    private val _priceEditError = mutableStateOf(false)
+    val priceEditError : State<Boolean> = _priceEditError
+
+    fun updatePriceEditTextState(newValue: String){
+        /*TODO("arreglar bugs al manejar numeros y caracteres")*/
+        _priceEditError.value = !CurrencyFormatter.isInputNumericValid(newValue)
+        if(!priceEditError.value)
+            _priceEditTextState.value = CurrencyFormatter.formatInput(newValue)
+        else
+            _priceEditTextState.value = newValue
+    }
 
     fun updateSearchWidgetState(newValue: SearchWidgetState){
-        _searchWidgetState.value = newValue
+        repository.updateSearchWidgetState(newValue)
     }
 
     fun updateSearchTextState(newValue: String){
-        _searchTextState.value = newValue
+        repository.updateSearchTextState(newValue)
     }
 
     fun deleteProduct(product: Product){
         viewModelScope.launch {
-            database.delete(product)
+            repository.deleteProduct(product)
         }
     }
 
     fun clear(){
         viewModelScope.launch {
-            database.clearDb()
+            repository.clear()
         }
     }
 
     fun addProduct(product: Product){
         viewModelScope.launch {
-            database.insert(product)
+            repository.insertProduct(product)
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        viewModelJob.cancel()
     }
 
     fun updateProduct(p:Product){
         viewModelScope.launch {
-            database.update(p.getProductId(),p.getPrice(),p.getUpdateDate())
+            repository.update(p)
         }
     }
 
@@ -109,17 +113,6 @@ class HomeViewModel(private val database: ProductDatabaseDao,application: Applic
     fun filterByCategory(cat:String?){
         val list = products.value?.filter { it.getCategory() == cat }
         filteredList = list as MutableList<Product>
-    }
-
-    fun filterByUserSearch(query:String) : MutableList<Product>{
-        val tempList : MutableList<Product> = mutableListOf()
-        val list = filteredList ?: products.value!!
-        list.forEach {
-            if(it.getDescription().lowercase(Locale.getDefault()).contains(query)){
-                tempList.add(it)
-            }
-        }
-        return tempList
     }
 
     fun filterByDate(date:String){

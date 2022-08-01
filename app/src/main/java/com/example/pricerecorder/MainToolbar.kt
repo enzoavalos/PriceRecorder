@@ -2,27 +2,27 @@ package com.example.pricerecorder
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
 import com.example.pricerecorder.theme.PriceRecorderShapes
 import com.example.pricerecorder.theme.PriceRecorderTheme
 
@@ -31,12 +31,12 @@ data class AppBarAction(
     val name:String,
     val icon:ImageVector?,
     val action: () -> Unit,
-    var enabled:Boolean = true
+    var enabled: Boolean = true
 )
 
 /*Creates an app bar and receives a title and a composable content to be able to be set dynamically*/
 @Composable
-fun showTopAppBar(appBarTitle: String, actionItems:List<AppBarAction>,
+fun ShowTopAppBar(appBarTitle: String, actionItems:List<AppBarAction>,
                   navigationIcon: (@Composable () -> Unit)?, modifier:Modifier = Modifier){
     TopAppBar(
         title = { Text(appBarTitle) },
@@ -50,15 +50,16 @@ fun showTopAppBar(appBarTitle: String, actionItems:List<AppBarAction>,
                   actions.forEach {
                       IconButton(
                           onClick = it.action,
-                          content = { Icon(imageVector = it.icon!!,contentDescription = it.name) },
-                          modifier = Modifier.alpha(1f)
+                          enabled = it.enabled,
+                          content = { Icon(imageVector = it.icon!!,contentDescription = it.name,
+                              tint = MaterialTheme.colors.onPrimary,modifier = Modifier.alpha(1f)) }
                       )
                   }
 
             if(options.isNotEmpty()) {
                 /*State declared to keep track of the menu visibility*/
                 val isExpanded = remember { mutableStateOf(false) }
-                overflowMenu(isExpanded = isExpanded.value,
+                OverflowMenu(isExpanded = isExpanded.value,
                     setExpanded = {
                         isExpanded.value = it
                     }, options = options)
@@ -69,14 +70,39 @@ fun showTopAppBar(appBarTitle: String, actionItems:List<AppBarAction>,
 }
 
 @Composable
-fun searchAppBar(text:String,onTextChange:(String) -> Unit,
-    onCloseClicked:() -> Unit,onSearchClicked:(String) -> Unit){
+fun HomeAppBar(onSearchClick: () -> Unit, onFilterClick: () -> Unit, onDeleteAllClicked:() -> Unit,
+               onSettingsClicked:() -> Unit){
+    ShowTopAppBar(stringResource(R.string.app_name),
+        navigationIcon = null
+        , actionItems = listOf(
+            AppBarAction(stringResource(id = R.string.search_view_hint),
+                Icons.Filled.Search, onSearchClick),
+            AppBarAction(stringResource(id = R.string.filter_dialog_title),
+                Icons.Filled.FilterList,onFilterClick),
+            AppBarAction(stringResource(id = R.string.delete_all_menu_option),null,onDeleteAllClicked),
+            AppBarAction(stringResource(id = R.string.setting_fragment_title),null,onSettingsClicked)
+        ))
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun SearchAppBar(text:String, onTextChange:(String) -> Unit,
+                 onCloseClicked:() -> Unit){
+    /*Used to manage clearing focus from the text field when onSearchClicked is called*/
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    BackPressHandler(onBackPressed = onCloseClicked)
+
     Surface(modifier = Modifier
         .fillMaxWidth()
         .height(56.dp),
         elevation = AppBarDefaults.TopAppBarElevation,
         color = MaterialTheme.colors.primary) {
-        TextField(value = text, onValueChange = { onTextChange(it) }, modifier = Modifier.fillMaxWidth(),
+        TextField(value = text, onValueChange = { onTextChange(it) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
             placeholder = { Text(modifier = Modifier.alpha(ContentAlpha.medium),
                 text = stringResource(id = R.string.search_view_hint),
                 color = MaterialTheme.colors.onPrimary) },
@@ -106,27 +132,37 @@ fun searchAppBar(text:String,onTextChange:(String) -> Unit,
                 imeAction = ImeAction.Search
             ),
             keyboardActions = KeyboardActions(
-                onSearch = { onSearchClicked(text) }
+                onSearch = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                }
             ),
             colors = TextFieldDefaults.textFieldColors(
                 backgroundColor = Color.Transparent,
-                cursorColor = MaterialTheme.colors.onPrimary.copy(ContentAlpha.medium)
+                cursorColor = MaterialTheme.colors.primaryVariant
             ))
+
+        /*Suspends recomposition and request focus for the component associated to the focusRequester*/
+        LaunchedEffect(key1 = null){
+            focusRequester.requestFocus()
+        }
     }
 }
 
 /*Creates an overflow menu with the options given*/
 @Composable
-private fun overflowMenu(isExpanded:Boolean,setExpanded:(Boolean) -> Unit,options:List<AppBarAction>){
+private fun OverflowMenu(isExpanded:Boolean, setExpanded:(Boolean) -> Unit, options:List<AppBarAction>){
     IconButton(onClick = { setExpanded(true) }) {
-        Icon(imageVector = Icons.Filled.MoreVert, contentDescription = stringResource(id = R.string.overflow_menu_description))
+        Icon(imageVector = Icons.Filled.MoreVert, contentDescription = stringResource(id = R.string.overflow_menu_description),
+            tint = MaterialTheme.colors.onPrimary,modifier = Modifier.alpha(1f))
     }
     MaterialTheme(shapes = PriceRecorderShapes.copy(medium = RoundedCornerShape(0.dp))) {
         DropdownMenu(expanded = isExpanded, onDismissRequest = { setExpanded(false) },
             offset = DpOffset(x = 0.dp, y = (-8).dp)
         ) {
             options.forEach { option ->
-                DropdownMenuItem(onClick = {
+                DropdownMenuItem(enabled = option.enabled,
+                    onClick = {
                     option.action()
                     setExpanded(false)
                 }) {
@@ -137,26 +173,11 @@ private fun overflowMenu(isExpanded:Boolean,setExpanded:(Boolean) -> Unit,option
     }
 }
 
-@Composable
-fun homeAppBar(onSearchClick: () -> Unit, onFilterClick: () -> Unit,onDeleteAllClicked:() -> Unit,
-               onSettingsClicked:() -> Unit){
-    showTopAppBar(stringResource(R.string.app_name),
-        navigationIcon = null
-        , actionItems = listOf(
-            AppBarAction(stringResource(id = R.string.search_view_hint),
-                Icons.Filled.Search, onSearchClick),
-            AppBarAction(stringResource(id = R.string.filter_dialog_title),
-                Icons.Filled.FilterList,onFilterClick),
-            AppBarAction(stringResource(id = R.string.delete_all_menu_option),null,onDeleteAllClicked),
-            AppBarAction(stringResource(id = R.string.setting_fragment_title),null,onSettingsClicked)
-        ))
-}
-
 @Preview
 @Composable
-private fun homeAppBarPreview(){
+private fun HomeAppBarPreview(){
     PriceRecorderTheme {
-        showTopAppBar(stringResource(R.string.app_name),
+        ShowTopAppBar(stringResource(R.string.app_name),
             navigationIcon = null,
             actionItems = listOf(
                 AppBarAction(stringResource(id = R.string.search_view_hint),Icons.Filled.Search,{}),
@@ -169,8 +190,8 @@ private fun homeAppBarPreview(){
 
 @Preview
 @Composable
-private fun searchAppBarPreview(){
+private fun SearchAppBarPreview(){
     PriceRecorderTheme {
-        searchAppBar(text = "Lorem ipsun", onTextChange = {}, onCloseClicked = {}, onSearchClicked = {})
+        SearchAppBar(text = "Lorem ipsum", onTextChange = {}, onCloseClicked = {})
     }
 }

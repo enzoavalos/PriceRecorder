@@ -7,7 +7,6 @@ import com.example.pricerecorder.DateUtils
 import java.lang.Exception
 
 @Entity(tableName = "products_table")
-@TypeConverters(Converters::class)
 data class Product(
     @ColumnInfo(name = "description")
     private var description : String,

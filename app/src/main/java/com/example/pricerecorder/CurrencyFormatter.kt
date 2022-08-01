@@ -1,50 +1,44 @@
 package com.example.pricerecorder
 
-import android.widget.EditText
 import com.example.pricerecorder.addFragment.AddFragment
 
 /*Class responsible for formatting a text numeric input into a valid currency format*/
 class CurrencyFormatter {
     companion object{
-        fun formatInput(editText: EditText){
-            var sequence:String = editText.text.toString()
-            var cursorPosition = editText.selectionStart
+        fun isInputNumericValid(input:String):Boolean{
+            if(input.isEmpty())
+                return true
+            return !input.startsWith('.') and (input.toDoubleOrNull() != null)
+        }
 
-            if(sequence.isNotEmpty()){
-                //Allows only 5 integral digits
-                if((!sequence.contains('.')) and (sequence.length > AddFragment.MAX_INTEGRAL_DIGITS)) {
-                    sequence = sequence.dropLast(1)
-                    cursorPosition -= 1
-                }
+        fun formatInput(input:String):String{
+            var output = input
 
-                //Adds a 0 to the start if the price starts with a "."
-                if(sequence.startsWith(".")) {
-                    sequence = "0$sequence"
-                    cursorPosition += 1
-                }
-
-                //Does not allow numbers starting with 0
+            if(output.isNotEmpty()){
+                //Does not allow numbers with a 0 on the leftmost side of the integral part
                 var pattern = Regex("^0[0-9]")
-                if(sequence.contains(pattern)) {
-                    sequence = sequence.dropWhile { it == '0' }
-                    if(sequence.isEmpty()) {
-                        sequence = "0"
-                        cursorPosition = 1
-                    }else{
-                        cursorPosition = sequence.length
-                    }
+                if(output.contains(pattern)) {
+                    output = output.dropWhile { it == '0' }
+                    if(output.isEmpty())
+                        output = "0"
                 }
 
                 //Allows only 2 decimal digits
                 pattern = Regex("\\..[0-9]+")
-                if(sequence.contains(pattern)) {
-                    sequence = sequence.dropLast(1)
-                    cursorPosition-=1
-                }
+                if(output.contains(pattern))
+                    output = output.dropLast(1)
 
-                editText.setText(sequence)
-                editText.setSelection(cursorPosition)
+                //Allows only 6 integral digits
+                var (integrals,decimals,separator) = if(output.contains('.'))
+                    listOf(output.substringBefore('.'),output.substringAfter('.'),".")
+                    else listOf(output,"","")
+
+                if(integrals.isNotEmpty() and (integrals.length > AddFragment.MAX_INTEGRAL_DIGITS))
+                    integrals = integrals.dropLast(1)
+
+                output = "$integrals$separator$decimals"
             }
+            return output
         }
     }
 }

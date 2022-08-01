@@ -1,131 +1,101 @@
 package com.example.pricerecorder.settingsFragment
 
 import android.app.Application
-import android.app.Dialog
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AppCompatActivity
-import androidx.databinding.DataBindingUtil
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.Navigation
-import com.example.pricerecorder.ConnectivityChecker
-import com.example.pricerecorder.DateUtils
+import androidx.navigation.fragment.findNavController
+import com.example.pricerecorder.*
 import com.example.pricerecorder.R
 import com.example.pricerecorder.database.ProductDatabase
-import com.example.pricerecorder.databinding.SettingsFragmentBinding
-import com.example.pricerecorder.databinding.UploadProgressIndicatorLayoutBinding
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
+import com.example.pricerecorder.theme.PriceRecorderTheme
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.io.File
 
 class SettingsFragment : Fragment(){
-    private lateinit var binding : SettingsFragmentBinding
     private lateinit var viewModel: SettingsFragmentViewModel
     private lateinit var database : ProductDatabase
-    /*Variables used for accessing firebase functionality as authentication and cloud storage*/
-    private lateinit var mAuth : FirebaseAuth
-    private lateinit var storageRef : StorageReference
     companion object{
         //Equivalent to 1 Gigabyte
         const val MAX_DOWNLOAD_SIZE = 1L * 1024 * 1024 * 1024
     }
+
+    data class SectionOption(
+        val title:String,
+        var desc:String? = null,
+        var onClick:() -> Unit
+    )
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = DataBindingUtil.inflate(inflater, R.layout.settings_fragment,container,false)
-
         val application: Application = requireNotNull(this.activity).application
         database = ProductDatabase.getInstance(application)
-        val dataSource = database.productDatabaseDao
-        val viewModelFactory = SettingFragmentViewModelFactory(dataSource,application)
+        val viewModelFactory = SettingFragmentViewModelFactory(application)
         viewModel = ViewModelProvider(this, viewModelFactory)[SettingsFragmentViewModel::class.java]
-        binding.viewModel = viewModel
+        viewModel.getLastBackupDate()
 
-        viewModel.viewClicked.observe(viewLifecycleOwner) {
-            it?.let {
-                when (it) {
-                    R.id.account_section -> navigateToSignInFragment()
-                    R.id.export_data_view -> saveBackupToCloudStorage()
-                    R.id.import_data_view -> getBackupFromCloudStorage()
-                }
-                viewModel.onClickEventHandled()
+        return ComposeView(requireContext()).apply {
+            setContent {
+                SettingsScreen()
             }
         }
-
-        /*Handles the back device button pressed event. In this case is used to navigate back to the home fragment.
-        It is explicitly added because otherwise, after restoring the db, the changes are not shown in the home fragment*/
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner,
-        object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                navigateUp()
-            }
-        })
-
-        /*Entry point of the firebase authentication sdk*/
-        mAuth = FirebaseAuth.getInstance()
-        val user = mAuth.currentUser
-        if(user != null)
-            setUserInfo(user)
-        /*Creates a reference to upload,download or delete files. It can be thought as a pointer to a file in the cloud*/
-        storageRef = FirebaseStorage.getInstance().reference
-        setLastBackupDate()
-
-        setHasOptionsMenu(true)
-        return binding.root
-    }
-
-    /*Gets the date of the last backup performed by the user only in the case one has been made*/
-    private fun setLastBackupDate(){
-        when{
-            !isUserSignedIn(false) -> return
-            !checkInternetConnection(false) -> return
-            else -> {
-                val fileRef = storageRef.child("room_backups/" + mAuth.currentUser!!.uid)
-                fileRef.metadata.addOnSuccessListener {
-                    val modifiedDate = DateUtils.formatDate(it.creationTimeMillis)
-                    binding.exportDateTextview.text = resources.getString(R.string.last_export_date,modifiedDate)
-                }
-            }
-        }
-    }
-
-    /*Check if the user is currently signed in with its google account*/
-    private fun isUserSignedIn(navigate:Boolean) : Boolean{
-        return if(mAuth.currentUser == null){
-            if(navigate)
-                navigateToSignInFragment()
-            false
-        }else
-            true
     }
 
     /*Downloads the backup file associated to the user from firebase cloud storage*/
     private fun getBackupFromCloudStorage(){
         when {
-            !isUserSignedIn(true) -> return
-            !checkInternetConnection(true) -> return
+            !viewModel.isUserSignedIn { navigateToSignInFragment() } -> return
+            !viewModel.checkInternetConnection{
+                Toast.makeText(requireContext(), getString(R.string.no_internet_signal_msg), Toast.LENGTH_SHORT).show()
+            } -> return
             else -> {
-                val pair = createProgressDialog(R.string.downloading_in_progress_title,R.string.dowloading_msg)
-                val dialog = pair.first
-                val fileRef = storageRef.child("room_backups/" + mAuth.currentUser!!.uid)
-                fileRef.getBytes(MAX_DOWNLOAD_SIZE)
-                    .addOnSuccessListener {
-                        importBackupToDatabase(it)
-                        dialog.dismiss()
+                val fileRef = viewModel.storageRef.child("room_backups/" + viewModel.user.value!!.uid)
+
+                createProgressNotification(
+                    requireContext(),
+                    DOWNLOAD_NOTIFICATION_ID,
+                    R.drawable.ic_download,
+                    getString(R.string.download_notification_title),
+                    null,
+                    indefinite = true,
+                    pendingWork = { _, onComplete ->
+                        fileRef.getBytes(MAX_DOWNLOAD_SIZE)
+                            .addOnSuccessListener {
+                                importBackupToDatabase(it)
+                                viewModel.notifyDatabaseRestored()
+                                onComplete(getString(R.string.download_notification_success_text),
+                                    R.drawable.ic_download_done)
+                            }
+                            .addOnFailureListener {
+                                onComplete(getString(R.string.download_notification_failed_text),
+                                    R.drawable.ic_warning)
+                                Toast.makeText(requireContext(), it.message, Toast.LENGTH_SHORT).show()
+                            }
                     }
-                    .addOnFailureListener {
-                        dialog.dismiss()
-                        Toast.makeText(requireContext(), it.message, Toast.LENGTH_SHORT).show()
-                    }
+                )
             }
         }
     }
@@ -138,97 +108,184 @@ class SettingsFragment : Fragment(){
     }
 
     /*Saves the db backup file created in firebase storage*/
-    private fun saveBackupToCloudStorage(){
-        when {
-            !isUserSignedIn(true) -> return
-            !checkInternetConnection(true) -> return
-            else -> {
-                val backupFile = createDbBackup()
-                if (backupFile != null) {
-                    val backupRef = storageRef.child("room_backups/" + mAuth.currentUser!!.uid)
+    private fun saveBackupToCloudStorage(backupFile:File?){
+        if (backupFile != null) {
+            val backupRef = viewModel.storageRef.child("room_backups/" + viewModel.user.value!!.uid)
 
-                    val pair = createProgressDialog(R.string.uploading_in_progress_msg,R.string.percentage_uploaded_msg)
-                    val dialog = pair.first
-                    val dialogBinding = pair.second
-                    backupRef.putBytes(backupFile.readBytes())
-                        .addOnSuccessListener {
-                            dialog.dismiss()
-                            Toast.makeText(requireContext(),
-                                R.string.backup_successful_msg,
-                                Toast.LENGTH_SHORT).show()
-                        }
-                        .addOnFailureListener {
-                            dialog.dismiss()
-                            Toast.makeText(requireContext(), it.message, Toast.LENGTH_SHORT).show()
-                        }
-                        .addOnProgressListener {
-                            val progress = (100 * it.bytesTransferred) / it.totalByteCount
-                            dialogBinding.uploadProgressTextview.text =
-                                resources.getString(R.string.percentage_uploaded_msg,
-                                    "${progress}%")
-                        }
+            createProgressNotification(
+                requireContext(),
+                UPLOAD_NOTIFICATION_ID,
+                R.drawable.ic_cloud_upload,
+                getString(R.string.uploading_in_progress_msg),
+                null,
+                false,
+            ){ setProgress, onComplete ->
+                backupRef.putBytes(backupFile.readBytes())
+                    .addOnSuccessListener {
+                        onComplete(getString(R.string.upload_notification_success_text),
+                            R.drawable.ic_download_done)
+                        Toast.makeText(requireContext(),
+                            R.string.upload_notification_success_text,
+                            Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener {
+                        onComplete(getString(R.string.upload_notification_failed_text),
+                            R.drawable.ic_warning)
+                        Toast.makeText(requireContext(), it.message, Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnProgressListener {
+                        val progress = ((100 * it.bytesTransferred) / it.totalByteCount).toInt()
+                        setProgress(progress)
+                    }
+            }
+        }
+    }
+
+    /*Creates a db backup and stores it in a local file*/
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun createDbBackup(){
+        when{
+            !viewModel.isUserSignedIn { navigateToSignInFragment() } -> return
+            !viewModel.checkInternetConnection{
+                Toast.makeText(requireContext(), getString(R.string.no_internet_signal_msg), Toast.LENGTH_SHORT).show()
+            } -> return
+            else -> {
+                val deferred = viewModel.backupDatabaseAsync()
+                GlobalScope.launch {
+                    val backupSuccessful = deferred.await()
+                    if(backupSuccessful){
+                        saveBackupToCloudStorage(File(database.openHelper.writableDatabase.path))
+                    }else{
+                        Toast.makeText(requireContext(),getString(R.string.database_backup_error_msg),Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
     }
 
-    /*If the db was successfully backed up, it returns the file where it is stored*/
-    private fun createDbBackup() : File?{
-        if(viewModel.backupDatabase()){
-            return File(database.openHelper.writableDatabase.path)
-        }else{
-            Toast.makeText(requireContext(),getString(R.string.database_backup_error_msg),Toast.LENGTH_SHORT).show()
-        }
-        return null
-    }
-
-    /*Checks if the device currently has internet connection*/
-    private fun checkInternetConnection(showMsg:Boolean) : Boolean{
-        if(!ConnectivityChecker.isOnline(requireActivity().application)){
-            if(showMsg)
-                Toast.makeText(requireContext(), getString(R.string.no_internet_signal_msg), Toast.LENGTH_SHORT).show()
-            return false
-        }
-        return true
-    }
-
-    /*Creates a bottom sheet dialog shows the user the current upload progress*/
-    private fun createProgressDialog(title:Int,msg:Int) : Pair<Dialog,UploadProgressIndicatorLayoutBinding>{
-        val dialogBinding = UploadProgressIndicatorLayoutBinding.inflate(layoutInflater)
-        dialogBinding.progressTitle.text = resources.getString(title)
-        when(msg){
-            R.string.percentage_uploaded_msg ->  dialogBinding.uploadProgressTextview.text = resources.getString(msg,"0%")
-            R.string.dowloading_msg -> dialogBinding.uploadProgressTextview.text = resources.getString(msg)
-        }
-
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(dialogBinding.root).create()
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.show()
-        dialog.window!!.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT)
-        dialog.window!!.setBackgroundDrawableResource(R.color.transparent)
-        dialog.window!!.attributes.windowAnimations = R.style.DialogAnimation
-        dialog.window!!.setGravity(Gravity.BOTTOM)
-        return Pair(dialog,dialogBinding)
-    }
-
-    private fun setUserInfo(user: FirebaseUser) {
-        binding.accountNameTextview.text = user.displayName
-        binding.accountEmailTextview.text = user.email
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId){
-            android.R.id.home -> navigateUp()
-        }
-        return true
-    }
-
     private fun navigateUp(){
-        Navigation.findNavController(binding.root).navigate(SettingsFragmentDirections.actionSettingsFragmentToHomeFragment())
+        findNavController().navigate(SettingsFragmentDirections.actionSettingsFragmentToHomeFragment())
     }
 
     private fun navigateToSignInFragment(){
-        Navigation.findNavController(binding.root).navigate(SettingsFragmentDirections.actionSettingsFragmentToSignInFragment())
+        findNavController().navigate(SettingsFragmentDirections.actionSettingsFragmentToSignInFragment())
+    }
+
+    @Composable
+    private fun SettingsScreen(){
+        BackPressHandler(onBackPressed = { navigateUp() })
+        val scaffoldState = rememberScaffoldState()
+
+        PriceRecorderTheme {
+            Scaffold(scaffoldState = scaffoldState,
+                backgroundColor = MaterialTheme.colors.background,
+                topBar = {
+                    ShowTopAppBar(appBarTitle = stringResource(id = R.string.setting_fragment_title),
+                        actionItems = listOf(),
+                        navigationIcon = {
+                            IconButton(onClick = { navigateUp() }) {
+                                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
+                            }
+                        })
+                }) {
+                SettingScreenContent(modifier = Modifier.padding(it))
+            }
+        }
+    }
+
+    @Composable
+    private fun SettingScreenContent(modifier: Modifier = Modifier){
+        val user by viewModel.user
+        val backupDate by viewModel.lastBackupDate
+
+        Surface(modifier = modifier.fillMaxSize(),
+            color = MaterialTheme.colors.surface) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())) {
+                SectionHeader(title = stringResource(id = R.string.account_section_title))
+                val accountTitle = user?.displayName ?: stringResource(id = R.string.sign_in_string)
+                val accountDesc = user?.email ?: stringResource(id = R.string.sign_in_description)
+                SectionOptions(options = listOf(
+                    SectionOption(title = accountTitle,
+                        desc = accountDesc, onClick = { navigateToSignInFragment() })
+                ))
+
+                SectionHeader(title = stringResource(id = R.string.db_section_title))
+                SectionOptions(options = listOf(
+                    SectionOption(title = stringResource(id = R.string.export_data_string),
+                        desc = backupDate ?: getString(R.string.no_backups_found_msg),
+                        onClick = { createDbBackup() }),
+                    SectionOption(title = stringResource(id = R.string.import_data_string),
+                        desc = stringResource(id = R.string.restore_data_description),
+                        onClick = { getBackupFromCloudStorage() })
+                ))
+
+                SectionHeader(title = stringResource(id = R.string.info_section_title))
+                SectionOptions(options = listOf(
+                    SectionOption(title = stringResource(id = R.string.version_title_string),
+                        desc = BuildConfig.VERSION_NAME, onClick = {}),
+                    SectionOption(title = stringResource(id = R.string.help_and_faq_string),
+                        onClick = {}),
+                    SectionOption(title = stringResource(id = R.string.about_title_string),
+                        onClick = {}),
+                    SectionOption(title = stringResource(id = R.string.review_app_string),
+                        onClick = {})
+                ))
+            }
+        }
+    }
+
+    @Composable
+    private fun SectionHeader(title:String, modifier: Modifier = Modifier){
+        Column(modifier = modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start) {
+            Text(text = title, color = MaterialTheme.colors.secondary,
+                style = MaterialTheme.typography.subtitle1,
+                modifier = Modifier.padding(start = 20.dp, top = 8.dp))
+            Divider(thickness = 2.dp,
+                color = MaterialTheme.colors.primary,
+                modifier = Modifier
+                    .padding(start = 12.dp, end = 12.dp)
+                    .fillMaxWidth())
+        }
+    }
+
+    @OptIn(ExperimentalMaterialApi::class)
+    @Composable
+    private fun SectionOptions(options:List<SectionOption>, modifier: Modifier = Modifier){
+        Column(modifier = modifier.fillMaxWidth()){
+            options.forEachIndexed { index, sectionOption ->
+                Surface(modifier = Modifier.fillMaxWidth(),
+                    onClick = sectionOption.onClick) {
+                    Column(modifier = modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start){
+                        Text(text = sectionOption.title, color = MaterialTheme.colors.onSurface,
+                            style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Normal, fontSize = 18.sp),
+                            modifier = Modifier
+                                .padding(start = 20.dp, top = 8.dp)
+                                .alpha(1f))
+
+                        val desc = sectionOption.desc
+                        if(!desc.isNullOrEmpty()) {
+                            Text(text = desc, color = MaterialTheme.colors.onSurface,
+                                style = MaterialTheme.typography.subtitle2.copy(fontWeight = FontWeight.Normal),
+                                modifier = Modifier
+                                    .padding(start = 20.dp)
+                                    .alpha(0.8f))
+                        }
+
+                        if(index < options.size-1){
+                            Divider(thickness = 1.dp,
+                                color = MaterialTheme.colors.primary,
+                                modifier = Modifier
+                                    .padding(start = 12.dp, end = 12.dp, top = 8.dp)
+                                    .fillMaxWidth()
+                                    .alpha(0.8f))
+                        }
+                    }
+                }
+            }
+        }
     }
 }

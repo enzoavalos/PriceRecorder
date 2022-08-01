@@ -3,9 +3,9 @@ package com.example.pricerecorder
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
 import java.io.ByteArrayOutputStream
-import java.util.*
 
 class Converters {
     /*Function to convert from a bitmap to a byte array, used to store an image in the Room DB*/

@@ -41,9 +41,8 @@ class EditFragment : Fragment() {
     ): View {
         val args : EditFragmentArgs by navArgs()
         val application: Application = requireNotNull(this.activity).application
-        val dataSource = ProductDatabase.getInstance(application).productDatabaseDao
         binding = DataBindingUtil.inflate(inflater,R.layout.edit_fragment,container,false)
-        viewModel = EditFragmentViewModel(dataSource)
+        viewModel = EditFragmentViewModel(application)
 
         /*Launches a coroutine and blocks the current thread until it is completed. It is designed to bridge regular
         * blocking code to libraries written in suspending style*/
@@ -65,7 +64,7 @@ class EditFragment : Fragment() {
         }
 
         /*Creates a dialog that gives the user th option to select an image from the gallery or take a picture*/
-        binding.includedLayout.addProductImage.setOnClickListener {
+        /*binding.includedLayout.addProductImage.setOnClickListener {
             val items = resources.getStringArray(R.array.add_image_dialog_items)
             if(productImage == null){
                 MaterialAlertDialogBuilder(requireContext())
@@ -107,14 +106,8 @@ class EditFragment : Fragment() {
                     dialog.setOnDismissListener { imgDialogDisplayed = false }
                 }
             }
-        }
+        }*/
 
-        /* An adapter for the dropdown input editText is created with the different categories*/
-        val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
-            resources.getStringArray(R.array.product_categories).sortedBy { it })
-        binding.includedLayout.categoryAutoCompleteTextView.setAdapter(arrayAdapter)
-
-        setHasOptionsMenu(true)
         return binding.root
     }
 
@@ -180,12 +173,12 @@ class EditFragment : Fragment() {
     /*Validates the inputs of each edit text*/
     private fun validateInputs(){
         binding.includedLayout.apply {
-            if(descriptionEditText.validateTextInput() and placeEditText.validateTextInput()
+            /*if(descriptionEditText.validateTextInput() and placeEditText.validateTextInput()
                 and (descriptionEditText.text!!.length <= AddFragment.DESCRIPTION_MAX_LENGTH)
                 and (placeEditText.text!!.length <= AddFragment.PLACE_MAX_LENGTH))
                 binding.includedLayout.acceptButton.setAcceptButtonEnabled(true)
             else
-                binding.includedLayout.acceptButton.setAcceptButtonEnabled(false)
+                binding.includedLayout.acceptButton.setAcceptButtonEnabled(false)*/
         }
     }
 
@@ -242,13 +235,6 @@ class EditFragment : Fragment() {
                 binding.includedLayout.addProductImage.setImageBitmap(it)
             }
         }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId){
-            android.R.id.home -> navigateUp()
-        }
-        return true
     }
 
     private fun navigateUp(){
