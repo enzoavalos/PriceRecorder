@@ -1,20 +1,28 @@
 package com.example.pricerecorder.editFragment
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductDatabaseDao
+import com.example.pricerecorder.database.ProductsRepository
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
-class EditFragmentViewModel(private val databaseDao: ProductDatabaseDao) : ViewModel() {
-    suspend fun getProductById(productId:Long): Product{
-        return databaseDao.get(productId)!!
+class EditFragmentViewModel(application: Application) : ViewModel() {
+    private val repository = ProductsRepository.getInstance(application)
+
+    fun getProductById(productId:Long): Product{
+        var product:Product?
+        runBlocking {
+            product = repository.getProductById(productId)
+        }
+        return product!!
     }
 
     fun updateProduct(p: Product){
         viewModelScope.launch {
-            databaseDao.update(p.getProductId(),p.getDescription(),p.getPlaceOfPurchase(),p.getCategory()
-                ,p.getImage())
+            repository.update(p)
         }
     }
 }

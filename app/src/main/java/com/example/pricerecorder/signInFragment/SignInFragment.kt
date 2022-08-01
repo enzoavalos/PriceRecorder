@@ -3,33 +3,53 @@ package com.example.pricerecorder.signInFragment
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.databinding.DataBindingUtil
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
-import androidx.navigation.Navigation
-import com.bumptech.glide.Glide
-import com.example.pricerecorder.ConnectivityChecker
+import androidx.lifecycle.MutableLiveData
+import androidx.navigation.fragment.findNavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.pricerecorder.*
 import com.example.pricerecorder.R
-import com.example.pricerecorder.databinding.SignInFragmentBinding
+import com.example.pricerecorder.theme.PriceRecorderTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 
 class SignInFragment : Fragment() {
-    private lateinit var binding: SignInFragmentBinding
-
     //Used for user authentication with google account
     private lateinit var mAuth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
-
+    /*Keeps track of the current logged user, in order to be used as a state*/
+    private val user = MutableLiveData<FirebaseUser?>()
     companion object {
         const val TAG = "Google_Sign_In"
     }
@@ -39,8 +59,6 @@ class SignInFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = DataBindingUtil.inflate(inflater, R.layout.sign_in_fragment, container, false)
-
         // Configure Google Sign In
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id))
@@ -50,17 +68,13 @@ class SignInFragment : Fragment() {
         googleSignInClient = GoogleSignIn.getClient(requireContext(), gso)
         //Entry point for firebase authentication sdk
         mAuth = FirebaseAuth.getInstance()
+        user.value = mAuth.currentUser
 
-        if (mAuth.currentUser != null)
-            showProfileInfo()
-        binding.signInButton.setOnClickListener {
-            if(checkInternetConnection())
-                signIn()
+        return ComposeView(requireContext()).apply {
+            setContent {
+                SignInScreen()
+            }
         }
-        binding.signOutButton.setOnClickListener { signOut() }
-
-        setHasOptionsMenu(true)
-        return binding.root
     }
 
     private fun checkInternetConnection() : Boolean{
@@ -71,10 +85,17 @@ class SignInFragment : Fragment() {
         return true
     }
 
+    private fun signIn() {
+        if(checkInternetConnection()){
+            val signInIntent = googleSignInClient.signInIntent
+            signInLauncher.launch(signInIntent)
+        }
+    }
+
     private fun signOut() {
         mAuth.signOut()
         googleSignInClient.signOut()
-        navigateUp()
+        user.value = null
     }
 
     /*Registers an activity to get a result from it*/
@@ -100,11 +121,6 @@ class SignInFragment : Fragment() {
             }
         }
 
-    private fun signIn() {
-        val signInIntent = googleSignInClient.signInIntent
-        signInLauncher.launch(signInIntent)
-    }
-
     /*After a user successfully signs in, get an ID token from the GoogleSignInAccount object, exchange it
     for a Firebase credential, and authenticate with Firebase using the Firebase credential*/
     private fun firebaseAuthWithGoogle(idToken: String) {
@@ -114,7 +130,7 @@ class SignInFragment : Fragment() {
                 if (task.isSuccessful) {
                     // Sign in success, update UI with the signed-in user's information
                     Log.d(TAG, "signInWithCredential: success")
-
+                    user.value = mAuth.currentUser
 
                     //Check if user is new or existing
                     if (task.result.additionalUserInfo!!.isNewUser) {
@@ -128,7 +144,6 @@ class SignInFragment : Fragment() {
                                 mAuth.currentUser!!.displayName),
                             Toast.LENGTH_SHORT).show()
                     }
-                    showProfileInfo()
                 } else {
                     // If sign in fails, display a message to the user.
                     Log.w(TAG, "signInWithCredential: failure", task.exception)
@@ -137,28 +152,121 @@ class SignInFragment : Fragment() {
             }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            android.R.id.home -> navigateUp()
-        }
-        return true
-    }
-
     private fun navigateUp() {
-        Navigation.findNavController(binding.root)
-            .navigate(SignInFragmentDirections.actionSignInFragmentToSettingsFragment())
-    }
-
-    private fun showProfileInfo() {
-        binding.signInLayout.visibility = View.GONE
-        binding.profileLayout.visibility = View.VISIBLE
-
-        binding.userNameTextview.text = mAuth.currentUser!!.displayName
-        binding.userEmailTextview.text = mAuth.currentUser!!.email
-        mAuth.currentUser!!.photoUrl?.let { Glide.with(requireContext()).load(it).into(binding.profileImage) }
+        findNavController().navigate(SignInFragmentDirections.actionSignInFragmentToSettingsFragment())
     }
 
     private fun showSignInErrorMessage(){
         Toast.makeText(requireContext(),getString(R.string.sign_in_error_message),Toast.LENGTH_SHORT).show()
+    }
+
+    @Composable
+    private fun SignInScreen(){
+        BackPressHandler(onBackPressed = {navigateUp()})
+        val currentUser = user.observeAsState()
+        
+        PriceRecorderTheme {
+            Scaffold(
+                topBar = {
+                    ShowTopAppBar(appBarTitle = stringResource(id = R.string.account_section_title),
+                        actionItems = listOf(),
+                        navigationIcon = {
+                            IconButton(onClick = { navigateUp() }) {
+                                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
+                            }
+                        })
+                }
+            ){
+                SignInScreenContent(currentUser.value,Modifier.padding(it))
+            }
+        }
+    }
+
+    @Composable
+    private fun SignInScreenContent(user:FirebaseUser?,modifier: Modifier = Modifier){
+        Surface(modifier = modifier
+            .fillMaxSize()
+            .background(brush = Brush.verticalGradient(
+                colors = listOf(
+                    MaterialTheme.colors.primaryVariant,
+                    MaterialTheme.colors.primary
+                )
+            )),
+            color = Color.Unspecified) {
+            if(user == null){
+                Column(modifier = Modifier
+                    .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center) {
+                    Image(painter = painterResource(id = R.drawable.ic_add_photo_alternate), contentDescription = "",
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .sizeIn(minHeight = 120.dp, minWidth = 120.dp)
+                            .background(color = Color.Transparent))
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Image(painter = painterResource(id = R.drawable.ic_error), contentDescription = "")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(id = R.string.sign_in_to_enable_functions_string),
+                            color = MaterialTheme.colors.onSurface,
+                            style = MaterialTheme.typography.subtitle1.copy(fontWeight = FontWeight.Normal),
+                            modifier = Modifier.weight(1f,true))
+                    }
+                    GoogleSignInButton(onClick = { signIn() },
+                        modifier = Modifier.padding(16.dp))
+                }
+            }else
+                UserSignedInScreen(user = user,
+                    onSignOut = {
+                        signOut()
+                    })
+        }
+    }
+
+    @Composable
+    private fun UserSignedInScreen(user: FirebaseUser, onSignOut:() -> Unit){
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Transparent),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(user.photoUrl)
+                    .crossfade(true)
+                    .build(),
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .sizeIn(minHeight = 120.dp, minWidth = 120.dp),
+                contentDescription = "")
+            user.displayName?.let { 
+                Text(text = it, color = MaterialTheme.colors.onSurface,
+                    style = MaterialTheme.typography.h6,
+                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp))
+            }
+            user.email?.let {
+                Text(text = it,  color = MaterialTheme.colors.onSurface,
+                    style = MaterialTheme.typography.subtitle1.copy(fontWeight = FontWeight.Normal),
+                    modifier = Modifier
+                        .padding(start = 20.dp, end = 20.dp,top = 8.dp))
+            }
+            Button(onClick = onSignOut, colors = ButtonDefaults.buttonColors(
+                backgroundColor = MaterialTheme.colors.secondary
+            ), modifier = Modifier.padding(16.dp)) {
+                Text(text = stringResource(id = R.string.log_out_title_string),
+                    color = MaterialTheme.colors.onSecondary)
+            }
+        }
+    }
+
+    @Preview(heightDp = 450, widthDp = 360, showBackground = true)
+    @Composable
+    private fun SignInScreenContentPreview(){
+        PriceRecorderTheme {
+            SignInScreenContent(null)
+        }
     }
 }

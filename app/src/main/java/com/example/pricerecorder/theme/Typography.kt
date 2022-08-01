@@ -8,17 +8,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.pricerecorder.R
 
-private val Domine = FontFamily(
-    Font(R.font.domine_regular),
-    Font(R.font.domine_bold, FontWeight.Bold)
-)
-
-private val Montserrat = FontFamily(
-    Font(R.font.montserrat_regular),
-    Font(R.font.montserrat_medium, FontWeight.Medium),
-    Font(R.font.montserrat_semibold, FontWeight.SemiBold)
-)
-
 private val Inter = FontFamily(
     Font(R.font.inter_light, FontWeight.Light),
     Font(R.font.inter_medium, FontWeight.Medium),

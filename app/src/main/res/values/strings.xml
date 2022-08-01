@@ -30,10 +30,10 @@
     <string name="camera_access_error">No es posible acceder a la camara</string>
     <string name="add_image_dialog_title">Agregar foto</string>
     <string name="delete_image_button_text">Eliminar Foto</string>
-    <string name="image_deleted_succes">Imagen eliminada</string>
+    <string name="image_deleted_success">Imagen eliminada</string>
     <string name="product_updated_string">%1$s actualizado</string>
     <string name="option_uncategorized">Sin categoria</string>
-    <string name="filter_dialog_title">Filtrar</string>
+    <string name="filter_dialog_title">Filtrar Productos</string>
     <string name="switch_category_text">Categoria</string>
     <string name="switch_purchase_place">Lugar de compra</string>
     <string name="switch_date">Fecha</string>
@@ -64,14 +64,9 @@
     <string name="no_internet_signal_msg">Sin conexion a internet</string>
     <string name="backup_dialog_title">Copia de seguridad</string>
     <string name="cloud_backup_option">Subir a la nube</string>
-    <string name="backup_successful_msg">Copia subida exitosamente</string>
-    <string name="uploading_in_progress_msg">Subiendo…</string>
-    <string name="percentage_uploaded_msg">%1$s subido</string>
-    <string name="downloading_in_progress_title">Descargando copia de seguridad…</string>
-    <string name="dowloading_msg">Descargando</string>
     <string name="restore_successful_msg">Restauración exitosa</string>
     <string name="restore_data_description">Restaura tu datos de una copia de seguridad creada anteriormente</string>
-    <string name="no_results_found_desc">No se encontraron resultados :(</string>
+    <string name="no_results_found_desc">Sin resultados :(</string>
     <string name="add_img_dialog_take_picture">Tomar foto</string>
     <string name="add_img_dialog_pick_from_gallery">Elegir de galeria</string>
     <string name="product_category_edibles">Comestibles</string>
@@ -86,6 +81,17 @@
     <string name="product_category_bakery">Panaderia</string>
     <string name="product_category_tech">Tecnologia</string>
     <string name="product_category_perfumery">Perfumeria</string>
+
+
+    <string name="upload_notification_success_text">Copia subida exitosamente</string>
+    <string name="uploading_in_progress_msg">Subiendo</string>
+    <string name="percentage_uploaded_msg">%1$s subido</string>
+    <string name="upload_notification_failed_text">Ha ocurrido un error durante la operacion</string>
+    <string name="downloading_in_progress_title">Descargando copia de seguridad…</string>
+    <string name="download_notification_title">Descargando</string>
+    <string name="download_notification_success_text">Descarga realizada correctamente</string>
+    <string name="download_notification_failed_text">Descarga fallida</string>
+
     <string name="up_button_description">Navegar atras</string>
     <string name="overflow_menu_description">Menu desplegable</string>
     <string name="update_price_button_desc">Modificar precio</string>
@@ -93,6 +99,8 @@
     <string name="modified_date_desc">Modificado</string>
     <string name="price_title">Precio</string>
     <string name="close_icon_desc">Cerrar</string>
+    <string name="delete_all_success_msg">Productos eliminados</string>
+    <string name="google_sign_in_button_text">Acceder</string>
 
     <string-array name="range_slider_values">
         <item>20</item>

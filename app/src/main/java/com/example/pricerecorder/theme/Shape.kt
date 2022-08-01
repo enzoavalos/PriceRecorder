@@ -7,5 +7,5 @@ import androidx.compose.ui.unit.dp
 
 val PriceRecorderShapes = Shapes(
     medium = RoundedCornerShape(20.dp),
-    large = CutCornerShape(topEnd = 30.dp, bottomStart = 30.dp)
+    large = CutCornerShape(topEnd = 50.dp, bottomStart = 50.dp)
 )
