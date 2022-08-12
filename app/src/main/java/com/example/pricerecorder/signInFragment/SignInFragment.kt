@@ -198,7 +198,9 @@ class SignInFragment : Fragment() {
                     .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center) {
-                    Image(painter = painterResource(id = R.drawable.ic_add_photo_alternate), contentDescription = "",
+                    AdaptiveIconImage(
+                        adaptiveDrawable = R.mipmap.launcher_icon_round,
+                        drawable = R.drawable.ic_account_circle,
                         modifier = Modifier
                             .clip(CircleShape)
                             .sizeIn(minHeight = 120.dp, minWidth = 120.dp)

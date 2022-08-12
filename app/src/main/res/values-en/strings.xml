@@ -32,7 +32,6 @@
     <string name="edit_fragment_title">Edit Product</string>
     <string name="search_view_hint">Search</string>
     <string name="delete_all_menu_option">Remove all</string>
-    <string name="uncategorized_product">No category</string>
     <string name="helper_text_optional">Optional</string>
     <string name="no_elements_string">Sorry, nothing found!</string>
     <string name="delete_image_button_text">Remove picture</string>
@@ -44,7 +43,7 @@
     <string name="switch_purchase_place">Place of purchase</string>
     <string name="switch_date">Date</string>
     <string name="price_title">Price</string>
-    <string name="filter_by_string">Filter by: %1$</string>
+    <string name="filter_by_string">Filters</string>
     <string name="date_filter_text">Date</string>
     <string name="date_picker_title">Pick date</string>
     <string name="setting_fragment_title">Settings</string>
@@ -98,4 +97,8 @@
     <string name="download_notification_success_text">Download completed successfully</string>
     <string name="upload_notification_failed_text">An error occurred while downloading</string>
     <string name="delete_all_success_msg">Products removed</string>
+    <string name="optional_helper_text">Optional</string>
+    <string name="product_quantity_label">Quantity</string>
+    <string name="product_size_label">Size/Weight</string>
+    <string name="button_apply_label">Apply</string>
 </resources>

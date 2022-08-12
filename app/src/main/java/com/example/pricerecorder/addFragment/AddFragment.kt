@@ -1,37 +1,37 @@
 package com.example.pricerecorder.addFragment
 
 import android.app.Application
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.HighlightOff
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.vector.DefaultTintColor
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -45,7 +45,11 @@ class AddFragment:Fragment(){
     private lateinit var viewModel: AddFragmentViewModel
 
     companion object {
+        const val DESCRIPTION_MAX_LENGTH = 60
+        const val PLACE_MAX_LENGTH = 40
         const val MAX_INTEGRAL_DIGITS = 6
+        const val SIZE_MAX_LENGTH = 20
+        const val QUANTITY_MAX_LENGTH = 5
     }
 
     override fun onCreateView(inflater: LayoutInflater,container: ViewGroup?,savedInstanceState: Bundle?): View {
@@ -108,12 +112,13 @@ class AddFragment:Fragment(){
 
     //Creates a new Product instance and stores it in the DB
     private fun createNewProduct(){
-        /*TODO("terminar de agregar caracteristicas a los productos")*/
         val desc = viewModel.prodDescription.value
         val price = viewModel.prodPrice.value.toDouble()
         val place = viewModel.prodPurchasePlace.value
-        val cat = getString(R.string.uncategorized_product)
-        val newProduct = Product(desc,price,place,cat,DateUtils.getCurrentDate(),viewModel.prodImage.value)
+        val cat = viewModel.prodCategory.value
+        val weight = viewModel.prodSize.value
+        val amount = viewModel.prodQuantity.value
+        val newProduct = Product(desc,price,place,cat, image = viewModel.prodImage.value, size = weight, quantity = amount)
 
         viewModel.addProduct(newProduct)
         Toast.makeText(context,resources.getString(R.string.new_product_added,desc),Toast.LENGTH_SHORT).show()
@@ -142,7 +147,9 @@ class AddFragment:Fragment(){
                     }) },
                 floatingActionButtonPosition = FabPosition.Center
             ) {
-                AddProductScreenContent(Modifier.padding(it))
+                AddProductScreenContent(
+                    Modifier
+                        .padding(it))
             }
         }
     }
@@ -153,12 +160,30 @@ class AddFragment:Fragment(){
         val description = viewModel.prodDescription
         val purchasePlace = viewModel.prodPurchasePlace
         val priceState = viewModel.prodPrice
+        val categoryState = viewModel.prodCategory
+        val sizeState = viewModel.prodSize
+        val quantityState = viewModel.prodQuantity
         val showImageDialog = viewModel.showImageDialog
+        val priceErrorState by viewModel.priceEditError
+        val placePredictions by viewModel.placesFiltered
 
         ImagePickerCustomDialog(
-            show = (showImageDialog.value and (image.value == null))) {
-            viewModel.updateShowImageDialogState(false)
-        }
+            show = (showImageDialog.value and (image.value == null)),
+            onDismiss = { viewModel.updateShowImageDialogState(false) },
+            title = stringResource(id = R.string.add_image_dialog_title),
+            galleryPicker = {
+                PermissionChecker.checkForPermissions(requireContext(),android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                    PermissionChecker.FILE_REQUEST_CODE,
+                    ::pickImageFromGallery,
+                    readExternalFilesPermission)
+            },
+            pictureTaker = {
+                PermissionChecker.checkForPermissions(requireContext(),
+                    android.Manifest.permission.CAMERA,
+                    PermissionChecker.CAMERA_REQUEST_CODE,
+                    ::takePictureFromCamera,
+                    accessCameraPermission)
+            })
 
         SelectedImageCustomDialog(
             show = showImageDialog.value,
@@ -168,14 +193,15 @@ class AddFragment:Fragment(){
                 viewModel.updateProdImage(null)
                 viewModel.updateShowImageDialogState(false)
             },
-            modifier = Modifier.padding(24.dp))
+            buttonText = stringResource(id = R.string.delete_image_button_text),
+            modifier = Modifier.padding(32.dp))
 
         Surface(modifier = modifier
+            .verticalScroll(rememberScrollState())
             .fillMaxSize(),
             color = MaterialTheme.colors.surface) {
             Column(modifier = Modifier
-                .fillMaxSize()
-                .scrollable(rememberScrollState(), orientation = Orientation.Vertical),
+                .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 CurrentSelectedImage(image = image.value,
                     onClick = {
@@ -183,7 +209,7 @@ class AddFragment:Fragment(){
                     })
 
                 /*Description text field*/
-                RegularTextField(value = description.value,
+                CustomTextField(value = description.value,
                     modifier = Modifier
                         .padding(start = 24.dp, end = 24.dp)
                         .fillMaxWidth(),
@@ -193,7 +219,7 @@ class AddFragment:Fragment(){
                             color = MaterialTheme.colors.onSurface.copy(0.6f))
                     },
                     maxLines = 2,
-                    maxAllowedChars = 60,
+                    maxAllowedChars = DESCRIPTION_MAX_LENGTH,
                     onValueChange = {
                         viewModel.updateProdDescription(it)
                     },
@@ -211,7 +237,8 @@ class AddFragment:Fragment(){
                     ))
 
                 /*place of purchase text field*/
-                RegularTextField(value = purchasePlace.value,
+                AutoCompleteTextField(
+                    value = purchasePlace.value,
                     modifier = Modifier
                         .padding(start = 24.dp, end = 24.dp)
                         .fillMaxWidth(),
@@ -220,8 +247,7 @@ class AddFragment:Fragment(){
                             style = MaterialTheme.typography.subtitle1,
                             color = MaterialTheme.colors.onSurface.copy(0.6f))
                     },
-                    maxLines = 1,
-                    maxAllowedChars = 40,
+                    maxAllowedChars = PLACE_MAX_LENGTH,
                     onValueChange = {
                         viewModel.updateProdPurchasePlace(it)
                     },
@@ -229,20 +255,103 @@ class AddFragment:Fragment(){
                         Icon(painter = painterResource(id = R.drawable.ic_place), contentDescription = "")
                     },
                     trailingIcon = {
-                        IconButton(onClick = { viewModel.updateProdPurchasePlace("") }) {
+                        IconButton(onClick = {
+                            viewModel.updateProdPurchasePlace("")
+                        }) {
                             Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
                         }
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Next
-                    ))
+                    ),
+                    predictions = placePredictions,
+                    itemContent = {
+                        Text(text = it,
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.onSurface.copy(0.8f),
+                            modifier = Modifier.padding(2.dp))
+                    }
+                )
 
-                /*TODO("agregar opciones de auto completado a textfield de lugar de compra")*/
-                /*TODO("agregar textfield de categorias con auto complete")*/
+                /*Category dropdown menu*/
+                ExposedDropdownMenu(
+                    value = categoryState.value,
+                    modifier = Modifier
+                        .padding(start = 24.dp, end = 24.dp)
+                        .fillMaxWidth(),
+                    label = {
+                        Text(text = stringResource(id = R.string.category_input_string),
+                        style = MaterialTheme.typography.subtitle1,
+                        color = MaterialTheme.colors.onSurface.copy(0.6f)) },
+                    onValueChange = {
+                        viewModel.updateProductCategoryState(it)
+                    },
+                    leadingIcon = {
+                        Icon(painter = painterResource(id = R.drawable.ic_category), contentDescription = "")
+                    },
+                    helperText = stringResource(id = R.string.helper_text_optional),
+                    options = stringArrayResource(id = R.array.categories_array)
+                        .toList().sorted())
+
+                /*Quantity text field*/
+                CustomTextField(value = quantityState.value,
+                    modifier = Modifier
+                        .padding(start = 24.dp, end = 24.dp)
+                        .fillMaxWidth(),
+                    label = {
+                        Text(text = stringResource(id = R.string.product_quantity_label),
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.onSurface.copy(0.6f))
+                    },
+                    maxAllowedChars = QUANTITY_MAX_LENGTH,
+                    onValueChange = {
+                        viewModel.updateProductQuantityState(it)
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            viewModel.updateProductQuantityState("")
+                        }) {
+                            Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
+                    helperText = stringResource(id = R.string.helper_text_optional),
+                    showCount = false)
+
+                /*Size/Weight text field*/
+                CustomTextField(value = sizeState.value,
+                    modifier = Modifier
+                        .padding(start = 24.dp, end = 24.dp)
+                        .fillMaxWidth(),
+                    label = {
+                        Text(text = stringResource(id = R.string.product_size_label),
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.onSurface.copy(0.6f))
+                    },
+                    maxAllowedChars = SIZE_MAX_LENGTH,
+                    onValueChange = {
+                        viewModel.updateProductSizeState(it)
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            viewModel.updateProductSizeState("")
+                        }) {
+                            Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    ),
+                    helperText = stringResource(id = R.string.helper_text_optional),
+                    showCount = false)
 
                 /*price text field*/
-                RegularTextField(value = priceState.value,
+                CustomTextField(value = priceState.value,
                     modifier = Modifier
                         .padding(start = 24.dp, end = 24.dp)
                         .width(200.dp),
@@ -257,97 +366,22 @@ class AddFragment:Fragment(){
                     },
                     trailingIcon = {
                         IconButton(onClick = { viewModel.updateProductPriceState("") }) {
-                            Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+                            Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "",
+                                tint = if(!priceErrorState) DefaultTintColor else MaterialTheme.colors.error)
                         }
                     },
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
+                        keyboardType = KeyboardType.Decimal,
                         imeAction = ImeAction.Done
-                    ))
-            }
-        }
-    }
+                    ),
+                    isError = priceErrorState)
 
-    @OptIn(ExperimentalComposeUiApi::class)
-    @Composable
-    private fun SelectedImageCustomDialog(show: Boolean,
-                                          image:Bitmap?,
-                                          onDismiss: () -> Unit,
-                                          onDelete:() -> Unit,
-                                          modifier: Modifier = Modifier){
-        if(!show or (image == null))
-            return
-        Dialog(onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false)) {
-            Column(modifier = modifier,
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally) {
-                Image(bitmap = image!!.asImageBitmap(),
-                    contentDescription = "",
-                    modifier = Modifier.fillMaxWidth(),
-                    contentScale = ContentScale.Crop)
-
-                Button(onClick = onDelete,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color.Red
-                    )) {
-                    Text(text = stringResource(id = R.string.delete_image_button_text),
-                        style = MaterialTheme.typography.h6,
-                        color = MaterialTheme.colors.onError)
-                }
-            }
-        }
-    }
-
-    /*Creates a dialog that gives the user the option to select an image from the gallery or take a picture in case it has
-    * not already done it, in this case a dialog is shown with the current image where the user can delete it if wanted*/
-    @OptIn(ExperimentalMaterialApi::class)
-    @Composable
-    private fun ImagePickerCustomDialog(show:Boolean,
-                                        onDismiss:() -> Unit){
-        CustomAlertDialog(show = show,
-            title = stringResource(id = R.string.add_image_dialog_title),
-            msg = {
-                Column(modifier = Modifier
+                Spacer(modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 8.dp, end = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center) {
-                    Surface(modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Start),
-                        onClick = {
-                            onDismiss()
-                            PermissionChecker.checkForPermissions(requireContext(),android.Manifest.permission.CAMERA,
-                                PermissionChecker.CAMERA_REQUEST_CODE,
-                                ::takePictureFromCamera,
-                                accessCameraPermission)
-                        }) {
-                            Text(text = stringResource(id = R.string.add_img_dialog_take_picture),
-                                style = MaterialTheme.typography.subtitle1,
-                                color = MaterialTheme.colors.primaryVariant)
-                    }
-                    Surface(modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Start),
-                        onClick = {
-                            onDismiss()
-                            PermissionChecker.checkForPermissions(requireContext(),android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                                PermissionChecker.FILE_REQUEST_CODE,
-                                ::pickImageFromGallery,
-                                readExternalFilesPermission)
-                        }) {
-                        Text(text = stringResource(id = R.string.add_img_dialog_pick_from_gallery),
-                            style = MaterialTheme.typography.subtitle1,
-                            color = MaterialTheme.colors.primaryVariant)
-                    }
-                }
-            },
-            confirmButtonText = stringResource(id = R.string.cancel_button_string),
-            dismissButtonText = null,
-            onConfirm = onDismiss,
-            onDismiss = onDismiss)
+                    .height(80.dp)
+                    .background(Color.Transparent))
+            }
+        }
     }
 
     //@Preview(heightDp = 800, widthDp = 360)

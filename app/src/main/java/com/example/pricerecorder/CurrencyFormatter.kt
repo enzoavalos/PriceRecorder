@@ -11,7 +11,7 @@ class CurrencyFormatter {
             return !input.startsWith('.') and (input.toDoubleOrNull() != null)
         }
 
-        fun formatInput(input:String):String{
+        fun formatInput(input:String,oldValue:String):String{
             var output = input
 
             if(output.isNotEmpty()){
@@ -34,7 +34,7 @@ class CurrencyFormatter {
                     else listOf(output,"","")
 
                 if(integrals.isNotEmpty() and (integrals.length > AddFragment.MAX_INTEGRAL_DIGITS))
-                    integrals = integrals.dropLast(1)
+                    integrals = oldValue.substringBefore('.')
 
                 output = "$integrals$separator$decimals"
             }

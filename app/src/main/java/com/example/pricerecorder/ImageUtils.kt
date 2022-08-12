@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
@@ -86,6 +87,15 @@ interface ImageUtils {
         @Composable
         fun createImageVector(drawableRes: Int) : ImageVector{
             return ImageVector.Companion.vectorResource(id = drawableRes)
+        }
+
+        /*Given a drawable returns a bitmap created from it*/
+        fun createBitmapFromDrawable(drawable: Drawable):Bitmap{
+            return Bitmap.createBitmap(
+                drawable.intrinsicWidth,
+                drawable.intrinsicHeight,
+                Bitmap.Config.ARGB_8888
+            )
         }
     }
 }

@@ -11,17 +11,26 @@ import androidx.lifecycle.MutableLiveData
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.pricerecorder.SearchState
 import com.example.pricerecorder.SearchWidgetState
+import com.example.pricerecorder.filters.CategoryFilter
+import com.example.pricerecorder.filters.FilterState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.lang.Exception
+import com.example.pricerecorder.R
+import com.example.pricerecorder.filters.AndFilter
+import com.example.pricerecorder.filters.PlaceFilter
+import java.net.Inet4Address
 
 /*Repository isolates the data layer from the rest of the app, meaning, where all data and business logic
 * is handled, exposing consistent APIs for the rest of the app to access the data*/
 class ProductsRepository private constructor(
-    application: Application,private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    @get:JvmName("getProductsRepositoryApplication") val application: Application,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ){
     companion object{
+        const val MIN_INPUT_PREDICTION_LENGTH = 2
+
         /*Instance stores a reference to the first ever Repo returned by get instance, therefore being
         * instantiated only once.*/
         @Volatile private var INSTANCE : ProductsRepository? = null
@@ -37,6 +46,12 @@ class ProductsRepository private constructor(
 
     private val databaseDao = ProductDatabase.getInstance(application).productDatabaseDao
 
+    /*Both public val's will expose their values to composable functions, and are used to track the state
+    * of the search bar and its text input*/
+    val searchWidgetState: MutableState<SearchWidgetState> =
+        mutableStateOf(SearchWidgetState.CLOSED)
+    val searchTextState: MutableState<String> = mutableStateOf("")
+
     private val _isSearching : MutableState<SearchState> = mutableStateOf(SearchState.STARTING)
     val searching: State<Boolean> = derivedStateOf { _isSearching.value == SearchState.SEARCHING }
     /*var that keeps track of the DB data*/
@@ -44,16 +59,48 @@ class ProductsRepository private constructor(
     /*val to store the current dataset to expose to the view model*/
     private val _searchResults = MutableLiveData<List<Product>>(mutableListOf())
     val products : LiveData<List<Product>>
-        get() {return if(_isSearching.value == SearchState.STARTING) _products else _searchResults}
+        get() {
+            return if((_isSearching.value == SearchState.STARTING) and (_isFiltering.value == FilterState.IDLE)) _products
+            else _searchResults}
 
-    private val _allPlacesRegistered: State<List<String>> =
-        derivedStateOf { listOf(/*TODO("llevar lista de todos los lugares registrados")*/) }
+    private var _isFiltering : MutableState<FilterState> = mutableStateOf(FilterState.IDLE)
+    val isFiltering : State<Boolean> = derivedStateOf { _isFiltering.value == FilterState.FILTERING }
+    private var _categoryFilter = mutableStateOf("")
+    var categoryFilter : State<String> = _categoryFilter
+    private var _placeFilter = mutableStateOf("")
+    var placeFilter : State<String> = _placeFilter
 
-    /*Both public val's will expose their values to composable functions, and are used to track the state
-    * of the search bar and its text input*/
-    val searchWidgetState: MutableState<SearchWidgetState> =
-        mutableStateOf(SearchWidgetState.CLOSED)
-    val searchTextState: MutableState<String> = mutableStateOf("")
+    fun updatePlaceFilter(newValue: String){
+        _placeFilter.value = newValue
+    }
+
+    fun updateCategoryFilter(newValue: String){
+        _categoryFilter.value = newValue
+    }
+
+    fun updateFilterState(newValue: FilterState){
+        _isFiltering.value = newValue
+        if(_isFiltering.value == FilterState.FILTERING)
+            filterProducts()
+        else
+            resetFilters()
+    }
+
+    private fun filterProducts(){
+        val compoundFilter = AndFilter(
+            CategoryFilter(
+            category = _categoryFilter.value,
+            application.resources.getString(R.string.option_uncategorized)),
+            PlaceFilter( _placeFilter.value )
+        )
+        val list = _products.value?.filter{ compoundFilter.meetsCriteria(it) }
+        _searchResults.value = list ?: listOf()
+    }
+
+    fun resetFilters(){
+        _categoryFilter.value = ""
+        _placeFilter.value = ""
+    }
 
     /*Filters the current list based on the user input parameters*/
     private fun searchProductList(query:String,listToSearch:List<Product>?){
@@ -68,21 +115,26 @@ class ProductsRepository private constructor(
         _searchResults.value = results ?: listOf()
     }
 
-    fun updateSearchWidgetState(newValue: SearchWidgetState){
-        searchWidgetState.value = newValue
-    }
-
     /*When user enters a new character the search is performed on the previous filtered list, otherwise
     * performed on the whole products list
     * Also, when search bar is emptied or newly opened, all products are shown*/
     fun updateSearchTextState(newValue: String){
-        val userDeletedChars = (newValue.length < searchTextState.value.length)
+        val userDeletedChars = userDeletedCharsFromQuery(newValue,searchTextState.value)
         _isSearching.value = if(newValue.isEmpty()) SearchState.STARTING else SearchState.SEARCHING
         searchTextState.value = newValue
 
         searchProductList(newValue, listToSearch =
         if(userDeletedChars or (_isSearching.value == SearchState.SEARCHING)) _products.value
         else _searchResults.value)
+    }
+
+    fun updateSearchWidgetState(newValue: SearchWidgetState){
+        searchWidgetState.value = newValue
+    }
+
+    /*Determines if the user has deleter chars from the query*/
+    private fun userDeletedCharsFromQuery(newValue: String,oldValue:String):Boolean{
+        return (newValue.length < oldValue.length)
     }
 
     suspend fun insertProduct(product: Product){
@@ -132,5 +184,14 @@ class ProductsRepository private constructor(
     /*Called when database has been restored from previous backup*/
     fun databaseRestored(){
         _products = databaseDao.getAllProducts()
+    }
+
+    suspend fun filterPlacesRegistered(query: String):List<String>{
+        if(query.length < MIN_INPUT_PREDICTION_LENGTH)
+            return listOf()
+
+        return withContext(ioDispatcher){
+            return@withContext databaseDao.filterPlacesRegistered(query)
+        }
     }
 }

@@ -124,6 +124,7 @@ class SettingsFragment : Fragment(){
                     .addOnSuccessListener {
                         onComplete(getString(R.string.upload_notification_success_text),
                             R.drawable.ic_download_done)
+                        viewModel.getLastBackupDate()
                         Toast.makeText(requireContext(),
                             R.string.upload_notification_success_text,
                             Toast.LENGTH_SHORT).show()
