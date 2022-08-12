@@ -14,12 +14,6 @@ interface ProductDatabaseDao {
     @Update
     fun update(product: Product)
 
-    @Query("UPDATE products_table SET update_date = :date, price = :price WHERE productId = :id")
-    fun update(id:Long,price:Double,date:Long) : Int
-
-    @Query("UPDATE products_table SET description=:des,place_of_purchase=:place,category=:cat,product_img=:img WHERE productId = :id")
-    fun update(id: Long,des:String,place:String,cat:String?,img:Bitmap?)
-
     @Delete
     fun delete(product: Product)
 
@@ -31,6 +25,12 @@ interface ProductDatabaseDao {
 
     @Query("SELECT * FROM products_table ORDER BY update_date desc,description asc")
     fun getAllProducts() : LiveData<List<Product>>
+
+
+    /*Selects all different values that contain the given query arg as a substring in any part of the text*/
+    @Query("SELECT DISTINCT place_of_purchase FROM products_table WHERE place_of_purchase LIKE '%'||:query||'%' " +
+            " ORDER BY place_of_purchase ASC")
+    fun filterPlacesRegistered(query: String) : List<String>
 
     /*Query executed when the user chooses to backup the db. This checkpoint query ensures that all pending transactions are applied.
     A Single is similar to an Observable, but it always emits one value or an error notification*/

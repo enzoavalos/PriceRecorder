@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="product_categories">
+    <string-array name="categories_array">
         <item>@string/product_category_edibles</item>
         <item>@string/product_category_cleaning</item>
         <item>@string/product_category_home</item>

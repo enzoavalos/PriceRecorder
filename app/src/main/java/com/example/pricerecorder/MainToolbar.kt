@@ -69,21 +69,6 @@ fun ShowTopAppBar(appBarTitle: String, actionItems:List<AppBarAction>,
     )
 }
 
-@Composable
-fun HomeAppBar(onSearchClick: () -> Unit, onFilterClick: () -> Unit, onDeleteAllClicked:() -> Unit,
-               onSettingsClicked:() -> Unit){
-    ShowTopAppBar(stringResource(R.string.app_name),
-        navigationIcon = null
-        , actionItems = listOf(
-            AppBarAction(stringResource(id = R.string.search_view_hint),
-                Icons.Filled.Search, onSearchClick),
-            AppBarAction(stringResource(id = R.string.filter_dialog_title),
-                Icons.Filled.FilterList,onFilterClick),
-            AppBarAction(stringResource(id = R.string.delete_all_menu_option),null,onDeleteAllClicked),
-            AppBarAction(stringResource(id = R.string.setting_fragment_title),null,onSettingsClicked)
-        ))
-}
-
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SearchAppBar(text:String, onTextChange:(String) -> Unit,

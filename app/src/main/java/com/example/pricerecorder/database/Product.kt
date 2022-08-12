@@ -21,7 +21,13 @@ data class Product(
     private var category : String,
 
     @ColumnInfo(name = "update_date")
-    private var updateDate : Long,
+    private var updateDate : Long = DateUtils.getCurrentDate(),
+
+    @ColumnInfo(name = "product_size")
+    private var size : String,
+
+    @ColumnInfo(name = "product_quantity")
+    private var quantity : String,
 
     @ColumnInfo(name = "product_img")
     private var image : Bitmap? = null,
@@ -34,15 +40,24 @@ data class Product(
         updateDate = DateUtils.getCurrentDate()
     }
 
-    fun updateData(des:String,place:String,cat:String,img:Bitmap?){
+    fun updateData(des:String,place:String,cat:String,img:Bitmap?,newPrice:Double){
         description = des
         placeOfPurchase = place
         category = cat
         image = img
+        price = newPrice
     }
 
     fun getProductId() : Long{
         return  this.productId
+    }
+
+    fun getQuantity() : String{
+        return  this.quantity
+    }
+
+    fun getSize() : String{
+        return  this.size
     }
 
     fun getPlaceOfPurchase(): String {
@@ -76,8 +91,7 @@ data class Product(
     override fun equals(other: Any?): Boolean {
         return try {
             val aux = other as Product
-            ((this.description == aux.getDescription()) and (this.placeOfPurchase == aux.getPlaceOfPurchase()) and
-                    (this.price == aux.getPrice()))
+            ((this.description == aux.getDescription()) and (this.placeOfPurchase == aux.getPlaceOfPurchase()))
         }catch (e : Exception){
             false
         }

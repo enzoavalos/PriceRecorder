@@ -1,12 +1,9 @@
 package com.example.pricerecorder.homeFragment
 
 import android.app.Application
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.os.Bundle
 import android.view.*
-import android.widget.CompoundButton
 import android.widget.Toast
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -49,7 +46,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -58,24 +54,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.example.pricerecorder.*
 import com.example.pricerecorder.R
+import com.example.pricerecorder.addFragment.AddFragment
 import com.example.pricerecorder.database.Product
-import com.example.pricerecorder.databinding.*
+import com.example.pricerecorder.filters.FilterState
 import com.example.pricerecorder.theme.*
-import com.google.android.material.datepicker.MaterialDatePicker
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
-import java.util.*
-import kotlin.math.ceil
 
 class HomeFragment:Fragment() {
     private lateinit var viewModel: HomeViewModel
-
-    private lateinit var binding: HomeFragmentBinding
-    /*Used to prevent multiple dialogs from appearing*/
-    private var filterDialogDisplayed = false
-
-    private var filterOptionSelected : CompoundButton? = null
-    private var filterBy : String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val application: Application = requireNotNull(this.activity).application
@@ -88,161 +74,6 @@ class HomeFragment:Fragment() {
                 HomeScreen()
             }
         }
-    }
-
-    private fun onFilterProducts(filterBinding:FilterMenuDialogBinding):Boolean{
-        when(filterOptionSelected){
-            filterBinding.placeSwitch -> {
-                filterBy = filterBinding.placeAutoComplete.text.toString()
-                if(filterBy.isNullOrEmpty())
-                    return false
-                viewModel.filterByPlace(filterBy!!)
-            }
-            filterBinding.categorySwitch -> {
-                filterBy = filterBinding.categoryAutoComplete.text.toString()
-                if(filterBy.isNullOrEmpty())
-                    return false
-                if(filterBy == resources.getString(R.string.option_uncategorized))
-                    viewModel.filterByCategory("")
-                else
-                    viewModel.filterByCategory(filterBy)
-            }
-            filterBinding.dateSwitch -> {
-                if(filterBy.isNullOrEmpty())
-                    return false
-                viewModel.filterByDate(filterBy!!)
-            }
-            filterBinding.priceSwitch -> {
-                val values = filterBinding.priceSliderView.values
-                filterBy = "$${values[0].toInt()} - $${values[1].toInt()}"
-                viewModel.filterByPriceRange(values[0],values[1])
-            }
-        }
-        //adapter.submitList(viewModel.filteredList)
-        return true
-    }
-
-    /*Implements an OnCheckedChangeListener applied to every and each one of the switches of the filter dialog*/
-    private fun changeChecker(filterBinding: FilterMenuDialogBinding) : CompoundButton.OnCheckedChangeListener{
-        return CompoundButton.OnCheckedChangeListener { selected, isChecked ->
-            filterBinding.also { f ->
-                if(isChecked){
-                    if(selected != f.categorySwitch) {
-                        f.categorySwitch.isChecked = false
-                        f.categoryInput.visibility = View.GONE
-                    }else{
-                        //f.progressBar.visibility = View.VISIBLE
-                        //val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
-                            //viewModel.getListOfCategories(resources))
-                        //f.categoryAutoComplete.setAdapter(arrayAdapter)
-                        //f.progressBar.visibility = View.GONE
-                        f.categoryInput.visibility = View.VISIBLE
-                    }
-
-                    if(selected != f.placeSwitch) {
-                        f.placeSwitch.isChecked = false
-                        f.placeInput.visibility = View.GONE
-                    }else{
-                        //f.progressBar.visibility = View.VISIBLE
-                        //val arrayAdapter = ArrayAdapter(requireContext(),R.layout.drowpdown_item,
-                            //viewModel.getListOfPlaces())
-                        //f.placeAutoComplete.setAdapter(arrayAdapter)
-                       // f.progressBar.visibility = View.GONE
-                        f.placeInput.visibility = View.VISIBLE
-                    }
-
-                    if(selected != f.dateSwitch){
-                        f.dateSwitch.isChecked = false
-                        f.dateInput.visibility = View.GONE
-                    }else{
-                        val today = DateUtils.formatDate(Calendar.getInstance().timeInMillis)
-                        filterBinding.dateInput.setText(today)
-                        filterBy = today
-                        filterBinding.dateInput.visibility = View.VISIBLE
-                        filterBinding.dateInput.setOnClickListener {
-                            val datePicker = MaterialDatePicker.Builder.datePicker()
-                                .setTitleText(getString(R.string.date_picker_title))
-                                .setTheme(R.style.CustomDatePicker)
-                                .build()
-                            datePicker.addOnPositiveButtonClickListener {
-                                filterBy = DateUtils.formatDate(it)
-                                filterBinding.dateInput.setText(filterBy)
-                            }
-                            datePicker.show(parentFragmentManager,null)
-                        }
-                    }
-
-                    if(selected != f.priceSwitch){
-                        f.priceSwitch.isChecked = false
-                        f.priceSliderView.visibility = View.GONE
-                    }else{
-                        f.priceSliderView.apply {
-                            valueFrom = 0f
-                            valueTo = viewModel.getMaxPrice()
-                            values = mutableListOf(valueFrom,valueTo)
-                            stepSize = adaptStepSize(valueTo)
-                            setLabelFormatter { value -> return@setLabelFormatter "$${value.toInt()}" }
-                            visibility = View.VISIBLE
-                        }
-                    }
-                }else{
-                    when(selected){
-                        f.categorySwitch -> f.categoryInput.visibility = View.GONE
-                        f.placeSwitch -> f.placeInput.visibility = View.GONE
-                        f.dateSwitch -> f.dateInput.visibility = View.GONE
-                        f.priceSwitch -> f.priceSliderView.visibility = View.GONE
-                    }
-                }
-            }
-        }
-    }
-
-    /*Adapts the range slider step size according to its maximum value*/
-    private fun adaptStepSize(value: Float): Float {
-        return ceil(value * 0.01f)
-    }
-
-    /*Creates a dialog box that allows users to filter from all products based on determined criteria*/
-    private fun createCustomFilterDialog(){
-        filterDialogDisplayed = true
-        val filterBinding = FilterMenuDialogBinding.inflate(layoutInflater)
-
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setView(filterBinding.root)
-            .setNegativeButton(resources.getString(R.string.cancel_button_string)) { dialog, _ -> dialog.dismiss() }
-            .setPositiveButton(resources.getString(R.string.accept_button_string)) {dialog,_ ->
-                filterOptionSelected = getFilterCheckedSwitch(filterBinding)
-                if(filterOptionSelected != null){
-                    if(onFilterProducts(filterBinding)){
-                        //binding.filterByTextview.text = resources.getString(R.string.filter_by_string,filterBy)
-                        //binding.filterFab.hide()
-                        //binding.filterByView.visibility = View.VISIBLE
-                    }else
-                        filterOptionSelected = null
-                }
-                dialog.dismiss()}
-            .create()
-
-        changeChecker(filterBinding).also {
-            filterBinding.categorySwitch.setOnCheckedChangeListener(it)
-            filterBinding.placeSwitch.setOnCheckedChangeListener(it)
-            filterBinding.priceSwitch.setOnCheckedChangeListener(it)
-            filterBinding.dateSwitch.setOnCheckedChangeListener(it)
-        }
-
-        dialog.setOnDismissListener { filterDialogDisplayed = false }
-        dialog.show()
-    }
-
-    /*Returns the switch checked by the user in the filter dialog*/
-    private fun getFilterCheckedSwitch(f:FilterMenuDialogBinding) : CompoundButton?{
-        when{
-            f.placeSwitch.isChecked -> return f.placeSwitch
-            f.categorySwitch.isChecked -> return f.categorySwitch
-            f.dateSwitch.isChecked -> return f.dateSwitch
-            f.priceSwitch.isChecked -> return f.priceSwitch
-        }
-        return null
     }
 
     private fun navigateToSettingsFragment(){
@@ -264,6 +95,7 @@ class HomeFragment:Fragment() {
         val searchTextState by viewModel.searchTextState
         val scaffoldState = rememberScaffoldState()
         val coroutineScope = rememberCoroutineScope()
+        val filterState = viewModel.isFiltering
 
         PriceRecorderTheme {
             Scaffold(scaffoldState = scaffoldState,
@@ -272,16 +104,30 @@ class HomeFragment:Fragment() {
                 floatingActionButton = { AddFloatingActionButton(enabled = true,
                     onClick = { navigateToAddFragment() }) },
                 floatingActionButtonPosition = FabPosition.Center) {
-                ProductsList(showSnackbar = { msg, actionLabel, onActionPerformed ->
-                    coroutineScope.launch {
-                        /*Snackbar is shown on screen and when the action is clicked, onActionPerformed is invoked*/
-                        when(scaffoldState.snackbarHostState.showSnackbar(message = msg,actionLabel = actionLabel)){
-                            SnackbarResult.ActionPerformed -> onActionPerformed()
-                            else -> {}
-                        }
+                Column(modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally) {
+                    AnimatedVisibility(visible = filterState.value) {
+                        FiltersAppliedScreen(
+                            show = filterState.value,
+                            onCancelClick = {
+                                viewModel.updateFilterState(FilterState.IDLE)
+                                viewModel.resetFilters()
+                            },
+                            modifier = Modifier.fillMaxWidth())
                     }
-                },
-                modifier = Modifier.padding(it))
+
+                    ProductsList(showSnackBar = { msg, actionLabel, onActionPerformed ->
+                        coroutineScope.launch {
+                            /*Snack bar is shown on screen and when the action is clicked, onActionPerformed is invoked*/
+                            when(scaffoldState.snackbarHostState.showSnackbar(message = msg,actionLabel = actionLabel)){
+                                SnackbarResult.ActionPerformed -> onActionPerformed()
+                                else -> {}
+                            }
+                        }
+                    },
+                        modifier = Modifier.padding(it))
+                }
             }
         }
     }
@@ -292,6 +138,19 @@ class HomeFragment:Fragment() {
         var showDeleteAllDialog by remember {
             mutableStateOf(false)
         }
+        var showFilterDialog by remember {
+            mutableStateOf(false)
+        }
+
+        FilterProductsDialog(
+            show = showFilterDialog,
+            onConfirm = {
+                showFilterDialog = false
+                viewModel.updateFilterState(FilterState.FILTERING)
+            },
+            onDismiss = {
+                showFilterDialog = false
+                viewModel.resetFilters() })
 
         CustomAlertDialog(show = showDeleteAllDialog,
             title = stringResource(id = R.string.delete_all_dialog_title),
@@ -313,7 +172,7 @@ class HomeFragment:Fragment() {
         when(searchWidgetState){
             SearchWidgetState.CLOSED -> {
                 HomeAppBar(onSearchClick = { viewModel.updateSearchWidgetState(SearchWidgetState.OPENED) },
-                    onFilterClick = { createCustomFilterDialog() },
+                    onFilterClick = { showFilterDialog = true },
                     onDeleteAllClicked = { showDeleteAllDialog = true },
                     onSettingsClicked = { navigateToSettingsFragment() })
             }
@@ -332,7 +191,7 @@ class HomeFragment:Fragment() {
     /*List displayed in the home screen with all stored products*/
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
-    private fun ProductsList(showSnackbar:(String, String, () -> Unit) -> Unit, modifier: Modifier = Modifier){
+    private fun ProductsList(showSnackBar:(String, String, () -> Unit) -> Unit, modifier: Modifier = Modifier){
         val list by viewModel.products.observeAsState(listOf())
 
         if(list.isNotEmpty()){
@@ -355,7 +214,7 @@ class HomeFragment:Fragment() {
                                 /*If item was swiped to start, then its deleted from the DB*/
                                 if(it == DismissValue.DismissedToStart){
                                     viewModel.deleteProduct(product = product)
-                                    showSnackbar(getString(R.string.product_deleted_msg),getString(R.string.undo_action_msg)){
+                                    showSnackBar(getString(R.string.product_deleted_msg),getString(R.string.undo_action_msg)){
                                         viewModel.addProduct(product)
                                     }
                                 }
@@ -392,7 +251,7 @@ class HomeFragment:Fragment() {
                                 /*swipeable content*/
                                 Card(modifier = Modifier.fillMaxWidth(),
                                     shape = MaterialTheme.shapes.medium.copy(CornerSize(0.dp)),
-                                    /*Adds elevation to item as its beign swiped*/
+                                    /*Adds elevation to item as its being swiped*/
                                     elevation = animateDpAsState(
                                         targetValue = if(dismissState.dismissDirection != null) 6.dp else 0.dp).value) {
                                     ListItemProduct(product = product, modifier = Modifier.fillMaxWidth())
@@ -415,9 +274,11 @@ class HomeFragment:Fragment() {
             }
         }else{
             when(viewModel.searching.value){
-                false -> HomeEmptyBackgroundScreen(drawableRes = R.drawable.ic_connection_error,
+                false -> HomeEmptyBackgroundScreen(
+                    drawableRes = R.mipmap.ic_no_elements,
                     R.string.no_elements_string)
-                true -> HomeEmptyBackgroundScreen(drawableRes = R.drawable.ic_broken_image,
+                true -> HomeEmptyBackgroundScreen(
+                    drawableRes = R.mipmap.ic_no_results_found,
                     R.string.no_results_found_desc)
             }
 
@@ -444,16 +305,18 @@ class HomeFragment:Fragment() {
 
     /*Layout shown when there are no elements stored yet*/
     @Composable
-    private fun HomeEmptyBackgroundScreen(@DrawableRes drawableRes: Int,
-                                          @StringRes stringRes:Int, modifier: Modifier = Modifier){
+    private fun HomeEmptyBackgroundScreen(
+        drawableRes: Int,
+        @StringRes stringRes:Int, modifier: Modifier = Modifier){
         Column(modifier = modifier
             .fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(painter = painterResource(id = drawableRes), contentDescription = "",
-                modifier
-                    .widthIn(120.dp)
-                    .heightIn(120.dp))
+            AdaptiveIconImage(
+                adaptiveDrawable = drawableRes,
+                drawable = R.drawable.ic_sentiment_dissatisfied,
+                Modifier.widthIn(120.dp).heightIn(120.dp))
+
             Text(text = stringResource(id = stringRes),
                 modifier
                     .padding(top = 8.dp, start = 32.dp, end = 32.dp)
@@ -547,7 +410,6 @@ class HomeFragment:Fragment() {
                 Text(text = "$${product.getPrice()}",
                     style = MaterialTheme.typography.h6,color = MaterialTheme.colors.secondary)
             }else{
-                /*TODO("asegurar que teclado muestra punto o coma, deshabilitar click largo")*/
                 OutlinedTextField(value = textState,
                     isError = errorState,
                     placeholder = {
@@ -569,7 +431,7 @@ class HomeFragment:Fragment() {
                     },
                     keyboardOptions = KeyboardOptions(
                         imeAction = ImeAction.Done,
-                        keyboardType = KeyboardType.Number),
+                        keyboardType = KeyboardType.Decimal),
                     keyboardActions = KeyboardActions(
                         onDone = {
                             if(!errorState)
@@ -582,6 +444,25 @@ class HomeFragment:Fragment() {
                         textColor = MaterialTheme.colors.secondary
                     ),
                     textStyle = MaterialTheme.typography.h6)
+            }
+        }
+    }
+
+    /*Section that displays a property of the current value and its value*/
+    @Composable
+    private fun DetailPropertySection(
+        description:String,
+        value:String,
+        modifier: Modifier = Modifier
+    ){
+        if(value.isNotEmpty()){
+            Row(modifier = modifier,
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start) {
+                Text(text = description, modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
+                Text(text = value,
+                    style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.onSurface)
             }
         }
     }
@@ -626,17 +507,28 @@ class HomeFragment:Fragment() {
                             editPrice = false
                             viewModel.updatePriceEditTextState("")
                         })
-                    
-                    Row(modifier = Modifier
-                        .padding(top = 4.dp, start = 16.dp, end = 16.dp)
-                        .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start) {
-                        Text(text = stringResource(id = R.string.modified_date_desc), modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
-                        Text(text = DateUtils.formatDate(product.getUpdateDate()),
-                            style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.onSurface)
-                    }
+
+                    DetailPropertySection(
+                        description = stringResource(id = R.string.modified_date_desc),
+                        value = DateUtils.formatDate(product.getUpdateDate()),
+                        modifier = Modifier
+                            .padding(top = 4.dp, start = 16.dp, end = 16.dp)
+                            .fillMaxWidth())
+
+                    DetailPropertySection(
+                        description = stringResource(id = R.string.product_size_label),
+                        value = product.getSize(),
+                        modifier = Modifier
+                            .padding(top = 4.dp, start = 16.dp, end = 16.dp)
+                            .fillMaxWidth())
+
+                    DetailPropertySection(
+                        description = stringResource(id = R.string.product_quantity_label),
+                        value = product.getQuantity(),
+                        modifier = Modifier
+                            .padding(top = 4.dp, start = 16.dp, end = 16.dp)
+                            .fillMaxWidth())
+
                     DetailDialogBottomActionBar(product,onDismiss,
                         onEditPriceClicked = {
                             editPrice = !editPrice
@@ -724,61 +616,182 @@ class HomeFragment:Fragment() {
         }
     }
 
-    /*@Composable
-    private fun filterProductsDialog(show:Boolean,onConfirm:(Double) -> Unit,onDismiss: () -> Unit,
-                                     modifier: Modifier = Modifier){
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Composable
+    private fun FilterProductsDialog(
+        show:Boolean,
+        onConfirm:() -> Unit,
+        onDismiss: () -> Unit,
+        modifier: Modifier = Modifier){
+        /*TODO("mostrar barra superior cuando se haya fitrado y desactivar acciones de barra superior")*/
         if(!show)
             return
 
-        var categorySwitchState by remember { mutableStateOf(false) }
+        val placeState = viewModel.placeFilter
+        val categoryState = viewModel.categoryFilter
+        val filterEnabled = viewModel.filterEnabled
+        val placePredictions by viewModel.placesFiltered
+        Dialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            Surface(modifier = modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+                border = BorderStroke(3.dp,MaterialTheme.colors.onSurface),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colors.surface) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally){
+                    Text(text = stringResource(id = R.string.filter_dialog_title),
+                        style = MaterialTheme.typography.h6, modifier = Modifier.padding(16.dp))
 
-        Surface(modifier = modifier
-            .fillMaxWidth()
-            .padding(32.dp),
-            border = BorderStroke(3.dp,MaterialTheme.colors.onSurface),
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colors.surface) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally){
-                Text(text = stringResource(id = R.string.filter_dialog_title),
-                    style = MaterialTheme.typography.h6, modifier = Modifier.padding(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp)) {
-                    Text(text = stringResource(id = R.string.category_input_string),
-                        style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.onSurface,
-                        modifier = Modifier.weight(1f))
-                    Switch(checked = categorySwitchState, onCheckedChange = { categorySwitchState = it })
+                    /*Category dropdown menu*/
+                    ExposedDropdownMenu(
+                        value = categoryState.value,
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp)
+                            .fillMaxWidth(),
+                        label = {
+                            Text(text = stringResource(id = R.string.category_input_string),
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.onSurface.copy(0.6f)) },
+                        onValueChange = {
+                            viewModel.updateCategoryFilter(it)
+                        },
+                        leadingIcon = {
+                            Icon(painter = painterResource(id = R.drawable.ic_category), contentDescription = "")
+                        },
+                        options = viewModel.getListOfCategories())
+
+                    /*place of purchase text field*/
+                    AutoCompleteTextField(
+                        value = placeState.value,
+                        modifier = Modifier
+                            .padding(start = 16.dp, end = 16.dp, top = 12.dp)
+                            .fillMaxWidth(),
+                        label = {
+                            Text(text = stringResource(id = R.string.place_hint),
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.onSurface.copy(0.6f))
+                        },
+                        maxAllowedChars = AddFragment.PLACE_MAX_LENGTH,
+                        onValueChange = {
+                            viewModel.updatePlaceFilter(it)
+                        },
+                        leadingIcon = {
+                            Icon(painter = painterResource(id = R.drawable.ic_place), contentDescription = "")
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                viewModel.updatePlaceFilter("")
+                            }) {
+                                Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        ),
+                        predictions = placePredictions,
+                        itemContent = {
+                            Text(text = it,
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.onSurface.copy(0.8f),
+                                modifier = Modifier.padding(2.dp))
+                        }
+                    )
+
+                    Row(modifier = Modifier
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                        .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End) {
+                        Button(onClick = onConfirm,
+                            enabled = filterEnabled.value,
+                            colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent,
+                                contentColor = MaterialTheme.colors.secondary),
+                            elevation = ButtonDefaults.elevation(defaultElevation = 0.dp)) {
+                            Text(text = stringResource(id = R.string.button_apply_label)
+                                , style = MaterialTheme.typography.h6)
+                        }
+                    }
                 }
-                Divider(thickness = 2.dp,
-                    color = MaterialTheme.colors.secondary.copy(0.7f),
-                    modifier = Modifier.padding(start = 30.dp, end = 30.dp))
             }
         }
     }
 
-    @Preview(heightDp = 450, widthDp = 360)
     @Composable
-    fun filterDialogPreview(){
-        PriceRecorderTheme {
-            filterProductsDialog(show = true, onConfirm = {}, onDismiss = {})
-        }
-    }*/
+    private fun FiltersAppliedScreen(
+        show: Boolean,
+        onCancelClick:() -> Unit,
+        modifier: Modifier = Modifier
+    ){
+        if(!show)
+            return
 
-    @Preview(heightDp = 450, widthDp = 360, uiMode = UI_MODE_NIGHT_YES)
-    @Composable
-    fun ProductDetailPreview(){
-        PriceRecorderTheme {
-            ProductDetail(product = Product("Leche La Serenisima",250.0,"Carrefour Market",
-                "Lacteos",DateUtils.getCurrentDate()),{})
+        /*Filter is cancelled when the system back press key is pressed*/
+        BackPressHandler(onBackPressed = onCancelClick)
+        Row(modifier = modifier
+            .background(MaterialTheme.colors.primaryVariant.copy(0.8f))
+            .fillMaxWidth()
+            .padding(bottom = 4.dp, top = 4.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically) {
+
+            val chipItems = mutableListOf<ChipItem>()
+            if(viewModel.categoryFilter.value.isNotEmpty()){
+                chipItems.add(
+                    ChipItem(
+                        text = viewModel.categoryFilter.value,
+                        leadingIcon = {
+                            Icon(painter = painterResource(id = R.drawable.ic_category), contentDescription = "",
+                                modifier = Modifier.clip(CircleShape))
+                        }
+                    )
+                )
+            }
+            if(viewModel.placeFilter.value.isNotEmpty()){
+                chipItems.add(
+                    ChipItem(
+                        text = viewModel.placeFilter.value,
+                        leadingIcon = {
+                            Icon(painter = painterResource(id = R.drawable.ic_place), contentDescription = "",
+                                modifier = Modifier.clip(CircleShape))
+                        }
+                    )
+                )
+            }
+
+            CustomChipList(
+                items = chipItems.toList(),
+                modifier = Modifier
+                    .weight(1f)
+                    .horizontalScroll(rememberScrollState()))
+
+            IconButton(onClick = onCancelClick) {
+                Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "",
+                    tint = MaterialTheme.colors.onPrimary)
+            }
         }
     }
 
-    //@Preview(widthDp = 360)
     @Composable
-    private fun ListItemProductPreview(){
-        PriceRecorderTheme {
-            ListItemProduct(product = Product("Leche La Serenisima",250.0,"Carrefour Market",
-                "",DateUtils.getCurrentDate())
-            )
-        }
+    fun HomeAppBar(onSearchClick: () -> Unit, onFilterClick: () -> Unit, onDeleteAllClicked:() -> Unit,
+                   onSettingsClicked:() -> Unit){
+        /*TODO("Deshabilitar acciones de barra superior cuando no haya productos almacenados")*/
+        /*val productListEmpty by remember {
+            derivedStateOf { viewModel.products.value.isNullOrEmpty() }
+        }*/
+
+        ShowTopAppBar(stringResource(R.string.app_name),
+            navigationIcon = null
+            , actionItems = listOf(
+                AppBarAction(stringResource(id = R.string.search_view_hint),
+                    Icons.Filled.Search, onSearchClick),
+                AppBarAction(stringResource(id = R.string.filter_dialog_title),
+                    Icons.Filled.FilterList,onFilterClick),
+                AppBarAction(stringResource(id = R.string.delete_all_menu_option),
+                    null,onDeleteAllClicked),
+                AppBarAction(stringResource(id = R.string.setting_fragment_title),null,onSettingsClicked)
+            ))
     }
 }
