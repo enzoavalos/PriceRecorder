@@ -1,6 +1,5 @@
 package com.example.pricerecorder.settingsFragment
 
-import android.app.Application
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
@@ -16,12 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.pricerecorder.*
 import com.example.pricerecorder.R
@@ -33,13 +33,13 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 class SettingsFragment : Fragment(){
-    private lateinit var viewModel: SettingsFragmentViewModel
+    private val viewModel: SettingsFragmentViewModel by viewModels { SettingsFragmentViewModel.factory }
     private lateinit var database : ProductDatabase
+
     companion object{
         //Equivalent to 1 Gigabyte
         const val MAX_DOWNLOAD_SIZE = 1L * 1024 * 1024 * 1024
     }
-
     data class SectionOption(
         val title:String,
         var desc:String? = null,
@@ -51,13 +51,11 @@ class SettingsFragment : Fragment(){
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val application: Application = requireNotNull(this.activity).application
-        database = ProductDatabase.getInstance(application)
-        val viewModelFactory = SettingFragmentViewModelFactory(application)
-        viewModel = ViewModelProvider(this, viewModelFactory)[SettingsFragmentViewModel::class.java]
+        database = ProductDatabase.getInstance(requireNotNull(this.activity).application)
         viewModel.getLastBackupDate()
 
         return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnLifecycleDestroyed(viewLifecycleOwner))
             setContent {
                 SettingsScreen()
             }

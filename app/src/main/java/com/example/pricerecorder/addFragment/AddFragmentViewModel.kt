@@ -2,25 +2,36 @@ package com.example.pricerecorder.addFragment
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.pricerecorder.CurrencyFormatter
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductsRepository
-import com.google.android.gms.common.internal.Objects
 import kotlinx.coroutines.*
 
 class AddFragmentViewModel(application: Application):ViewModel() {
+    companion object{
+        val factory = object : ViewModelProvider.Factory{
+            @Suppress("unchecked_cast")
+            override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
+                val application = checkNotNull(extras[APPLICATION_KEY])
+                return AddFragmentViewModel(application) as T
+            }
+        }
+    }
+
     private val repository = ProductsRepository.getInstance(application)
 
     private var _fabEnabled : MutableState<Boolean> = mutableStateOf(false)
     var fabEnabled : State<Boolean> = _fabEnabled
+    private var _showImageDialog = mutableStateOf(false)
+    var showImageDialog : State<Boolean> = _showImageDialog
 
     private var _prodImage : MutableState<Bitmap?> = mutableStateOf(null)
     var prodImage : State<Bitmap?> = _prodImage
@@ -36,14 +47,17 @@ class AddFragmentViewModel(application: Application):ViewModel() {
     var prodSize : State<String> = _prodSize
     private var _prodQuantity : MutableState<String> = mutableStateOf("")
     var prodQuantity : State<String> = _prodQuantity
-
-    private var _showImageDialog = mutableStateOf(false)
-    var showImageDialog : State<Boolean> = _showImageDialog
-
     private var _prodPurchasePlace : MutableState<String> = mutableStateOf("")
     var prodPurchasePlace : State<String> = _prodPurchasePlace
     private val _placesFiltered : MutableState<List<String>> = mutableStateOf(listOf())
     val placesFiltered : State<List<String>> = _placesFiltered
+
+    private val _barCode : MutableState<String> = mutableStateOf("")
+    val barCode : State<String> = _barCode
+
+    fun updateBarCodeState(newValue: String){
+        _barCode.value = newValue
+    }
 
     fun updateProdPurchasePlace(newValue:String){
         _prodPurchasePlace.value = newValue
@@ -101,6 +115,12 @@ class AddFragmentViewModel(application: Application):ViewModel() {
     fun addProduct(product: Product){
         viewModelScope.launch {
             repository.insertProduct(product)
+        }
+    }
+
+    fun productAlreadyRegistered(description:String,place:String):Boolean{
+        return runBlocking {
+            return@runBlocking repository.productAlreadyRegistered(description,place)
         }
     }
 }

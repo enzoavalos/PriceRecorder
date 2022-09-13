@@ -29,6 +29,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -295,34 +298,33 @@ fun CustomTextField(
     Column(modifier = modifier
         .background(Color.Transparent),
         horizontalAlignment = Alignment.End) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {
-            var newValue = it
-            maxAllowedChars?.let { limit ->
-                if(it.length > limit)
-                    newValue = it.dropLast(it.length - limit)
-            }
-            onValueChange(newValue)
-        },
-            label = label,
-            modifier = Modifier
-                .fillMaxWidth(),
-            singleLine = (maxLines == 1),
-            readOnly = readOnly,
-            maxLines = maxLines,
-            leadingIcon = leadingIcon,
-            trailingIcon = if(showTrailingIcon) trailingIcon else null,
-            textStyle = MaterialTheme.typography.subtitle1,
-            colors = TextFieldDefaults.textFieldColors(
-                backgroundColor = Color.Transparent,
-                cursorColor = MaterialTheme.colors.primaryVariant.copy(ContentAlpha.medium),
-                textColor = MaterialTheme.colors.onSurface
-            ),
-            keyboardOptions = keyboardOptions,
-            keyboardActions = keyboardActions,
-            isError = isError,
-            enabled = enabled)
+            OutlinedTextField(
+                value = value,
+                onValueChange = {
+                    var newValue = it
+                    maxAllowedChars?.let { limit ->
+                        if(it.length > limit)
+                            newValue = it.dropLast(it.length - limit)
+                    }
+                    onValueChange(newValue)
+                },
+                label = label,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = (maxLines == 1),
+                readOnly = readOnly,
+                maxLines = maxLines,
+                leadingIcon = leadingIcon,
+                trailingIcon = if(showTrailingIcon) trailingIcon else null,
+                textStyle = MaterialTheme.typography.subtitle1,
+                colors = TextFieldDefaults.textFieldColors(
+                    backgroundColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colors.primaryVariant.copy(ContentAlpha.medium),
+                    textColor = MaterialTheme.colors.onSurface
+                ),
+                keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions,
+                isError = isError,
+                enabled = enabled)
 
        TextFieldDecorators(
             maxAllowedChars =  maxAllowedChars,
@@ -339,7 +341,7 @@ private fun TextFieldDecorators(
     charCount:Int? = null,
     showCount:Boolean = false){
     Row(modifier = Modifier
-        .padding(end = 12.dp, bottom = 8.dp, start = 12.dp)
+        .padding(end = 12.dp, start = 12.dp)
         .fillMaxWidth(),
         horizontalArrangement = if(helperText != null) Arrangement.Start else Arrangement.End,
         verticalAlignment = Alignment.CenterVertically) {
@@ -433,17 +435,20 @@ fun SelectedImageCustomDialog(
         return
     Dialog(onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(modifier = modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Bottom,
+        Column(modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally) {
             Image(bitmap = image!!.asImageBitmap(),
                 contentDescription = "",
                 modifier = Modifier.fillMaxWidth(),
                 contentScale = ContentScale.Crop,
-                alignment = Alignment.Center)
+                alignment = Alignment.TopCenter)
 
             Button(onClick = onDelete,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+                shape = MaterialTheme.shapes.small.copy(topStart = CornerSize(0.dp), topEnd = CornerSize(0.dp)),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = Color.Red
                 )) {
@@ -529,6 +534,56 @@ fun AdaptiveIconImage(
     Image(painter = painterResource(id = drawable),
         contentDescription = "",
         modifier = modifier)
+}
+
+@Composable
+fun BarcodeScanSection(
+    barcodeState:String,
+    onValueChange:(String) -> Unit,
+    onCancelClicked:() -> Unit,
+    onScanCodeClicked:() -> Unit,
+    maxAllowedChars:Int? = null,
+    helperText: String? = null){
+    CustomTextField(value = barcodeState,
+        modifier = Modifier
+            .fillMaxWidth(),
+        label = {
+            Text(text = stringResource(id = R.string.product_barcode_label),
+                style = MaterialTheme.typography.subtitle1,
+                color = MaterialTheme.colors.onSurface.copy(0.6f))
+        },
+        maxAllowedChars = maxAllowedChars,
+        onValueChange = {
+            onValueChange(it)
+        },
+        trailingIcon = {
+            IconButton(onClick = onCancelClicked) {
+                Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+            }
+        },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Text,
+            imeAction = ImeAction.Next
+        ),
+        showCount = false)
+
+    TextFieldDecorators(helperText = helperText)
+
+    OutlinedButton(onClick = onScanCodeClicked,
+        border = BorderStroke(width = 2.dp, color = MaterialTheme.colors.secondary),
+        modifier = Modifier
+            .padding(start = 12.dp, end = 12.dp, bottom = 8.dp, top = 2.dp)
+            .fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = MaterialTheme.colors.secondary.copy(alpha = 0.6f)
+        )) {
+        Text(text = stringResource(id = R.string.scan_barcode_prompt),
+            style = MaterialTheme.typography.subtitle1,
+            modifier = Modifier
+                .fillMaxWidth(),
+            color = MaterialTheme.colors.onSecondary,
+            textAlign = TextAlign.Center)
+    }
 }
 
 @OptIn(ExperimentalMaterialApi::class)

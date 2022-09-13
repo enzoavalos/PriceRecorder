@@ -1,48 +1,45 @@
 package com.example.pricerecorder.addFragment
 
-import android.app.Application
-import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.HighlightOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.DefaultTintColor
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
+import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.pricerecorder.*
 import com.example.pricerecorder.R
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.theme.PriceRecorderTheme
+import kotlinx.coroutines.launch
 
 class AddFragment:Fragment(){
-    private lateinit var viewModel: AddFragmentViewModel
+    private val viewModel: AddFragmentViewModel by viewModels { AddFragmentViewModel.factory }
+    private lateinit var imageHandler : ImageUtils
+    private lateinit var permissionChecker : PermissionChecker
+    private lateinit var barcodeScanner: BarcodeScanner
 
     companion object {
         const val DESCRIPTION_MAX_LENGTH = 60
@@ -50,77 +47,45 @@ class AddFragment:Fragment(){
         const val MAX_INTEGRAL_DIGITS = 6
         const val SIZE_MAX_LENGTH = 20
         const val QUANTITY_MAX_LENGTH = 5
+        const val BARCODE_MAX_LENGTH = 50
     }
 
     override fun onCreateView(inflater: LayoutInflater,container: ViewGroup?,savedInstanceState: Bundle?): View {
-        val application: Application = requireNotNull(this.activity).application
-        val viewModelFactory = AddViewModelFactory(application)
-        viewModel = ViewModelProvider(this,viewModelFactory)[AddFragmentViewModel::class.java]
+        imageHandler = ImageUtils(requireContext(),requireActivity().activityResultRegistry)
+        permissionChecker = PermissionChecker(requireContext(),requireActivity().activityResultRegistry)
 
         return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnLifecycleDestroyed(viewLifecycleOwner))
             setContent {
                 AddProductScreen(onNavigateBack = { navigateUp() })
             }
         }
     }
 
-    /*Handles the return value of their specific request made to the user*/
-    private val readExternalFilesPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()){
-        if(it){ pickImageFromGallery() }
-    }
-
-    private val accessCameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()){
-        if(it){ takePictureFromCamera() }
-    }
-
-    /*Launches the activities registered below in order to get a result from them*/
-    private fun pickImageFromGallery(){
-        selectPictureLauncher.launch("image/*")
-    }
-
-    private fun takePictureFromCamera(){
-        tempImageUri = FileProvider.getUriForFile(requireContext(),
-            "com.example.pricerecorder.provider",ImageUtils.createTemporaryImageFile(requireContext()))
-        try {
-            cameraLauncher.launch(tempImageUri)
-        }catch (e:Exception){
-            Toast.makeText(context,resources.getString(R.string.camera_access_error),Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    /*Register a contract that returns a special launcher used to start an activity for result, designated by the given
-    contract, in this case to select an image from the gallery or take a picture from the systems camera*/
-    private val selectPictureLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if(uri != null){
-            ImageUtils.getBitmapFromUri(requireContext(),uri)?.let {
-                val productImage = ImageUtils.getModifiedBitmap(requireContext(),it,uri)
-                viewModel.updateProdImage(productImage)
-            }
-        }
-    }
-
-    private var tempImageUri : Uri? = null
-    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()
-    ) { success ->
-        if(success){
-            ImageUtils.getBitmapFromUri(requireContext(),tempImageUri!!)?.let {
-                val productImage = ImageUtils.getModifiedBitmap(requireContext(),it,tempImageUri!!)
-                viewModel.updateProdImage(productImage)
-            }
-        }
-    }
-
     //Creates a new Product instance and stores it in the DB
-    private fun createNewProduct(){
+    private fun createNewProduct(showSnackbar:(String)->Unit){
         val desc = viewModel.prodDescription.value
-        val price = viewModel.prodPrice.value.toDouble()
         val place = viewModel.prodPurchasePlace.value
-        val cat = viewModel.prodCategory.value
-        val weight = viewModel.prodSize.value
-        val amount = viewModel.prodQuantity.value
-        val newProduct = Product(desc,price,place,cat, image = viewModel.prodImage.value, size = weight, quantity = amount)
 
-        viewModel.addProduct(newProduct)
+        viewModel.apply {
+            if(productAlreadyRegistered(desc,place)){
+                showSnackbar(getString(R.string.product_already_exists_msg))
+                return
+            }
+
+            val newProduct = Product(
+                description = desc,
+                price = prodPrice.value.toDouble(),
+                placeOfPurchase = place,
+                category = prodCategory.value,
+                image = viewModel.prodImage.value,
+                size = prodSize.value,
+                quantity = prodQuantity.value,
+                barcode = barCode.value)
+
+            addProduct(newProduct)
+        }
+
         Toast.makeText(context,resources.getString(R.string.new_product_added,desc),Toast.LENGTH_SHORT).show()
         navigateUp()
     }
@@ -132,9 +97,12 @@ class AddFragment:Fragment(){
     @Composable
     fun AddProductScreen(onNavigateBack:() -> Unit){
         val fabEnabled = viewModel.fabEnabled
+        val scaffoldState = rememberScaffoldState()
+        val coroutineScope = rememberCoroutineScope()
 
         PriceRecorderTheme {
             Scaffold(
+                scaffoldState = scaffoldState,
                 topBar = { ShowTopAppBar(appBarTitle = stringResource(id = R.string.add_fragment_title), actionItems = listOf(),
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
@@ -143,7 +111,11 @@ class AddFragment:Fragment(){
                     }) },
                 floatingActionButton = { AddFloatingActionButton(enabled = fabEnabled.value,
                     onClick = {
-                        createNewProduct()
+                        createNewProduct(showSnackbar = { msg ->
+                            coroutineScope.launch {
+                                scaffoldState.snackbarHostState.showSnackbar(message = msg)
+                            }
+                        })
                     }) },
                 floatingActionButtonPosition = FabPosition.Center
             ) {
@@ -166,23 +138,23 @@ class AddFragment:Fragment(){
         val showImageDialog = viewModel.showImageDialog
         val priceErrorState by viewModel.priceEditError
         val placePredictions by viewModel.placesFiltered
+        val barcodeState by viewModel.barCode
 
         ImagePickerCustomDialog(
             show = (showImageDialog.value and (image.value == null)),
             onDismiss = { viewModel.updateShowImageDialogState(false) },
             title = stringResource(id = R.string.add_image_dialog_title),
             galleryPicker = {
-                PermissionChecker.checkForPermissions(requireContext(),android.Manifest.permission.READ_EXTERNAL_STORAGE,
-                    PermissionChecker.FILE_REQUEST_CODE,
-                    ::pickImageFromGallery,
-                    readExternalFilesPermission)
+                permissionChecker.checkForPermissions(
+                    PermissionChecker.READ_EXTERNAL_FILES_PERMISSION,
+                    PermissionChecker.FILE_REQUEST_CODE
+                ) { imageHandler.pickImageFromGallery { viewModel.updateProdImage(it) } }
             },
             pictureTaker = {
-                PermissionChecker.checkForPermissions(requireContext(),
-                    android.Manifest.permission.CAMERA,
-                    PermissionChecker.CAMERA_REQUEST_CODE,
-                    ::takePictureFromCamera,
-                    accessCameraPermission)
+                permissionChecker.checkForPermissions(
+                    PermissionChecker.CAMERA_ACCESS_PERMISSION,
+                    PermissionChecker.CAMERA_REQUEST_CODE
+                ) { imageHandler.takePictureFromCamera { viewModel.updateProdImage(it) } }
             })
 
         SelectedImageCustomDialog(
@@ -201,6 +173,7 @@ class AddFragment:Fragment(){
             .fillMaxSize(),
             color = MaterialTheme.colors.surface) {
             Column(modifier = Modifier
+                .padding(start = 24.dp, end = 24.dp)
                 .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 CurrentSelectedImage(image = image.value,
@@ -211,7 +184,7 @@ class AddFragment:Fragment(){
                 /*Description text field*/
                 CustomTextField(value = description.value,
                     modifier = Modifier
-                        .padding(start = 24.dp, end = 24.dp)
+                        .padding(bottom = 8.dp)
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.description_string),
@@ -240,7 +213,7 @@ class AddFragment:Fragment(){
                 AutoCompleteTextField(
                     value = purchasePlace.value,
                     modifier = Modifier
-                        .padding(start = 24.dp, end = 24.dp)
+                        .padding(bottom = 8.dp)
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.place_hint),
@@ -268,7 +241,7 @@ class AddFragment:Fragment(){
                     predictions = placePredictions,
                     itemContent = {
                         Text(text = it,
-                            style = MaterialTheme.typography.subtitle1,
+                            style = MaterialTheme.typography.subtitle1.copy(fontSize = 18.sp),
                             color = MaterialTheme.colors.onSurface.copy(0.8f),
                             modifier = Modifier.padding(2.dp))
                     }
@@ -278,7 +251,7 @@ class AddFragment:Fragment(){
                 ExposedDropdownMenu(
                     value = categoryState.value,
                     modifier = Modifier
-                        .padding(start = 24.dp, end = 24.dp)
+                        .padding(bottom = 8.dp)
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.category_input_string),
@@ -297,7 +270,7 @@ class AddFragment:Fragment(){
                 /*Quantity text field*/
                 CustomTextField(value = quantityState.value,
                     modifier = Modifier
-                        .padding(start = 24.dp, end = 24.dp)
+                        .padding(bottom = 8.dp)
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.product_quantity_label),
@@ -325,7 +298,7 @@ class AddFragment:Fragment(){
                 /*Size/Weight text field*/
                 CustomTextField(value = sizeState.value,
                     modifier = Modifier
-                        .padding(start = 24.dp, end = 24.dp)
+                        .padding(bottom = 8.dp)
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.product_size_label),
@@ -350,10 +323,26 @@ class AddFragment:Fragment(){
                     helperText = stringResource(id = R.string.helper_text_optional),
                     showCount = false)
 
+                BarcodeScanSection(
+                    barcodeState = barcodeState,
+                    onValueChange = { viewModel.updateBarCodeState(it) },
+                    onCancelClicked = { viewModel.updateBarCodeState("") },
+                    onScanCodeClicked = {
+                        barcodeScanner = BarcodeScanner(
+                            requireContext(),
+                            requireActivity().activityResultRegistry
+                        )
+                        barcodeScanner.scanCode(permissionChecker) {
+                            viewModel.updateBarCodeState(it)
+                        }
+                    },
+                    maxAllowedChars = BARCODE_MAX_LENGTH,
+                    helperText = stringResource(id = R.string.optional_helper_text))
+
                 /*price text field*/
                 CustomTextField(value = priceState.value,
                     modifier = Modifier
-                        .padding(start = 24.dp, end = 24.dp)
+                        .padding(bottom = 8.dp)
                         .width(200.dp),
                     label = {
                         Text(text = stringResource(id = R.string.price_title),
@@ -381,14 +370,6 @@ class AddFragment:Fragment(){
                     .height(80.dp)
                     .background(Color.Transparent))
             }
-        }
-    }
-
-    //@Preview(heightDp = 800, widthDp = 360)
-    @Composable
-    fun AddFragmentPreview(){
-        PriceRecorderTheme {
-            AddProductScreen(onNavigateBack = {})
         }
     }
 }

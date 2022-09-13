@@ -72,6 +72,7 @@
     <string name="product_quantity_label">Cantidad</string>
     <string name="product_size_label">Peso/Tamaño</string>
     <string name="button_apply_label">Aplicar</string>
+    <string name="product_already_exists_msg">El producto ingresado ya existe</string>
 
     <string name="product_category_edibles">Comestibles</string>
     <string name="product_category_cleaning">Limpieza</string>
@@ -105,6 +106,8 @@
     <string name="close_icon_desc">Cerrar</string>
     <string name="delete_all_success_msg">Productos eliminados</string>
     <string name="google_sign_in_button_text">Acceder</string>
+    <string name="scan_barcode_prompt">Escanear Codigo</string>
+    <string name="product_barcode_label">Codigo de barras</string>
 
     <string-array name="range_slider_values">
         <item>20</item>

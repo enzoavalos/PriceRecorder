@@ -3,9 +3,9 @@ package com.example.pricerecorder.homeFragment
 import android.app.Application
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.*
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.pricerecorder.CurrencyFormatter
 import com.example.pricerecorder.R
 import com.example.pricerecorder.SearchWidgetState
@@ -13,11 +13,20 @@ import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductsRepository
 import com.example.pricerecorder.filters.FilterState
 import kotlinx.coroutines.launch
-import kotlin.math.ceil
 
 class HomeViewModel(
     @get:JvmName("getViewModelApplication") val application: Application
 ): AndroidViewModel(application){
+    companion object{
+        val factory = object : ViewModelProvider.Factory{
+            @Suppress("unchecked_cast")
+            override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
+                val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
+                return HomeViewModel(application) as T
+            }
+        }
+    }
+
     private val repository = ProductsRepository.getInstance(application)
     val products : LiveData<List<Product>>
         get() = repository.products
@@ -37,6 +46,17 @@ class HomeViewModel(
     var isFiltering : State<Boolean> = repository.isFiltering
     private var _filterEnabled : MutableState<Boolean> = mutableStateOf(false)
     var filterEnabled : State<Boolean> = _filterEnabled
+    private var _barcodeFilter = mutableStateOf("")
+    var barcodeFilter : State<String> = _barcodeFilter
+
+    /*TODO("Implementar filtrado x codigo de barras")*/
+    fun updateBarcodeFilter(newValue: String){
+        _barcodeFilter.value = newValue
+        if(newValue.isNotEmpty())
+            viewModelScope.launch {
+                repository.filterByBarcode(newValue)
+            }
+    }
 
     private fun updateFilterEnabledState(){
         _filterEnabled.value = (
@@ -68,6 +88,11 @@ class HomeViewModel(
         _filterEnabled.value = false
     }
 
+    fun resetSearchState(){
+        updateSearchTextState("")
+        updateSearchWidgetState(SearchWidgetState.CLOSED)
+    }
+
     fun updatePriceEditTextState(newValue: String){
         _priceEditError.value = !CurrencyFormatter.isInputNumericValid(newValue)
         if(!priceEditError.value)
@@ -84,14 +109,14 @@ class HomeViewModel(
         repository.updateSearchTextState(newValue)
     }
 
-    fun deleteProduct(product: Product){
+    fun deleteProduct(productId:Long){
         viewModelScope.launch {
-            repository.deleteProduct(product)
-            repository.updateCategoryFilter("")
-            repository.updateSearchTextState("")
-            repository.updateFilterState(FilterState.IDLE)
-            repository.updateSearchWidgetState(SearchWidgetState.CLOSED)
+            repository.deleteProduct(productId)
         }
+        repository.updateFilterState(FilterState.IDLE)
+        repository.updateSearchWidgetState(SearchWidgetState.CLOSED)
+        repository.updateCategoryFilter("")
+        repository.updateSearchTextState("")
     }
 
     fun clear(){
@@ -130,13 +155,5 @@ class HomeViewModel(
         if(noCategory)
             list.add(0,application.resources.getString(R.string.option_uncategorized))
         return list.toList()
-    }
-
-    /*Returns the maximum price the user has registered rounded up*/
-    fun getMaxPrice() : Float{
-        products.value!!.let{
-            val list = it.sortedByDescending { p -> p.getPrice() }
-            return if(list.isNotEmpty()) ceil(list[0].getPrice()).toFloat() else 100f
-        }
     }
 }

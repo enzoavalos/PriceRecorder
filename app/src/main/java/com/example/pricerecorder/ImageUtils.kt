@@ -8,13 +8,62 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.result.ActivityResultRegistry
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
 
-interface ImageUtils {
+class ImageUtils(
+    private val context: Context,
+    registry: ActivityResultRegistry) {
+    private var onSuccess: (Bitmap) -> Unit = {}
+
+    /*Register a contract that returns a special launcher used to start an activity for result, designated by the given
+    contract, in this case to select an image from the gallery or take a picture from the systems camera*/
+    private val selectPictureLauncher = registry.register("selectPictureLauncher",
+        ActivityResultContracts.GetContent()) { uri ->
+        if(uri != null){
+            getBitmapFromUri(context,uri)?.let {
+                val activityResult = getModifiedBitmap(context,it,uri)
+                onSuccess(activityResult)
+            }
+        }
+    }
+
+    private var tempImageUri : Uri? = null
+    private val cameraLauncher = registry.register("cameraLauncher",
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if(success){
+            getBitmapFromUri(context,tempImageUri!!)?.let {
+                val activityResult = getModifiedBitmap(context,it,tempImageUri!!)
+                onSuccess(activityResult)
+            }
+        }
+    }
+
+    /*Launches the activities registered below in order to get a result from them*/
+    fun pickImageFromGallery(onSuccessCallback:(Bitmap) -> Unit){
+        this.onSuccess = onSuccessCallback
+        selectPictureLauncher.launch("image/*")
+    }
+
+    fun takePictureFromCamera(onSuccessCallback:(Bitmap) -> Unit){
+        this.onSuccess = onSuccessCallback
+        tempImageUri = FileProvider.getUriForFile(context,
+            "com.example.pricerecorder.provider",createTemporaryImageFile(context))
+        try {
+            cameraLauncher.launch(tempImageUri)
+        }catch (e:Exception){
+            Toast.makeText(context,context.resources.getString(R.string.camera_access_error), Toast.LENGTH_SHORT).show()
+        }
+    }
+
     companion object{
         private const val MAX_BITMAP_SIZE = 500000
 

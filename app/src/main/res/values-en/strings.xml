@@ -101,4 +101,7 @@
     <string name="product_quantity_label">Quantity</string>
     <string name="product_size_label">Size/Weight</string>
     <string name="button_apply_label">Apply</string>
+    <string name="product_already_exists_msg">The product already exists</string>
+    <string name="scan_barcode_prompt">Scan Barcode</string>
+    <string name="product_barcode_label">Barcode</string>
 </resources>

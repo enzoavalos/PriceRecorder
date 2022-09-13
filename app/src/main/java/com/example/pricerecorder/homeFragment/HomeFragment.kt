@@ -1,6 +1,5 @@
 package com.example.pricerecorder.homeFragment
 
-import android.app.Application
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
@@ -14,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -42,15 +42,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.pricerecorder.*
 import com.example.pricerecorder.R
@@ -61,15 +63,13 @@ import com.example.pricerecorder.theme.*
 import kotlinx.coroutines.launch
 
 class HomeFragment:Fragment() {
-    private lateinit var viewModel: HomeViewModel
+    private val viewModel: HomeViewModel by viewModels { HomeViewModel.factory }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val application: Application = requireNotNull(this.activity).application
-        val viewModelFactory = HomeViewModelFactory(application)
-        viewModel = ViewModelProvider(this, viewModelFactory)[HomeViewModel::class.java]
         createNotificationChannel(requireContext())
 
         return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
                 HomeScreen()
             }
@@ -96,11 +96,19 @@ class HomeFragment:Fragment() {
         val scaffoldState = rememberScaffoldState()
         val coroutineScope = rememberCoroutineScope()
         val filterState = viewModel.isFiltering
+        val list by viewModel.products.observeAsState(listOf())
+        /*Used to remember the state of the products list through recompositions*/
+        val lazyListState = rememberLazyListState()
+        /*Hoisted state used to disable the home app bar actions such as search and filter when there are
+        * no elements stored*/
+        val appBarActionsEnabled by remember {
+            derivedStateOf { list.isNotEmpty() }
+        }
 
         PriceRecorderTheme {
             Scaffold(scaffoldState = scaffoldState,
                 backgroundColor = MaterialTheme.colors.background
-                ,topBar = { MainAppBar(searchWidgetState,searchTextState) },
+                ,topBar = { MainAppBar(searchWidgetState,searchTextState,appBarActionsEnabled) },
                 floatingActionButton = { AddFloatingActionButton(enabled = true,
                     onClick = { navigateToAddFragment() }) },
                 floatingActionButtonPosition = FabPosition.Center) {
@@ -113,19 +121,25 @@ class HomeFragment:Fragment() {
                             onCancelClick = {
                                 viewModel.updateFilterState(FilterState.IDLE)
                                 viewModel.resetFilters()
+                                viewModel.resetSearchState()
                             },
                             modifier = Modifier.fillMaxWidth())
                     }
 
-                    ProductsList(showSnackBar = { msg, actionLabel, onActionPerformed ->
-                        coroutineScope.launch {
-                            /*Snack bar is shown on screen and when the action is clicked, onActionPerformed is invoked*/
-                            when(scaffoldState.snackbarHostState.showSnackbar(message = msg,actionLabel = actionLabel)){
-                                SnackbarResult.ActionPerformed -> onActionPerformed()
-                                else -> {}
+                    ProductsList(showSnackBar = {
+                        msg,
+                        actionLabel,
+                        onActionPerformed ->
+                            coroutineScope.launch {
+                                /*Snack bar is shown on screen and when the action is clicked, onActionPerformed is invoked*/
+                                when(scaffoldState.snackbarHostState.showSnackbar(message = msg,actionLabel = actionLabel)){
+                                    SnackbarResult.ActionPerformed -> onActionPerformed()
+                                    else -> {}
+                                }
                             }
-                        }
                     },
+                        list = list,
+                        lazyListState = lazyListState,
                         modifier = Modifier.padding(it))
                 }
             }
@@ -134,7 +148,11 @@ class HomeFragment:Fragment() {
 
     /*Determines the app bar to be displayed, either the default appbar or a search app bar*/
     @Composable
-    private fun MainAppBar(searchWidgetState: SearchWidgetState, searchTextState:String){
+    private fun MainAppBar(
+        searchWidgetState: SearchWidgetState,
+        searchTextState: String,
+        appBarActionsEnabled: Boolean
+        ){
         var showDeleteAllDialog by remember {
             mutableStateOf(false)
         }
@@ -174,7 +192,10 @@ class HomeFragment:Fragment() {
                 HomeAppBar(onSearchClick = { viewModel.updateSearchWidgetState(SearchWidgetState.OPENED) },
                     onFilterClick = { showFilterDialog = true },
                     onDeleteAllClicked = { showDeleteAllDialog = true },
-                    onSettingsClicked = { navigateToSettingsFragment() })
+                    onSettingsClicked = { navigateToSettingsFragment() },
+                    /*TODO("implementar busqueda mediante cod de barra")*/
+                    onSearchWithBarcode = {},
+                    appBarActionsEnabled)
             }
             else -> {
                 SearchAppBar(text = searchTextState,
@@ -182,8 +203,7 @@ class HomeFragment:Fragment() {
                         viewModel.updateSearchTextState(it)
                     },
                     onCloseClicked = {
-                        viewModel.updateSearchTextState("")
-                        viewModel.updateSearchWidgetState(SearchWidgetState.CLOSED) })
+                        viewModel.resetSearchState() })
             }
         }
     }
@@ -191,29 +211,31 @@ class HomeFragment:Fragment() {
     /*List displayed in the home screen with all stored products*/
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
-    private fun ProductsList(showSnackBar:(String, String, () -> Unit) -> Unit, modifier: Modifier = Modifier){
-        val list by viewModel.products.observeAsState(listOf())
-
+    private fun ProductsList(
+        showSnackBar: (String, String, () -> Unit) -> Unit,
+        list: List<Product>,
+        lazyListState: LazyListState,
+        modifier: Modifier = Modifier
+    ){
         if(list.isNotEmpty()){
             Box(modifier = modifier) {
-                /*Used to remember the state of the list through recompositions*/
-                val state = rememberLazyListState()
                 val coroutineScope = rememberCoroutineScope()
                 /*Used to remember whether the button should be visible or not*/
                 val showScrollToTopButton by remember {
                     derivedStateOf {
-                        state.firstVisibleItemIndex > 0
+                        lazyListState.firstVisibleItemIndex > 0
                     }
                 }
 
                 LazyColumn(modifier = Modifier.fillMaxWidth(),
-                    state = state, contentPadding = PaddingValues(bottom = 44.dp)){
-                    items(list, key = {it.getId()}){ product ->
+                    state = lazyListState, contentPadding = PaddingValues(bottom = 44.dp)){
+                    items(list, key = { it.getId() }){ product ->
                         val dismissState = rememberDismissState(
+                            initialValue = DismissValue.Default,
                             confirmStateChange = {
                                 /*If item was swiped to start, then its deleted from the DB*/
                                 if(it == DismissValue.DismissedToStart){
-                                    viewModel.deleteProduct(product = product)
+                                    viewModel.deleteProduct(productId = product.getId())
                                     showSnackBar(getString(R.string.product_deleted_msg),getString(R.string.undo_action_msg)){
                                         viewModel.addProduct(product)
                                     }
@@ -246,9 +268,9 @@ class HomeFragment:Fragment() {
                                 }
                             },
                             /*swipe fraction limit where the action is confirmed*/
-                            dismissThresholds = { FractionalThreshold(0.3f) },
+                            dismissThresholds = { FractionalThreshold(0.45f) },
                             dismissContent = {
-                                /*swipeable content*/
+                                /*content to be swiped*/
                                 Card(modifier = Modifier.fillMaxWidth(),
                                     shape = MaterialTheme.shapes.medium.copy(CornerSize(0.dp)),
                                     /*Adds elevation to item as its being swiped*/
@@ -267,7 +289,7 @@ class HomeFragment:Fragment() {
                     modifier = Modifier.align(Alignment.BottomEnd)) {
                     ScrollToTopButton {
                         coroutineScope.launch {
-                            state.animateScrollToItem(0)
+                            lazyListState.animateScrollToItem(0)
                         }
                     }
                 }
@@ -315,7 +337,9 @@ class HomeFragment:Fragment() {
             AdaptiveIconImage(
                 adaptiveDrawable = drawableRes,
                 drawable = R.drawable.ic_sentiment_dissatisfied,
-                Modifier.widthIn(120.dp).heightIn(120.dp))
+                Modifier
+                    .widthIn(120.dp)
+                    .heightIn(120.dp))
 
             Text(text = stringResource(id = stringRes),
                 modifier
@@ -544,15 +568,20 @@ class HomeFragment:Fragment() {
                     .fillMaxSize()
                     .padding(3.dp)
                     .align(Alignment.Center)
-                product.getImage()?.let {
-                    Image(bitmap = it.asImageBitmap(), contentDescription = "",
-                        modifier = imgModifier, contentScale = ContentScale.Crop)
-                    return@Surface
-                }
-                Image(painter = painterResource(id = R.drawable.ic_image), contentDescription = "",
-                    modifier = imgModifier, contentScale = ContentScale.Crop)
+                DetailImageSmall(product = product,imgModifier)
             }
         }
+    }
+    
+    @Composable
+    private fun DetailImageSmall(product: Product,modifier: Modifier = Modifier){
+        product.getImage()?.let {
+            Image(bitmap = it.asImageBitmap(), contentDescription = "",
+                modifier = modifier, contentScale = ContentScale.Crop)
+            return
+        }
+        Image(painter = painterResource(id = R.drawable.ic_image), contentDescription = "",
+            modifier = modifier, contentScale = ContentScale.Crop)
     }
 
     @Composable
@@ -573,7 +602,7 @@ class HomeFragment:Fragment() {
             onConfirm = {
                 showDeleteProductDialog = false
                 onDismiss()
-                viewModel.deleteProduct(product)
+                viewModel.deleteProduct(product.getId())
                 Toast.makeText(requireContext(),getString(R.string.delete_success_msg,product.getDescription()),
                     Toast.LENGTH_SHORT).show()
             },
@@ -623,7 +652,6 @@ class HomeFragment:Fragment() {
         onConfirm:() -> Unit,
         onDismiss: () -> Unit,
         modifier: Modifier = Modifier){
-        /*TODO("mostrar barra superior cuando se haya fitrado y desactivar acciones de barra superior")*/
         if(!show)
             return
 
@@ -694,7 +722,7 @@ class HomeFragment:Fragment() {
                         predictions = placePredictions,
                         itemContent = {
                             Text(text = it,
-                                style = MaterialTheme.typography.subtitle1,
+                                style = MaterialTheme.typography.subtitle1.copy(fontSize = 18.sp),
                                 color = MaterialTheme.colors.onSurface.copy(0.8f),
                                 modifier = Modifier.padding(2.dp))
                         }
@@ -775,22 +803,24 @@ class HomeFragment:Fragment() {
     }
 
     @Composable
-    fun HomeAppBar(onSearchClick: () -> Unit, onFilterClick: () -> Unit, onDeleteAllClicked:() -> Unit,
-                   onSettingsClicked:() -> Unit){
-        /*TODO("Deshabilitar acciones de barra superior cuando no haya productos almacenados")*/
-        /*val productListEmpty by remember {
-            derivedStateOf { viewModel.products.value.isNullOrEmpty() }
-        }*/
-
+    fun HomeAppBar(
+        onSearchClick: () -> Unit, onFilterClick: () -> Unit, onDeleteAllClicked: () -> Unit,
+        onSettingsClicked: () -> Unit,
+        onSearchWithBarcode: () -> Unit,
+        appBarActionsEnabled: Boolean
+    ){
         ShowTopAppBar(stringResource(R.string.app_name),
             navigationIcon = null
             , actionItems = listOf(
                 AppBarAction(stringResource(id = R.string.search_view_hint),
-                    Icons.Filled.Search, onSearchClick),
+                    Icons.Filled.Search, onSearchClick, enabled = appBarActionsEnabled),
                 AppBarAction(stringResource(id = R.string.filter_dialog_title),
-                    Icons.Filled.FilterList,onFilterClick),
+                    Icons.Filled.FilterList,onFilterClick,enabled = (appBarActionsEnabled and !viewModel.isFiltering.value)),
                 AppBarAction(stringResource(id = R.string.delete_all_menu_option),
-                    null,onDeleteAllClicked),
+                    null,onDeleteAllClicked,enabled = appBarActionsEnabled),
+                AppBarAction(stringResource(id = R.string.scan_barcode_prompt),
+                    ImageUtils.createImageVector(drawableRes = R.drawable.ic_barcode),
+                    onSearchWithBarcode,enabled = (appBarActionsEnabled and !viewModel.isFiltering.value)),
                 AppBarAction(stringResource(id = R.string.setting_fragment_title),null,onSettingsClicked)
             ))
     }

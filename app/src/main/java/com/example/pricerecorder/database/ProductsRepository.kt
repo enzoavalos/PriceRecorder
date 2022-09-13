@@ -20,7 +20,6 @@ import java.lang.Exception
 import com.example.pricerecorder.R
 import com.example.pricerecorder.filters.AndFilter
 import com.example.pricerecorder.filters.PlaceFilter
-import java.net.Inet4Address
 
 /*Repository isolates the data layer from the rest of the app, meaning, where all data and business logic
 * is handled, exposing consistent APIs for the rest of the app to access the data*/
@@ -58,6 +57,8 @@ class ProductsRepository private constructor(
     private var _products : LiveData<List<Product>> = databaseDao.getAllProducts()
     /*val to store the current dataset to expose to the view model*/
     private val _searchResults = MutableLiveData<List<Product>>(mutableListOf())
+    /*val to store the list associated to the last filter made by the user*/
+    private val _filterResults = MutableLiveData<List<Product>>(mutableListOf())
     val products : LiveData<List<Product>>
         get() {
             return if((_isSearching.value == SearchState.STARTING) and (_isFiltering.value == FilterState.IDLE)) _products
@@ -86,26 +87,35 @@ class ProductsRepository private constructor(
             resetFilters()
     }
 
-    private fun filterProducts(){
-        val compoundFilter = AndFilter(
-            CategoryFilter(
-            category = _categoryFilter.value,
-            application.resources.getString(R.string.option_uncategorized)),
-            PlaceFilter( _placeFilter.value )
-        )
-        val list = _products.value?.filter{ compoundFilter.meetsCriteria(it) }
-        _searchResults.value = list ?: listOf()
-    }
-
     fun resetFilters(){
         _categoryFilter.value = ""
         _placeFilter.value = ""
+        _filterResults.value = listOf()
+    }
+
+    /*When user enters a new character the search is performed on the previous filtered list, otherwise
+    * performed on the whole products list
+    * Also, when search bar is emptied or newly opened, all products are shown*/
+    fun updateSearchTextState(newValue: String){
+        val userDeletedChars = userDeletedCharsFromQuery(newValue,searchTextState.value)
+        searchTextState.value = newValue
+
+        searchProductList(newValue,
+            listToSearch = when(isFiltering.value){
+                true -> { if(!userDeletedChars) _searchResults.value else _filterResults.value}
+                else -> { if(userDeletedChars or !searching.value) _products.value else _searchResults.value}
+            }
+        )
     }
 
     /*Filters the current list based on the user input parameters*/
     private fun searchProductList(query:String,listToSearch:List<Product>?){
-        if(_isSearching.value == SearchState.STARTING) {
-            _searchResults.value = _products.value
+        _isSearching.value = if(query.isEmpty()) SearchState.STARTING else SearchState.SEARCHING
+        if(!searching.value) {
+            if(!isFiltering.value)
+                _searchResults.value = _products.value
+            else
+                _searchResults.value = _filterResults.value
             return
         }
 
@@ -115,17 +125,26 @@ class ProductsRepository private constructor(
         _searchResults.value = results ?: listOf()
     }
 
-    /*When user enters a new character the search is performed on the previous filtered list, otherwise
-    * performed on the whole products list
-    * Also, when search bar is emptied or newly opened, all products are shown*/
-    fun updateSearchTextState(newValue: String){
-        val userDeletedChars = userDeletedCharsFromQuery(newValue,searchTextState.value)
-        _isSearching.value = if(newValue.isEmpty()) SearchState.STARTING else SearchState.SEARCHING
-        searchTextState.value = newValue
+    private fun filterProducts(){
+        val compoundFilter = AndFilter(
+            CategoryFilter(
+                category = _categoryFilter.value,
+                application.resources.getString(R.string.option_uncategorized)),
+            PlaceFilter( _placeFilter.value )
+        )
+        val list = _products.value?.filter{ compoundFilter.meetsCriteria(it) }
+        _filterResults.value = list ?: listOf()
+        _searchResults.value = _filterResults.value
+    }
 
-        searchProductList(newValue, listToSearch =
-        if(userDeletedChars or (_isSearching.value == SearchState.SEARCHING)) _products.value
-        else _searchResults.value)
+    /*Filters the whole products list based on a scanned barcode*/
+    suspend fun filterByBarcode(barcode:String){
+        val result = withContext(ioDispatcher){
+            return@withContext databaseDao.filterByBarcode(barcode)
+        }
+        _isFiltering.value = FilterState.FILTERING
+        _filterResults.value = result
+        _searchResults.value = _filterResults.value
     }
 
     fun updateSearchWidgetState(newValue: SearchWidgetState){
@@ -135,6 +154,14 @@ class ProductsRepository private constructor(
     /*Determines if the user has deleter chars from the query*/
     private fun userDeletedCharsFromQuery(newValue: String,oldValue:String):Boolean{
         return (newValue.length < oldValue.length)
+    }
+
+    /*Determines if there already is a product registered with the same data*/
+    suspend fun productAlreadyRegistered(description:String,place:String,productId: Long? = null):Boolean{
+        val result = withContext(ioDispatcher){
+            return@withContext databaseDao.checkExistence(description,place,productId)
+        }
+        return (result == 1)
     }
 
     suspend fun insertProduct(product: Product){
@@ -150,9 +177,9 @@ class ProductsRepository private constructor(
         return result
     }
 
-    suspend fun deleteProduct(product: Product){
+    suspend fun deleteProduct(productId:Long){
         withContext(ioDispatcher){
-            databaseDao.delete(product)
+            databaseDao.delete(productId)
         }
     }
 
