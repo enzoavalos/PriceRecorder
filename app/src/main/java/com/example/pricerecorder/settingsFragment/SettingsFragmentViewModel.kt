@@ -5,7 +5,10 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.pricerecorder.ConnectivityChecker
 import com.example.pricerecorder.DateUtils
 import com.example.pricerecorder.R
@@ -20,6 +23,16 @@ import kotlinx.coroutines.*
 * getter accidentally overrides a defined getter*/
 class SettingsFragmentViewModel(
     @get:JvmName("getViewModelApplication") val application: Application) : AndroidViewModel(application) {
+    companion object{
+        val factory = object : ViewModelProvider.Factory{
+            @Suppress("unchecked_cast")
+            override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
+                val application = checkNotNull(extras[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY])
+                return SettingsFragmentViewModel(application) as T
+            }
+        }
+    }
+
     private val repository = ProductsRepository.getInstance(application)
     /*Variables used for accessing firebase functionality as authentication and cloud storage*/
     /*Entry point of the firebase authentication sdk*/

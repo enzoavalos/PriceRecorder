@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -52,7 +54,8 @@ fun ShowTopAppBar(appBarTitle: String, actionItems:List<AppBarAction>,
                           onClick = it.action,
                           enabled = it.enabled,
                           content = { Icon(imageVector = it.icon!!,contentDescription = it.name,
-                              tint = MaterialTheme.colors.onPrimary,modifier = Modifier.alpha(1f)) }
+                              tint = if(it.enabled) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onPrimary.copy(alpha = 0.7f),
+                              modifier = Modifier.alpha(1f)) }
                       )
                   }
 
@@ -79,57 +82,68 @@ fun SearchAppBar(text:String, onTextChange:(String) -> Unit,
     val keyboardController = LocalSoftwareKeyboardController.current
     BackPressHandler(onBackPressed = onCloseClicked)
 
-    Surface(modifier = Modifier
-        .fillMaxWidth()
-        .height(56.dp),
-        elevation = AppBarDefaults.TopAppBarElevation,
-        color = MaterialTheme.colors.primary) {
-        TextField(value = text, onValueChange = { onTextChange(it) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester),
-            placeholder = { Text(modifier = Modifier.alpha(ContentAlpha.medium),
-                text = stringResource(id = R.string.search_view_hint),
-                color = MaterialTheme.colors.onPrimary) },
-            singleLine = true,
-            leadingIcon = {
-                IconButton(onClick = {}, modifier = Modifier.alpha(ContentAlpha.medium)) {
-                    Icon(imageVector = Icons.Default.Search, contentDescription = "",
-                        tint = MaterialTheme.colors.onPrimary)
-                }
-            },
-            trailingIcon = {
-                IconButton(onClick = {
-                    /*When the close button is clicked, if the text field contains text then it is cleared,
-                    * otherwise the searchBar is closed*/
-                    if(text.isNotEmpty())
-                        onTextChange("")
-                    else
-                        onCloseClicked()
-                }) {
-                    Icon(imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(id = R.string.close_icon_desc),
-                        tint = MaterialTheme.colors.onPrimary)
-                }
-            },
-            /*Specifies that the search action should be displayed in the keyboard*/
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Search
-            ),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-                    focusManager.clearFocus()
-                    keyboardController?.hide()
-                }
-            ),
-            colors = TextFieldDefaults.textFieldColors(
-                backgroundColor = Color.Transparent,
-                cursorColor = MaterialTheme.colors.primaryVariant
-            ))
+    val customTextSelectionColors = TextSelectionColors(
+        handleColor = MaterialTheme.colors.secondary,
+        backgroundColor = MaterialTheme.colors.secondary.copy(alpha = 0.5f)
+    )
 
-        /*Suspends recomposition and request focus for the component associated to the focusRequester*/
-        LaunchedEffect(key1 = null){
-            focusRequester.requestFocus()
+    CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
+        Surface(modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+            elevation = AppBarDefaults.TopAppBarElevation,
+            color = MaterialTheme.colors.primary) {
+
+            OutlinedTextField(value = text, onValueChange = { onTextChange(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                placeholder = {
+                    Text(modifier = Modifier.alpha(ContentAlpha.medium),
+                        text = stringResource(id = R.string.search_view_hint),
+                        color = MaterialTheme.colors.onPrimary)
+                },
+                singleLine = true,
+                leadingIcon = {
+                    IconButton(onClick = {}, modifier = Modifier.alpha(ContentAlpha.medium)) {
+                        Icon(imageVector = Icons.Default.Search, contentDescription = "",
+                            tint = MaterialTheme.colors.onPrimary)
+                    }
+                },
+                trailingIcon = {
+                    IconButton(onClick = {
+                        /*When the close button is clicked, if the text field contains text then it is cleared,
+                        * otherwise the searchBar is closed*/
+                        if (text.isNotEmpty())
+                            onTextChange("")
+                        else
+                            onCloseClicked()
+                    }) {
+                        Icon(imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(id = R.string.close_icon_desc),
+                            tint = MaterialTheme.colors.onPrimary)
+                    }
+                },
+                /*Specifies that the search action should be displayed in the keyboard*/
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search
+                ),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                    }
+                ),
+                colors = TextFieldDefaults.textFieldColors(
+                    backgroundColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colors.secondary,
+                    textColor = MaterialTheme.colors.onPrimary
+                ))
+
+            /*Suspends recomposition and request focus for the component associated to the focusRequester*/
+            LaunchedEffect(key1 = null) {
+                focusRequester.requestFocus()
+            }
         }
     }
 }

@@ -2,7 +2,6 @@ package com.example.pricerecorder.database
 
 import android.graphics.Bitmap
 import androidx.room.*
-import com.example.pricerecorder.Converters
 import com.example.pricerecorder.DateUtils
 import java.lang.Exception
 
@@ -29,6 +28,9 @@ data class Product(
     @ColumnInfo(name = "product_quantity")
     private var quantity : String,
 
+    @ColumnInfo(name = "product_barcode")
+    private var barcode: String="",
+
     @ColumnInfo(name = "product_img")
     private var image : Bitmap? = null,
 
@@ -40,12 +42,25 @@ data class Product(
         updateDate = DateUtils.getCurrentDate()
     }
 
-    fun updateData(des:String,place:String,cat:String,img:Bitmap?,newPrice:Double){
+    fun updateData(
+        des: String,
+        place: String,
+        cat: String,
+        img: Bitmap?,
+        newPrice: Double,
+        size: String,
+        quantity: String,
+        barcode: String
+    ){
         description = des
         placeOfPurchase = place
         category = cat
         image = img
         price = newPrice
+        updateDate = DateUtils.getCurrentDate()
+        this.size = size
+        this.quantity = quantity
+        this.barcode = barcode
     }
 
     fun getProductId() : Long{
@@ -88,6 +103,10 @@ data class Product(
         return this.productId
     }
 
+    fun getBarcode(): String{
+        return this.barcode
+    }
+
     override fun equals(other: Any?): Boolean {
         return try {
             val aux = other as Product
@@ -103,6 +122,9 @@ data class Product(
         result = 31 * result + placeOfPurchase.hashCode()
         result = 31 * result + category.hashCode()
         result = 31 * result + updateDate.hashCode()
+        result = 31 * result + size.hashCode()
+        result = 31 * result + quantity.hashCode()
+        result = 31 * result + barcode.hashCode()
         result = 31 * result + (image?.hashCode() ?: 0)
         result = 31 * result + productId.hashCode()
         return result
