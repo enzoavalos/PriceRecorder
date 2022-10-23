@@ -15,12 +15,14 @@ import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductsRepository
 import kotlinx.coroutines.*
 
-class AddFragmentViewModel(application: Application):ViewModel() {
+class AddFragmentViewModel(
+    application: Application):ViewModel() {
     companion object{
         val factory = object : ViewModelProvider.Factory{
             @Suppress("unchecked_cast")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 val application = checkNotNull(extras[APPLICATION_KEY])
+
                 return AddFragmentViewModel(application) as T
             }
         }
@@ -30,8 +32,6 @@ class AddFragmentViewModel(application: Application):ViewModel() {
 
     private var _fabEnabled : MutableState<Boolean> = mutableStateOf(false)
     var fabEnabled : State<Boolean> = _fabEnabled
-    private var _showImageDialog = mutableStateOf(false)
-    var showImageDialog : State<Boolean> = _showImageDialog
 
     private var _prodImage : MutableState<Bitmap?> = mutableStateOf(null)
     var prodImage : State<Bitmap?> = _prodImage
@@ -41,8 +41,8 @@ class AddFragmentViewModel(application: Application):ViewModel() {
     var prodPrice : State<String> = _prodPrice
     private val _priceEditError = mutableStateOf(false)
     val priceEditError : State<Boolean> = _priceEditError
-    private var _prodCategory : MutableState<String> = mutableStateOf("")
-    var prodCategory : State<String> = _prodCategory
+    private var _prodCategory : MutableState<String?> = mutableStateOf(null)
+    var prodCategory : State<String?> = _prodCategory
     private var _prodSize : MutableState<String> = mutableStateOf("")
     var prodSize : State<String> = _prodSize
     private var _prodQuantity : MutableState<String> = mutableStateOf("")
@@ -87,10 +87,6 @@ class AddFragmentViewModel(application: Application):ViewModel() {
         else
             _prodPrice.value = newValue
         updateFabEnabledState()
-    }
-
-    fun updateShowImageDialogState(newValue: Boolean){
-        _showImageDialog.value = newValue
     }
 
     /*Checks the state of every text field to determine if they all have valid inputs*/

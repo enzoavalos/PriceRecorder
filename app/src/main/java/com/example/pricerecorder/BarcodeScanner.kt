@@ -10,6 +10,7 @@ class BarcodeScanner(
     registry: ActivityResultRegistry) {
     private var onScanSuccess : (String) -> Unit = {}
 
+    /*Registers a scan contract, launches the Capture activity and receives a string as a return value*/
     private val barcodeReaderLauncher = registry.register("key",
         ScanContract()){
         if(it.contents != null){
@@ -17,6 +18,7 @@ class BarcodeScanner(
         }
     }
 
+    /*Firstly requests camera access if not already given, and after that it launches the registered activity above*/
     fun scanCode(
         permissionChecker: PermissionChecker,
         onSuccessCallback:(String) -> Unit){

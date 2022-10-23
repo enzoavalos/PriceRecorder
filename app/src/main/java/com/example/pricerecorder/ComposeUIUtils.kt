@@ -1,5 +1,6 @@
 package com.example.pricerecorder
 
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
@@ -32,13 +33,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.res.ResourcesCompat
 import com.example.pricerecorder.theme.PriceRecorderShapes
-import com.example.pricerecorder.theme.PriceRecorderTheme
 
 data class ChipItem(
     val text:String,
@@ -426,35 +425,37 @@ fun GoogleSignInButton(onClick:() -> Unit, modifier: Modifier = Modifier){
 @Composable
 fun SelectedImageCustomDialog(
     show: Boolean,
-      image:Bitmap?,
-      onDismiss: () -> Unit,
-      onDelete:() -> Unit,
-    buttonText:String,
-      modifier: Modifier = Modifier){
+    image:Bitmap?,
+    onDismiss: () -> Unit,
+    onDelete:() -> Unit,
+    orientation:Int,
+    modifier: Modifier = Modifier){
     if(!show or (image == null))
         return
+
     Dialog(onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(modifier = modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(bitmap = image!!.asImageBitmap(),
-                contentDescription = "",
-                modifier = Modifier.fillMaxWidth(),
-                contentScale = ContentScale.Crop,
-                alignment = Alignment.TopCenter)
+        Box(modifier = modifier.background(Color.Red)) {
+            Surface(color = Color.Red,
+                modifier = Modifier.align(Alignment.Center)) {
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .background(Color.Red)) {
+                    Icon(imageVector = Icons.Default.Cancel, contentDescription = "")
+                }
 
-            Button(onClick = onDelete,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-                shape = MaterialTheme.shapes.small.copy(topStart = CornerSize(0.dp), topEnd = CornerSize(0.dp)),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color.Red
-                )) {
-                Text(text = buttonText,
-                    style = MaterialTheme.typography.h6,
-                    color = MaterialTheme.colors.onError)
+                val imgModifier = if(orientation == Configuration.ORIENTATION_PORTRAIT) Modifier.fillMaxWidth()
+                    else Modifier.fillMaxHeight()
+                Surface(
+                    modifier = Modifier.padding(2.dp),
+                    shape = MaterialTheme.shapes.large.copy(bottomStart = CornerSize(0.dp), topEnd = CornerSize(70.dp))) {
+                    Image(bitmap = image!!.asImageBitmap(),
+                        contentDescription = "",
+                        contentScale = ContentScale.Crop,
+                        modifier = imgModifier)
+                }
             }
         }
     }
@@ -610,18 +611,4 @@ fun CustomDoubleSelectionSlider(
             inactiveTickColor = MaterialTheme.colors.background,
             thumbColor = MaterialTheme.colors.secondary
         ))
-}
-
-@Preview(widthDp = 360, showBackground = true)
-@Composable
-fun CustomDoubleSelectionSliderPreview(){
-    PriceRecorderTheme {
-        CustomDoubleSelectionSlider(
-            onValueChange = {},
-            steps = 10,
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        )
-    }
 }

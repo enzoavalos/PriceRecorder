@@ -5,6 +5,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
 /*Custom composable element that sets ups a MaterialTheme, admitting other composable elements as content.
 * darkTheme parameter added to automatically determine if dark theme should be used depending the global
@@ -26,6 +27,7 @@ private val LightColors = lightColors(
     onPrimary = White,
     onSecondary = White,
     onSurface = Black,
+    onError = White
 )
 
 private val DarkColors = darkColors(
@@ -37,5 +39,6 @@ private val DarkColors = darkColors(
     error = OpaqueRed,
     onPrimary = White,
     onSecondary = White,
-    onSurface = SilverGrey
+    onSurface = SilverGrey,
+    onError = White
 )

@@ -11,15 +11,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.pricerecorder.SearchState
 import com.example.pricerecorder.SearchWidgetState
-import com.example.pricerecorder.filters.CategoryFilter
-import com.example.pricerecorder.filters.FilterState
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.lang.Exception
+import com.example.pricerecorder.FilterState
 import com.example.pricerecorder.R
-import com.example.pricerecorder.filters.AndFilter
-import com.example.pricerecorder.filters.PlaceFilter
+import java.lang.Exception
+import kotlinx.coroutines.*
 
 /*Repository isolates the data layer from the rest of the app, meaning, where all data and business logic
 * is handled, exposing consistent APIs for the rest of the app to access the data*/
@@ -42,7 +37,7 @@ class ProductsRepository private constructor(
             }
         }
     }
-
+    private val noCategoryString = application.resources.getString(R.string.option_uncategorized)
     private val databaseDao = ProductDatabase.getInstance(application).productDatabaseDao
 
     /*Both public val's will expose their values to composable functions, and are used to track the state
@@ -81,9 +76,7 @@ class ProductsRepository private constructor(
 
     fun updateFilterState(newValue: FilterState){
         _isFiltering.value = newValue
-        if(_isFiltering.value == FilterState.FILTERING)
-            filterProducts()
-        else
+        if(_isFiltering.value != FilterState.FILTERING)
             resetFilters()
     }
 
@@ -93,24 +86,13 @@ class ProductsRepository private constructor(
         _filterResults.value = listOf()
     }
 
-    /*When user enters a new character the search is performed on the previous filtered list, otherwise
-    * performed on the whole products list
-    * Also, when search bar is emptied or newly opened, all products are shown*/
-    fun updateSearchTextState(newValue: String){
-        val userDeletedChars = userDeletedCharsFromQuery(newValue,searchTextState.value)
+    /*Filters the product list based on user queries, if either the searchbar is newly opened or its content
+    * is empty, all products registered or those previously filtered are shown*/
+    fun updateSearchTextState(newValue: String,
+        viewModelScope:CoroutineScope?=null){
         searchTextState.value = newValue
+        _isSearching.value = if(newValue.isEmpty()) SearchState.STARTING else SearchState.SEARCHING
 
-        searchProductList(newValue,
-            listToSearch = when(isFiltering.value){
-                true -> { if(!userDeletedChars) _searchResults.value else _filterResults.value}
-                else -> { if(userDeletedChars or !searching.value) _products.value else _searchResults.value}
-            }
-        )
-    }
-
-    /*Filters the current list based on the user input parameters*/
-    private fun searchProductList(query:String,listToSearch:List<Product>?){
-        _isSearching.value = if(query.isEmpty()) SearchState.STARTING else SearchState.SEARCHING
         if(!searching.value) {
             if(!isFiltering.value)
                 _searchResults.value = _products.value
@@ -119,22 +101,35 @@ class ProductsRepository private constructor(
             return
         }
 
-        val results = listToSearch?.filter {
-            it.getDescription().contains(query, ignoreCase = true)
+        viewModelScope?.launch {
+            searchProductList(query = newValue)
         }
-        _searchResults.value = results ?: listOf()
     }
 
-    private fun filterProducts(){
-        val compoundFilter = AndFilter(
-            CategoryFilter(
-                category = _categoryFilter.value,
-                application.resources.getString(R.string.option_uncategorized)),
-            PlaceFilter( _placeFilter.value )
-        )
-        val list = _products.value?.filter{ compoundFilter.meetsCriteria(it) }
-        _filterResults.value = list ?: listOf()
-        _searchResults.value = _filterResults.value
+    /*Filters the current list based on the user input parameters*/
+    private suspend fun searchProductList(query:String){
+        val results = withContext(ioDispatcher){
+            return@withContext if(isFiltering.value)
+                databaseDao.searchProductList(
+                    query,
+                    catFilter = if(_categoryFilter.value == noCategoryString) "" else _categoryFilter.value,
+                    _placeFilter.value
+                    )
+            else
+                databaseDao.searchProductList(query)
+        }
+        _searchResults.value = results
+    }
+
+    suspend fun filterProducts(){
+        _isFiltering.value = FilterState.FILTERING
+        val result = withContext(ioDispatcher){
+            return@withContext databaseDao.filterProductList(
+                catFilter = if(_categoryFilter.value == noCategoryString) "" else _categoryFilter.value,
+                _placeFilter.value)
+        }
+        _filterResults.value = result
+        _searchResults.value = result
     }
 
     /*Filters the whole products list based on a scanned barcode*/
@@ -149,11 +144,6 @@ class ProductsRepository private constructor(
 
     fun updateSearchWidgetState(newValue: SearchWidgetState){
         searchWidgetState.value = newValue
-    }
-
-    /*Determines if the user has deleter chars from the query*/
-    private fun userDeletedCharsFromQuery(newValue: String,oldValue:String):Boolean{
-        return (newValue.length < oldValue.length)
     }
 
     /*Determines if there already is a product registered with the same data*/
@@ -203,7 +193,7 @@ class ProductsRepository private constructor(
                 databaseDao.checkPoint(SimpleSQLiteQuery("pragma wal_checkpoint(full)"))
                 true
             }catch (e: Exception){
-                Log.w("SettingsViewModel",e.toString())
+                Log.w("ProductsRepository",e.toString())
                 false
             }
         }
@@ -219,6 +209,12 @@ class ProductsRepository private constructor(
 
         return withContext(ioDispatcher){
             return@withContext databaseDao.filterPlacesRegistered(query)
+        }
+    }
+
+    suspend fun getCategoriesRegistered():List<String>{
+        return withContext(ioDispatcher){
+            return@withContext databaseDao.getListOfAllCategoriesRegistered(noCategoryString)
         }
     }
 }
