@@ -1,5 +1,6 @@
 package com.example.pricerecorder.addFragment
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
@@ -10,9 +11,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.HighlightOff
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,7 +35,7 @@ import com.example.pricerecorder.theme.PriceRecorderTheme
 import kotlinx.coroutines.launch
 
 class AddFragment:Fragment(){
-    private val viewModel: AddFragmentViewModel by viewModels { AddFragmentViewModel.factory }
+    private val viewModel: AddFragmentViewModel by viewModels{ AddFragmentViewModel.factory }
     private lateinit var imageHandler : ImageUtils
     private lateinit var permissionChecker : PermissionChecker
     private lateinit var barcodeScanner: BarcodeScanner
@@ -51,7 +50,15 @@ class AddFragment:Fragment(){
     }
 
     override fun onCreateView(inflater: LayoutInflater,container: ViewGroup?,savedInstanceState: Bundle?): View {
-        imageHandler = ImageUtils(requireContext(),requireActivity().activityResultRegistry)
+        /*The callback must be registered in onCreate since during configuration change or process death all the current
+        * as well as previous activities get recreated, and the callback passed gets cleared from memory and thus
+        * a call to it will never be received*/
+        imageHandler = ImageUtils(requireContext(),
+            requireActivity().activityResultRegistry){
+            viewModel.updateProdImage(it)
+            }
+        /*Temporal uri is restored from the saved bundle, this way it survives configuration changes and process death*/
+        imageHandler.setTempUri(savedInstanceState?.get("file_uri") as Uri?)
         permissionChecker = PermissionChecker(requireContext(),requireActivity().activityResultRegistry)
 
         return ComposeView(requireContext()).apply {
@@ -77,7 +84,7 @@ class AddFragment:Fragment(){
                 description = desc,
                 price = prodPrice.value.toDouble(),
                 placeOfPurchase = place,
-                category = prodCategory.value,
+                category = if(prodCategory.value.isNullOrEmpty()) null else prodCategory.value,
                 image = viewModel.prodImage.value,
                 size = prodSize.value,
                 quantity = prodQuantity.value,
@@ -135,38 +142,40 @@ class AddFragment:Fragment(){
         val categoryState = viewModel.prodCategory
         val sizeState = viewModel.prodSize
         val quantityState = viewModel.prodQuantity
-        val showImageDialog = viewModel.showImageDialog
+        var showImageDialog by remember {
+            mutableStateOf(false)
+        }
         val priceErrorState by viewModel.priceEditError
         val placePredictions by viewModel.placesFiltered
         val barcodeState by viewModel.barCode
 
         ImagePickerCustomDialog(
-            show = (showImageDialog.value and (image.value == null)),
-            onDismiss = { viewModel.updateShowImageDialogState(false) },
+            show = (showImageDialog and (image.value == null)),
+            onDismiss = { showImageDialog = false },
             title = stringResource(id = R.string.add_image_dialog_title),
             galleryPicker = {
                 permissionChecker.checkForPermissions(
                     PermissionChecker.READ_EXTERNAL_FILES_PERMISSION,
                     PermissionChecker.FILE_REQUEST_CODE
-                ) { imageHandler.pickImageFromGallery { viewModel.updateProdImage(it) } }
+                ) { imageHandler.pickImageFromGallery() }
             },
             pictureTaker = {
                 permissionChecker.checkForPermissions(
                     PermissionChecker.CAMERA_ACCESS_PERMISSION,
                     PermissionChecker.CAMERA_REQUEST_CODE
-                ) { imageHandler.takePictureFromCamera { viewModel.updateProdImage(it) } }
+                ) { imageHandler.takePictureFromCamera() }
             })
 
         SelectedImageCustomDialog(
-            show = showImageDialog.value,
+            show = showImageDialog,
             image = image.value,
-            onDismiss = { viewModel.updateShowImageDialogState(false) },
+            onDismiss = { showImageDialog = false },
             onDelete = {
                 viewModel.updateProdImage(null)
-                viewModel.updateShowImageDialogState(false)
+                showImageDialog = false
             },
-            buttonText = stringResource(id = R.string.delete_image_button_text),
-            modifier = Modifier.padding(32.dp))
+            modifier = Modifier.padding(32.dp),
+            orientation = resources.configuration.orientation)
 
         Surface(modifier = modifier
             .verticalScroll(rememberScrollState())
@@ -178,7 +187,7 @@ class AddFragment:Fragment(){
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 CurrentSelectedImage(image = image.value,
                     onClick = {
-                        viewModel.updateShowImageDialogState(true)
+                        showImageDialog = true
                     })
 
                 /*Description text field*/
@@ -249,7 +258,7 @@ class AddFragment:Fragment(){
 
                 /*Category dropdown menu*/
                 ExposedDropdownMenu(
-                    value = categoryState.value,
+                    value = categoryState.value ?: "",
                     modifier = Modifier
                         .padding(bottom = 8.dp)
                         .fillMaxWidth(),
@@ -371,5 +380,12 @@ class AddFragment:Fragment(){
                     .background(Color.Transparent))
             }
         }
+    }
+
+    /*The temporal uri used to store the picture taken by the camera is preserved to survive configuration
+    * changes and thus be available again when the fragment is recreated*/
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putParcelable("file_uri",imageHandler.getTempUri())
     }
 }

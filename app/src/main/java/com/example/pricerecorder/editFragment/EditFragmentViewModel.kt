@@ -23,8 +23,6 @@ class EditFragmentViewModel(application: Application,productId: Long) : ViewMode
 
     private var _fabEnabled : MutableState<Boolean> = mutableStateOf(false)
     var fabEnabled : State<Boolean> = _fabEnabled
-    private var _showImageDialog = mutableStateOf(false)
-    var showImageDialog : State<Boolean> = _showImageDialog
     private var _productModified : MutableState<Boolean> = mutableStateOf(false)
 
     private var _prodImage : MutableState<Bitmap?> = mutableStateOf(product.getImage())
@@ -35,8 +33,8 @@ class EditFragmentViewModel(application: Application,productId: Long) : ViewMode
     var prodPrice : State<String> = _prodPrice
     private val _priceEditError = mutableStateOf(false)
     val priceEditError : State<Boolean> = _priceEditError
-    private var _prodCategory : MutableState<String> = mutableStateOf(product.getCategory())
-    var prodCategory : State<String> = _prodCategory
+    private var _prodCategory : MutableState<String?> = mutableStateOf(product.getCategory())
+    var prodCategory : State<String?> = _prodCategory
     private var _prodSize : MutableState<String> = mutableStateOf(product.getSize())
     var prodSize : State<String> = _prodSize
     private var _prodQuantity : MutableState<String> = mutableStateOf(product.getQuantity())
@@ -90,10 +88,6 @@ class EditFragmentViewModel(application: Application,productId: Long) : ViewMode
         }else
             _prodPrice.value = newValue
         updateFabEnabledState()
-    }
-
-    fun updateShowImageDialogState(newValue: Boolean){
-        _showImageDialog.value = newValue
     }
 
     /*Checks the state of every text field and if the products has been modified*/

@@ -7,12 +7,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.pricerecorder.CurrencyFormatter
-import com.example.pricerecorder.R
 import com.example.pricerecorder.SearchWidgetState
 import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.database.ProductsRepository
-import com.example.pricerecorder.filters.FilterState
+import com.example.pricerecorder.FilterState
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class HomeViewModel(
     @get:JvmName("getViewModelApplication") val application: Application
@@ -46,10 +46,18 @@ class HomeViewModel(
     var isFiltering : State<Boolean> = repository.isFiltering
     private var _filterEnabled : MutableState<Boolean> = mutableStateOf(false)
     var filterEnabled : State<Boolean> = _filterEnabled
+
     private var _barcodeFilter = mutableStateOf("")
     var barcodeFilter : State<String> = _barcodeFilter
 
-    /*TODO("Implementar filtrado x codigo de barras")*/
+    fun updateSearchWidgetState(newValue: SearchWidgetState){
+        repository.updateSearchWidgetState(newValue)
+    }
+
+    fun updateSearchTextState(newValue: String){
+        repository.updateSearchTextState(newValue,viewModelScope)
+    }
+
     fun updateBarcodeFilter(newValue: String){
         _barcodeFilter.value = newValue
         if(newValue.isNotEmpty())
@@ -83,6 +91,12 @@ class HomeViewModel(
         repository.updateFilterState(newValue)
     }
 
+    fun filterProducts(){
+        viewModelScope.launch{
+            repository.filterProducts()
+        }
+    }
+
     fun resetFilters(){
         repository.resetFilters()
         _filterEnabled.value = false
@@ -93,20 +107,13 @@ class HomeViewModel(
         updateSearchWidgetState(SearchWidgetState.CLOSED)
     }
 
-    fun updatePriceEditTextState(newValue: String){
+    fun updatePriceEditTextState(newValue: String) {
         _priceEditError.value = !CurrencyFormatter.isInputNumericValid(newValue)
-        if(!priceEditError.value)
-            _priceEditTextState.value = CurrencyFormatter.formatInput(newValue,_priceEditTextState.value)
+        if (!priceEditError.value)
+            _priceEditTextState.value =
+                CurrencyFormatter.formatInput(newValue, _priceEditTextState.value)
         else
             _priceEditTextState.value = newValue
-    }
-
-    fun updateSearchWidgetState(newValue: SearchWidgetState){
-        repository.updateSearchWidgetState(newValue)
-    }
-
-    fun updateSearchTextState(newValue: String){
-        repository.updateSearchTextState(newValue)
     }
 
     fun deleteProduct(productId:Long){
@@ -138,22 +145,11 @@ class HomeViewModel(
     }
 
     /*Returns a list with all the categories associated to the products the user has registered*/
-    fun getListOfCategories() : List<String>{
-        val list = mutableListOf<String>()
-        var noCategory = false
-        products.value?.let {
-            it.forEach { p ->
-                if(p.getCategory().isNotEmpty()){
-                    if(!list.contains(p.getCategory()))
-                        list.add(p.getCategory())
-                }else
-                    noCategory = true
-            }
+    fun getListOfCategories() : List<String> {
+        var result : List<String>
+        runBlocking {
+            result = repository.getCategoriesRegistered()
         }
-        if(list.isNotEmpty())
-            list.sortBy { it }
-        if(noCategory)
-            list.add(0,application.resources.getString(R.string.option_uncategorized))
-        return list.toList()
+        return result
     }
 }

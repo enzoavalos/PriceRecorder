@@ -41,6 +41,28 @@ interface ProductDatabaseDao {
     @Query("SELECT * FROM products_table WHERE product_barcode = :barcode")
     fun filterByBarcode(barcode:String): List<Product>
 
+    /*Returns all products that contain the query as a substring in any part of their description*/
+    @Query("SELECT * FROM products_table WHERE description LIKE '%'||:query||'%' ORDER BY update_date desc,description asc")
+    fun searchProductList(query: String) : List<Product>
+
+    /*This function is used to search in the list when there has been a previous filter|*/
+    @Query("select * from products_table where description like '%'||:query||'%' and" +
+            "(:catFilter = IFNULL(category,'')) and " +
+            "(:placeFilter = '' or :placeFilter = place_of_purchase)" +
+            "order by update_date desc,description asc")
+    fun searchProductList(query: String,catFilter:String,placeFilter:String) : List<Product>
+
+    /*Selects all different categories associated to at least one product, in case there is one which its category is
+    * null then its replaced with an arbitrary string*/
+    @Query("SELECT DISTINCT coalesce(category,:noCategoryString) from products_table order by category asc")
+    fun getListOfAllCategoriesRegistered(noCategoryString:String) : List<String>
+
+    /*Selects all products that meet the given conditions. If any of the parameters is empty, then it should
+    * not be considered when filtering the list*/
+    @Query("select * from products_table where (:catFilter = IFNULL(category,'')) and " +
+            "(:placeFilter = '' or :placeFilter = place_of_purchase)")
+    fun filterProductList(catFilter:String,placeFilter:String) : List<Product>
+
     /*Query executed when the user chooses to backup the db. This checkpoint query ensures that all pending transactions are applied.
     A Single is similar to an Observable, but it always emits one value or an error notification*/
     @RawQuery

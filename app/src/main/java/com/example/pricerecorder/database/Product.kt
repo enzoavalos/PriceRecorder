@@ -17,7 +17,7 @@ data class Product(
     private var placeOfPurchase : String,
 
     @ColumnInfo(name = "category")
-    private var category : String,
+    private var category : String? = null,
 
     @ColumnInfo(name = "update_date")
     private var updateDate : Long = DateUtils.getCurrentDate(),
@@ -45,7 +45,7 @@ data class Product(
     fun updateData(
         des: String,
         place: String,
-        cat: String,
+        cat: String?,
         img: Bitmap?,
         newPrice: Double,
         size: String,
@@ -87,7 +87,7 @@ data class Product(
         return this.description
     }
 
-    fun getCategory(): String {
+    fun getCategory(): String? {
         return this.category
     }
 
@@ -110,7 +110,7 @@ data class Product(
     override fun equals(other: Any?): Boolean {
         return try {
             val aux = other as Product
-            ((this.description == aux.getDescription()) and (this.placeOfPurchase == aux.getPlaceOfPurchase()))
+            this.hashCode() == aux.hashCode()
         }catch (e : Exception){
             false
         }
@@ -121,7 +121,6 @@ data class Product(
         result = 31 * result + price.hashCode()
         result = 31 * result + placeOfPurchase.hashCode()
         result = 31 * result + category.hashCode()
-        result = 31 * result + updateDate.hashCode()
         result = 31 * result + size.hashCode()
         result = 31 * result + quantity.hashCode()
         result = 31 * result + barcode.hashCode()

@@ -1,4 +1,4 @@
-package com.example.pricerecorder.filters
+package com.example.pricerecorder
 
 enum class FilterState{
     FILTERING,IDLE

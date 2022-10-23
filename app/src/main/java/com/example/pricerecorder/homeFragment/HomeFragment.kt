@@ -58,12 +58,14 @@ import com.example.pricerecorder.*
 import com.example.pricerecorder.R
 import com.example.pricerecorder.addFragment.AddFragment
 import com.example.pricerecorder.database.Product
-import com.example.pricerecorder.filters.FilterState
+import com.example.pricerecorder.FilterState
 import com.example.pricerecorder.theme.*
 import kotlinx.coroutines.launch
 
 class HomeFragment:Fragment() {
     private val viewModel: HomeViewModel by viewModels { HomeViewModel.factory }
+    private lateinit var permissionChecker : PermissionChecker
+    private lateinit var barcodeScanner: BarcodeScanner
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         createNotificationChannel(requireContext())
@@ -164,7 +166,7 @@ class HomeFragment:Fragment() {
             show = showFilterDialog,
             onConfirm = {
                 showFilterDialog = false
-                viewModel.updateFilterState(FilterState.FILTERING)
+                viewModel.filterProducts()
             },
             onDismiss = {
                 showFilterDialog = false
@@ -193,8 +195,18 @@ class HomeFragment:Fragment() {
                     onFilterClick = { showFilterDialog = true },
                     onDeleteAllClicked = { showDeleteAllDialog = true },
                     onSettingsClicked = { navigateToSettingsFragment() },
-                    /*TODO("implementar busqueda mediante cod de barra")*/
-                    onSearchWithBarcode = {},
+                    onSearchWithBarcode = {
+                        if(!::permissionChecker.isInitialized)
+                            permissionChecker = PermissionChecker(requireContext(),requireActivity().activityResultRegistry)
+                        if(!::barcodeScanner.isInitialized)
+                            barcodeScanner = BarcodeScanner(requireContext(),requireActivity().activityResultRegistry)
+                        barcodeScanner.scanCode(
+                            permissionChecker,
+                            onSuccessCallback = {
+                                viewModel.updateBarcodeFilter(it)
+                            }
+                        )
+                    },
                     appBarActionsEnabled)
             }
             else -> {
@@ -514,8 +526,8 @@ class HomeFragment:Fragment() {
                         style = MaterialTheme.typography.h6,color = MaterialTheme.colors.onSurface)
                     Text(text = product.getPlaceOfPurchase(), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp),
                         style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
-                    if(product.getCategory().isNotEmpty()){
-                        Text(text = product.getCategory(), modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+                    if(!product.getCategory().isNullOrEmpty()){
+                        Text(text = product.getCategory()!!, modifier = Modifier.padding(start = 16.dp, end = 16.dp),
                             style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
                     }
                     
@@ -783,6 +795,18 @@ class HomeFragment:Fragment() {
                         text = viewModel.placeFilter.value,
                         leadingIcon = {
                             Icon(painter = painterResource(id = R.drawable.ic_place), contentDescription = "",
+                                modifier = Modifier.clip(CircleShape))
+                        }
+                    )
+                )
+            }
+            if(viewModel.barcodeFilter.value.isNotEmpty()){
+                chipItems.add(
+                    ChipItem(
+                        text = viewModel.barcodeFilter.value,
+                        leadingIcon = {
+                            Icon(painter = painterResource(id = R.drawable.ic_barcode),
+                                contentDescription = "",
                                 modifier = Modifier.clip(CircleShape))
                         }
                     )
