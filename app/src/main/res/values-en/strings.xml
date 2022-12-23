@@ -39,10 +39,10 @@
     <string name="product_updated_string">%1$s updated</string>
     <string name="option_uncategorized">No category</string>
     <string name="filter_dialog_title">Filter</string>
-    <string name="switch_category_text">Category</string>
-    <string name="switch_purchase_place">Place of purchase</string>
+    <string name="category_label">Category</string>
+    <string name="purchase_place_label">Place of purchase</string>
     <string name="switch_date">Date</string>
-    <string name="price_title">Price</string>
+    <string name="price_label">Price</string>
     <string name="filter_by_string">Filters</string>
     <string name="date_filter_text">Date</string>
     <string name="date_picker_title">Pick date</string>
@@ -104,4 +104,11 @@
     <string name="product_already_exists_msg">The product already exists</string>
     <string name="scan_barcode_prompt">Scan Barcode</string>
     <string name="product_barcode_label">Barcode</string>
+    <string name="privacy_policy_section_title">Privacy Policy</string>
+    <string name="screen_section_title">Display</string>
+    <string name="theme_setting_option">Theme</string>
+    <string name="select_theme_title">Select a theme</string>
+    <string name="dark_theme_string">Dark</string>
+    <string name="light_theme_string">Light</string>
+    <string name="system_default_theme_string">System default</string>
 </resources>

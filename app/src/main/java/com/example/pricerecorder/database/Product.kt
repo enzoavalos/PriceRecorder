@@ -1,8 +1,10 @@
 package com.example.pricerecorder.database
 
+import android.content.Context
 import android.graphics.Bitmap
 import androidx.room.*
 import com.example.pricerecorder.DateUtils
+import com.example.pricerecorder.R
 import java.lang.Exception
 
 @Entity(tableName = "products_table")
@@ -127,5 +129,22 @@ data class Product(
         result = 31 * result + (image?.hashCode() ?: 0)
         result = 31 * result + productId.hashCode()
         return result
+    }
+
+    fun formatToPlainText(context: Context):String{
+        var output = "$description\n"
+        output += "${context.getString(R.string.purchase_place_label)}: $placeOfPurchase\n"
+        this.category?.let { output += "${context.getString(R.string.category_label)}: $it\n" }
+        this.quantity.also {
+            if(it.isNotEmpty()) output += "${context.getString(R.string.product_quantity_label)}: $it\n" }
+        this.size.also {
+            if(it.isNotEmpty()) output += "${context.getString(R.string.product_size_label)}: $it\n"
+        }
+        this.barcode.also {
+            if(it.isNotEmpty()) output += "${context.getString(R.string.product_barcode_label)}: $it\n"
+        }
+        output += "${context.getString(R.string.price_label)}: $$price"
+
+        return output
     }
 }

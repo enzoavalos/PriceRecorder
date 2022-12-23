@@ -1,5 +1,6 @@
 package com.example.pricerecorder
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -30,19 +34,30 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.res.ResourcesCompat
 import com.example.pricerecorder.theme.PriceRecorderShapes
+import com.example.pricerecorder.theme.PriceRecorderTheme
 
 data class ChipItem(
     val text:String,
     var onClick: () -> Unit = {},
     val leadingIcon:@Composable (() -> Unit)?
+)
+
+data class RadioButtonItem(
+    val text:String,
+    val onClick: () -> Unit = {},
+    var selected: Boolean = false
 )
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -79,8 +94,9 @@ fun CustomChipList(items:List<ChipItem>,
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun CustomAlertDialog(show:Boolean, title:String, msg:@Composable (()->Unit)?, confirmButtonText:String,
-                      dismissButtonText:String?, onConfirm:() -> Unit, onDismiss:()->Unit,
+fun CustomAlertDialog(show:Boolean, title:String, onConfirm:() -> Unit, onDismiss:()->Unit,
+                      msg:@Composable (()->Unit)?, confirmButtonText:String? = null,
+                      dismissButtonText:String? = null,
                       useDefaultWidth:Boolean = true){
     if(!show)
         return
@@ -94,11 +110,13 @@ fun CustomAlertDialog(show:Boolean, title:String, msg:@Composable (()->Unit)?, c
         text = msg,
         backgroundColor = MaterialTheme.colors.surface,
         confirmButton = {
-            Button(onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent,
-                    contentColor = MaterialTheme.colors.secondary),
-                elevation = ButtonDefaults.elevation(defaultElevation = 0.dp)) {
-                Text(text = confirmButtonText, style = MaterialTheme.typography.h6)
+            confirmButtonText?.let{
+                Button(onClick = onConfirm,
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent,
+                        contentColor = MaterialTheme.colors.secondary),
+                    elevation = ButtonDefaults.elevation(defaultElevation = 0.dp)) {
+                    Text(text = confirmButtonText, style = MaterialTheme.typography.h6)
+                }
             }},
         dismissButton = {
             dismissButtonText?.let {
@@ -174,14 +192,34 @@ fun ExposedDropdownMenu(
                         expanded = false
                         onValueChange(option)
                     }) {
-                        Text(text = option)
+                        Text(text = option,
+                            style = MaterialTheme.typography.subtitle2)
                     }
                 }
             }
         }
     }
 }
+/*
+@Preview(showBackground = true, heightDp = 900)
+@Composable
+private fun ExposedDropdownMenuPreview(){
+    PriceRecorderTheme {
+        ExposedDropdownMenu(
+            value = "Comestibles",
+            label = {
+                Text(text = stringResource(id = R.string.category_input_string),
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface.copy(0.6f))
+            }, onValueChange = {},
+            leadingIcon = {
+                Icon(painter = painterResource(id = R.drawable.ic_category), contentDescription = "")
+            },
+            options = listOf("Comestibles","Lacteos","tecnologia","hogar"))
+    }
+}*/
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun AutoCompleteTextField(
     value: String,
@@ -273,6 +311,7 @@ fun AutoCompleteTextField(
     }
 }
 
+@SuppressLint("UnrememberedMutableState")
 @Composable
 fun CustomTextField(
     value: String,
@@ -289,10 +328,11 @@ fun CustomTextField(
     keyboardActions: KeyboardActions = KeyboardActions(),
     isError: Boolean = false,
     enabled: Boolean = true,
-    showCount: Boolean = true
+    showCount: Boolean = true,
+    showTrailingIcon : Boolean = false,
+    visualTransformation: VisualTransformation = VisualTransformation.None
 ){
     val charCount = value.length
-    val showTrailingIcon by derivedStateOf { value.isNotEmpty() }
 
     Column(modifier = modifier
         .background(Color.Transparent),
@@ -313,7 +353,7 @@ fun CustomTextField(
                 readOnly = readOnly,
                 maxLines = maxLines,
                 leadingIcon = leadingIcon,
-                trailingIcon = if(showTrailingIcon) trailingIcon else null,
+                trailingIcon = if(showTrailingIcon or value.isNotEmpty()) trailingIcon else null,
                 textStyle = MaterialTheme.typography.subtitle1,
                 colors = TextFieldDefaults.textFieldColors(
                     backgroundColor = Color.Transparent,
@@ -323,7 +363,8 @@ fun CustomTextField(
                 keyboardOptions = keyboardOptions,
                 keyboardActions = keyboardActions,
                 isError = isError,
-                enabled = enabled)
+                enabled = enabled,
+                visualTransformation = visualTransformation)
 
        TextFieldDecorators(
             maxAllowedChars =  maxAllowedChars,
@@ -368,7 +409,7 @@ fun CurrentSelectedImage(image: Bitmap?, onClick: () -> Unit, modifier: Modifier
         .padding(3.dp)
 
     Surface(modifier = modifier.padding(24.dp),
-        shape = MaterialTheme.shapes.medium.copy(CornerSize(10.dp)),
+        shape = MaterialTheme.shapes.medium,
         border = BorderStroke(3.dp,MaterialTheme.colors.onSurface),
         onClick = onClick) {
         if(image != null){
@@ -558,57 +599,47 @@ fun BarcodeScanSection(
             onValueChange(it)
         },
         trailingIcon = {
-            IconButton(onClick = onCancelClicked) {
-                Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+            if(barcodeState.isNotEmpty()){
+                IconButton(onClick = onCancelClicked) {
+                    Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+                }
+            } else {
+                IconButton(onClick = onScanCodeClicked) {
+                    Icon(imageVector = ImageUtils.createImageVector(drawableRes = R.drawable.ic_barcode),
+                        contentDescription = "")
+                }
             }
         },
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Text,
             imeAction = ImeAction.Next
         ),
-        showCount = false)
+        showCount = false,
+        showTrailingIcon = true)
 
     TextFieldDecorators(helperText = helperText)
-
-    OutlinedButton(onClick = onScanCodeClicked,
-        border = BorderStroke(width = 2.dp, color = MaterialTheme.colors.secondary),
-        modifier = Modifier
-            .padding(start = 12.dp, end = 12.dp, bottom = 8.dp, top = 2.dp)
-            .fillMaxWidth(),
-        colors = ButtonDefaults.buttonColors(
-            backgroundColor = MaterialTheme.colors.secondary.copy(alpha = 0.6f)
-        )) {
-        Text(text = stringResource(id = R.string.scan_barcode_prompt),
-            style = MaterialTheme.typography.subtitle1,
-            modifier = Modifier
-                .fillMaxWidth(),
-            color = MaterialTheme.colors.onSecondary,
-            textAlign = TextAlign.Center)
-    }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun CustomDoubleSelectionSlider(
-    onValueChange: (ClosedFloatingPointRange<Float>) -> Unit,
-    modifier: Modifier = Modifier,
-    range: ClosedFloatingPointRange<Float> = 0f..100f,
-    values : ClosedFloatingPointRange<Float> = range.start..range.endInclusive,
-    steps: Int = 0,
-    enabled: Boolean = true
-){
-    RangeSlider(
-        values = values,
-        valueRange = range,
-        steps = steps,
-        onValueChange = onValueChange,
-        enabled = enabled,
-        modifier = modifier,
-        colors = SliderDefaults.colors(
-            activeTrackColor = MaterialTheme.colors.secondary.copy(0.8f),
-            inactiveTrackColor = MaterialTheme.colors.background,
-            activeTickColor = MaterialTheme.colors.secondary.copy(0.8f),
-            inactiveTickColor = MaterialTheme.colors.background,
-            thumbColor = MaterialTheme.colors.secondary
-        ))
+fun SingleSelectableRadioButtons(
+    radioOptions:List<RadioButtonItem> = listOf()){
+    Column(horizontalAlignment = Alignment.Start,
+        modifier = Modifier.selectableGroup()) {
+        radioOptions.forEach { 
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .selectable(
+                    selected = it.selected,
+                    onClick = it.onClick,
+                    role = Role.RadioButton
+                ), verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(selected = it.selected, onClick = it.onClick,
+                    colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colors.primary))
+                Text(text = it.text,
+                    color = MaterialTheme.colors.onSurface,
+                    style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Normal, fontSize = 18.sp))
+            }
+        }
+    }
 }

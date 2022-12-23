@@ -1,5 +1,6 @@
 package com.example.pricerecorder.homeFragment
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
@@ -107,10 +108,12 @@ class HomeFragment:Fragment() {
             derivedStateOf { list.isNotEmpty() }
         }
 
-        PriceRecorderTheme {
+        PriceRecorderTheme(
+            context = requireContext()
+        ) {
             Scaffold(scaffoldState = scaffoldState,
-                backgroundColor = MaterialTheme.colors.background
-                ,topBar = { MainAppBar(searchWidgetState,searchTextState,appBarActionsEnabled) },
+                backgroundColor = MaterialTheme.colors.background,
+                topBar = { MainAppBar(searchWidgetState,searchTextState,appBarActionsEnabled) },
                 floatingActionButton = { AddFloatingActionButton(enabled = true,
                     onClick = { navigateToAddFragment() }) },
                 floatingActionButtonPosition = FabPosition.Center) {
@@ -280,7 +283,7 @@ class HomeFragment:Fragment() {
                                 }
                             },
                             /*swipe fraction limit where the action is confirmed*/
-                            dismissThresholds = { FractionalThreshold(0.45f) },
+                            dismissThresholds = { FractionalThreshold(0.35f) },
                             dismissContent = {
                                 /*content to be swiped*/
                                 Card(modifier = Modifier.fillMaxWidth(),
@@ -358,7 +361,7 @@ class HomeFragment:Fragment() {
                     .padding(top = 8.dp, start = 32.dp, end = 32.dp)
                     .align(Alignment.CenterHorizontally),
                 style = MaterialTheme.typography.h5,
-                color = if(!isSystemInDarkTheme()) PetrolBlue else SilverGrey)
+                color = if(!ThemeUtils.systemInDarkTheme(requireContext())) PetrolBlue else SilverGrey)
         }
     }
 
@@ -395,7 +398,7 @@ class HomeFragment:Fragment() {
                             maxLines = 2)
                         Text(text = product.getPlaceOfPurchase(),
                             style = MaterialTheme.typography.subtitle2,
-                            color = if(!isSystemInDarkTheme()) PetrolBlue else SilverGrey,
+                            color = if(!ThemeUtils.systemInDarkTheme(requireContext())) PetrolBlue else SilverGrey,
                             modifier = Modifier.padding(start = 16.dp, end = 8.dp),
                             maxLines = 1)
                     }
@@ -440,7 +443,7 @@ class HomeFragment:Fragment() {
             .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start) {
-            Text(text = stringResource(id = R.string.price_title), modifier = Modifier.weight(1f),
+            Text(text = stringResource(id = R.string.price_label), modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.subtitle1,color = MaterialTheme.colors.primaryVariant)
             if(!editPrice){
                 Text(text = "$${product.getPrice()}",
@@ -629,7 +632,17 @@ class HomeFragment:Fragment() {
             horizontalArrangement = Arrangement.End) {
 
             val actions = listOf(
-                AppBarAction(stringResource(id = R.string.share_product_button_desc), icon = Icons.Outlined.Share,{}),
+                AppBarAction(stringResource(id = R.string.share_product_button_desc), icon = Icons.Outlined.Share,
+                    action = {
+                        /*An intent is created to send data of type plain text*/
+                        val intent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_TEXT,product.formatToPlainText(requireContext()))
+                            type = "text/plain"
+                        }
+                        val shareIntent = Intent.createChooser(intent,null)
+                        startActivity(shareIntent)
+                    }),
                 AppBarAction(stringResource(id = R.string.edit_fragment_title), icon = Icons.Outlined.Edit, action = {
                     onDismiss()
                     navigateToEditFragment(product.getId())

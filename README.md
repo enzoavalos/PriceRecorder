@@ -16,3 +16,4 @@ The idea behind the project was born from the observed necessity of various acqu
 - Barcode and qr scanning implemented using Zxing library.
 - Usage of custom notifications for both upload and download.
 - Asynchronous tasks through Kotlin coroutines.
+- Use of shared preferences interface to store user setting preferences.
