@@ -1,6 +1,7 @@
 package com.example.pricerecorder.editFragment
 
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
@@ -17,7 +18,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.DefaultTintColor
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
@@ -57,7 +57,13 @@ class EditFragment : Fragment() {
             requireActivity().activityResultRegistry){
             viewModel.updateProdImage(it)
             }
-        imageHandler.setTempUri(savedInstanceState?.get("file_uri") as Uri?)
+
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+            imageHandler.setTempUri(savedInstanceState?.getParcelable("file_uri",Uri::class.java))
+        else
+            @Suppress("Deprecation")
+            imageHandler.setTempUri(savedInstanceState?.get("file_uri") as Uri?)
         permissionChecker = PermissionChecker(requireContext(),requireActivity().activityResultRegistry)
 
         return ComposeView(requireContext()).apply {
@@ -106,7 +112,9 @@ class EditFragment : Fragment() {
         val scaffoldState = rememberScaffoldState()
         val coroutineScope = rememberCoroutineScope()
 
-        PriceRecorderTheme {
+        PriceRecorderTheme(
+            context = requireContext()
+        ) {
             Scaffold(
                 scaffoldState = scaffoldState,
                 topBar = { ShowTopAppBar(appBarTitle = stringResource(id = R.string.edit_fragment_title), actionItems = listOf(),
@@ -356,7 +364,7 @@ class EditFragment : Fragment() {
                         .padding(bottom = 8.dp)
                         .width(200.dp),
                     label = {
-                        Text(text = stringResource(id = R.string.price_title),
+                        Text(text = stringResource(id = R.string.price_label),
                             style = MaterialTheme.typography.subtitle1,
                             color = MaterialTheme.colors.onSurface.copy(0.6f))
                     },
@@ -367,14 +375,16 @@ class EditFragment : Fragment() {
                     trailingIcon = {
                         IconButton(onClick = { viewModel.updateProductPriceState("") }) {
                             Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "",
-                                tint = if(!priceErrorState) DefaultTintColor else MaterialTheme.colors.error)
+                                tint = if(!priceErrorState) LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
+                                else MaterialTheme.colors.error)
                         }
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Decimal,
                         imeAction = ImeAction.Done
                     ),
-                    isError = priceErrorState)
+                    isError = priceErrorState,
+                    visualTransformation = PrefixVisualTransformation("$ "))
 
                 Spacer(modifier = Modifier
                     .fillMaxWidth()

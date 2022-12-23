@@ -1,7 +1,9 @@
 package com.example.pricerecorder
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -68,7 +70,8 @@ fun ShowTopAppBar(appBarTitle: String, actionItems:List<AppBarAction>,
                     }, options = options)
             }
         },
-        modifier = modifier
+        modifier = modifier.height(56.dp),
+        elevation = AppBarDefaults.TopAppBarElevation
     )
 }
 
@@ -89,12 +92,12 @@ fun SearchAppBar(text:String, onTextChange:(String) -> Unit,
 
     CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
         Surface(modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
+            .fillMaxWidth(),
             elevation = AppBarDefaults.TopAppBarElevation,
             color = MaterialTheme.colors.primary) {
 
-            OutlinedTextField(value = text, onValueChange = { onTextChange(it) },
+            OutlinedTextField(value = text,
+                onValueChange = { onTextChange(it) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester),
@@ -135,9 +138,10 @@ fun SearchAppBar(text:String, onTextChange:(String) -> Unit,
                     }
                 ),
                 colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.Transparent,
+                    backgroundColor = MaterialTheme.colors.primary,
                     cursorColor = MaterialTheme.colors.secondary,
-                    textColor = MaterialTheme.colors.onPrimary
+                    textColor = MaterialTheme.colors.onPrimary,
+                    focusedIndicatorColor = Color.Transparent
                 ))
 
             /*Suspends recomposition and request focus for the component associated to the focusRequester*/
@@ -172,6 +176,7 @@ private fun OverflowMenu(isExpanded:Boolean, setExpanded:(Boolean) -> Unit, opti
     }
 }
 
+/*
 @Preview
 @Composable
 private fun HomeAppBarPreview(){
@@ -185,7 +190,7 @@ private fun HomeAppBarPreview(){
                 AppBarAction(stringResource(id = R.string.setting_fragment_title),null,{}),
             ))
     }
-}
+}*/
 
 @Preview
 @Composable

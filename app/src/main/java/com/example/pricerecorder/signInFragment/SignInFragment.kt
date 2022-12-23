@@ -27,7 +27,6 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
@@ -167,7 +166,9 @@ class SignInFragment : Fragment() {
         BackPressHandler(onBackPressed = {navigateUp()})
         val currentUser = user.observeAsState()
         
-        PriceRecorderTheme {
+        PriceRecorderTheme(
+            context = requireContext()
+        ) {
             Scaffold(
                 topBar = {
                     ShowTopAppBar(appBarTitle = stringResource(id = R.string.account_section_title),
@@ -263,14 +264,6 @@ class SignInFragment : Fragment() {
                 Text(text = stringResource(id = R.string.log_out_title_string),
                     color = MaterialTheme.colors.onSecondary)
             }
-        }
-    }
-
-    @Preview(heightDp = 450, widthDp = 360, showBackground = true)
-    @Composable
-    private fun SignInScreenContentPreview(){
-        PriceRecorderTheme {
-            SignInScreenContent(null)
         }
     }
 }

@@ -82,7 +82,7 @@ class EditFragmentViewModel(application: Application,productId: Long) : ViewMode
 
     fun updateProductPriceState(newValue: String){
         _priceEditError.value = !CurrencyFormatter.isInputNumericValid(newValue)
-        if(_priceEditError.value){
+        if(!_priceEditError.value){
             _prodPrice.value = CurrencyFormatter.formatInput(newValue,_prodPrice.value)
             _productModified.value = true
         }else
