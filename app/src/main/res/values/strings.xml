@@ -8,16 +8,14 @@
     <string name="description_string">Descripcion</string>
     <string name="delete_all_dialog_title">Eliminar todos los elementos?</string>
     <string name="delete_all_dialog_msg">Una vez eliminados no podran recuperarse</string>
-    <string name="button_cancel_string">Cancelar</string>
-    <string name="button_accept_string">Aceptar</string>
     <string name="delete_success_msg">%1$s eliminado correctamente</string>
     <string name="new_product_added">%1$s agregado</string>
     <string name="add_fragment_title">Nuevo Producto</string>
     <string name="product_deleted_msg">Producto eliminado</string>
     <string name="undo_action_msg">Deshacer</string>
-    <string name="category_input_string">Categoria</string>
     <string name="current_price_string">Precio al %1$s</string>
-    <string name="delete_product_string">Eliminar producto?</string>
+    <string name="delete_product_title">Eliminar producto?</string>
+    <string name="delete_product_label">Eliminar</string>
     <string name="delete_product_dialog_msg">Una vez eliminado no podra ser recuperado</string>
     <string name="price_updated_msg">Precio actualizado</string>
     <string name="add_price_dialog_title">Ingrese el nuevo precio</string>
@@ -35,10 +33,6 @@
     <string name="filter_dialog_title">Filtrar Productos</string>
     <string name="category_label">Categoria</string>
     <string name="purchase_place_label">Lugar de compra</string>
-    <string name="switch_date">Fecha</string>
-    <string name="filter_by_string">Filtros</string>
-    <string name="date_filter_text">Fecha</string>
-    <string name="date_picker_title">Elegir fecha</string>
     <string name="setting_fragment_title">Ajustes</string>
     <string name="sign_in_string">Ingresar</string>
     <string name="sign_in_description">Iniciar sesion con Google</string>
@@ -47,8 +41,6 @@
     <string name="no_backups_found_msg">No se encontraron copias de seguridad</string>
     <string name="import_data_string">Importar datos</string>
     <string name="version_title_string">Version</string>
-    <string name="help_and_faq_string">Ayuda y FAQs</string>
-    <string name="about_title_string">Acerca de</string>
     <string name="review_app_string">Valora esta aplicacion</string>
     <string name="privacy_policy_section_title">Politica de privacidad</string>
     <string name="account_section_title">Cuenta</string>
@@ -68,7 +60,7 @@
     <string name="restore_successful_msg">Restauración exitosa</string>
     <string name="restore_data_description">Restaura tu datos de una copia de seguridad creada anteriormente</string>
     <string name="theme_setting_option">Tema</string>
-    <string name="no_results_found_desc">Sin resultados :(</string>
+    <string name="no_results_found_desc">Sin resultados!</string>
     <string name="add_img_dialog_take_picture">Tomar foto</string>
     <string name="add_img_dialog_pick_from_gallery">Elegir de galeria</string>
     <string name="optional_helper_text">Opcional</string>
@@ -111,6 +103,7 @@
     <string name="google_sign_in_button_text">Acceder</string>
     <string name="scan_barcode_prompt">Escanear Codigo</string>
     <string name="product_barcode_label">Codigo de barras</string>
+    <string name="save_changes_label">Guardar</string>
     
     <string name="dark_theme_string">Oscuro</string>
     <string name="light_theme_string">Claro</string>

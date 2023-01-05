@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -21,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -213,7 +216,7 @@ class SignInFragment : Fragment() {
                         .padding(24.dp),
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically) {
-                        Image(painter = painterResource(id = R.drawable.ic_error), contentDescription = "")
+                        Image(Icons.Default.Error, contentDescription = "")
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = stringResource(id = R.string.sign_in_to_enable_functions_string),
                             color = MaterialTheme.colors.onSurface,
@@ -238,11 +241,15 @@ class SignInFragment : Fragment() {
             .background(Color.Transparent),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center) {
+            val placeholder = ImageUtils.createBitmapFromDrawable(drawableRes = R.mipmap.launcher_icon_round)
+
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(user.photoUrl)
-                    .crossfade(true)
+                    .crossfade(500)
                     .build(),
+                placeholder = if(placeholder != null) BitmapPainter(placeholder.asImageBitmap())
+                    else painterResource(id = R.drawable.ic_account_circle),
                 modifier = Modifier
                     .clip(CircleShape)
                     .sizeIn(minHeight = 120.dp, minWidth = 120.dp),

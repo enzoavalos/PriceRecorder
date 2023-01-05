@@ -18,6 +18,7 @@ interface DateUtils {
             return if(gmtTime != null) DateFormat.getDateInstance().format(gmtTime) else ""
         }
 
+        /*Returns the current date in milliseconds*/
         fun getCurrentDate(): Long {
             return Calendar.getInstance(timezone, Locale.getDefault()).timeInMillis
         }

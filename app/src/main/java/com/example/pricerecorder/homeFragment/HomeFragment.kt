@@ -6,25 +6,19 @@ import android.view.*
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.runtime.*
@@ -33,11 +27,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.ComposeView
@@ -62,6 +56,7 @@ import com.example.pricerecorder.database.Product
 import com.example.pricerecorder.FilterState
 import com.example.pricerecorder.theme.*
 import kotlinx.coroutines.launch
+import kotlin.math.absoluteValue
 
 class HomeFragment:Fragment() {
     private val viewModel: HomeViewModel by viewModels { HomeViewModel.factory }
@@ -111,8 +106,20 @@ class HomeFragment:Fragment() {
         PriceRecorderTheme(
             context = requireContext()
         ) {
-            Scaffold(scaffoldState = scaffoldState,
+            Scaffold(
+                scaffoldState = scaffoldState,
                 backgroundColor = MaterialTheme.colors.background,
+                snackbarHost = {
+                    /*Host for snack bars to be used in scaffold, and specially customize its appearance*/
+                    SnackbarHost(hostState = it){ data ->
+                        Snackbar(
+                            actionColor = if(ThemeUtils.systemInDarkTheme(requireContext()))
+                                MaterialTheme.colors.surface
+                            else SnackbarDefaults.primaryActionColor,
+                            snackbarData = data
+                        )
+                    }
+                },
                 topBar = { MainAppBar(searchWidgetState,searchTextState,appBarActionsEnabled) },
                 floatingActionButton = { AddFloatingActionButton(enabled = true,
                     onClick = { navigateToAddFragment() }) },
@@ -131,17 +138,17 @@ class HomeFragment:Fragment() {
                             modifier = Modifier.fillMaxWidth())
                     }
 
-                    ProductsList(showSnackBar = {
-                        msg,
-                        actionLabel,
-                        onActionPerformed ->
-                            coroutineScope.launch {
-                                /*Snack bar is shown on screen and when the action is clicked, onActionPerformed is invoked*/
-                                when(scaffoldState.snackbarHostState.showSnackbar(message = msg,actionLabel = actionLabel)){
-                                    SnackbarResult.ActionPerformed -> onActionPerformed()
-                                    else -> {}
-                                }
+                    ProductsList(showSnackBar = { msg,
+                                                  actionLabel,
+                                                  onActionPerformed ->
+                        coroutineScope.launch {
+                            /*Snack bar is shown on screen and when the action is clicked, onActionPerformed is invoked*/
+                            when (scaffoldState.snackbarHostState.showSnackbar(message = msg,
+                                actionLabel = actionLabel)) {
+                                SnackbarResult.ActionPerformed -> onActionPerformed()
+                                else -> {}
                             }
+                        }
                     },
                         list = list,
                         lazyListState = lazyListState,
@@ -244,57 +251,51 @@ class HomeFragment:Fragment() {
 
                 LazyColumn(modifier = Modifier.fillMaxWidth(),
                     state = lazyListState, contentPadding = PaddingValues(bottom = 44.dp)){
-                    items(list, key = { it.getId() }){ product ->
-                        val dismissState = rememberDismissState(
-                            initialValue = DismissValue.Default,
-                            confirmStateChange = {
-                                /*If item was swiped to start, then its deleted from the DB*/
-                                if(it == DismissValue.DismissedToStart){
+                    itemsIndexed(list, key = { _,item -> item.getId() }){ index,product ->
+                        SwipeActions(
+                            endActionsConfig = SwipeActionsConfig(
+                                threshold = 0.30f,
+                                icon = Icons.Default.Delete,
+                                iconTint = Color.Red,
+                                background = MaterialTheme.colors.background,
+                                stayDismissed = true,
+                                onDismiss = {
                                     viewModel.deleteProduct(productId = product.getId())
                                     showSnackBar(getString(R.string.product_deleted_msg),getString(R.string.undo_action_msg)){
                                         viewModel.addProduct(product)
                                     }
                                 }
-                                true
-                            }
-                        )
-
-                        SwipeToDismiss(state = dismissState,
-                            directions = setOf(DismissDirection.EndToStart),
-                            background = {
-                                val color by animateColorAsState(
-                                    targetValue = when(dismissState.targetValue){
-                                        DismissValue.DismissedToStart -> Color.Red
-                                        else -> MaterialTheme.colors.background
-                                    })
-                                val icon = Icons.Default.Delete
-                                /*Used to animate the icon size as the item is being swiped*/
-                                val scale by animateFloatAsState(
-                                    targetValue = if(dismissState.targetValue == DismissValue.Default) 0.8f else 1.2f)
-                                val alignment = Alignment.CenterEnd
-
-                                Box(modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(color)
-                                    .padding(start = 12.dp, end = 12.dp),
-                                    contentAlignment = alignment) {
-                                    Icon(imageVector = icon, contentDescription = "",
-                                        modifier = Modifier.scale(scale))
-                                }
-                            },
-                            /*swipe fraction limit where the action is confirmed*/
-                            dismissThresholds = { FractionalThreshold(0.35f) },
-                            dismissContent = {
-                                /*content to be swiped*/
-                                Card(modifier = Modifier.fillMaxWidth(),
-                                    shape = MaterialTheme.shapes.medium.copy(CornerSize(0.dp)),
-                                    /*Adds elevation to item as its being swiped*/
-                                    elevation = animateDpAsState(
-                                        targetValue = if(dismissState.dismissDirection != null) 6.dp else 0.dp).value) {
-                                    ListItemProduct(product = product, modifier = Modifier.fillMaxWidth())
+                            ),
+                            /*Tutorial for swipe content shown only on the first element*/
+                            //showTutorial = (index == 0)
+                        ) { dismissState ->
+                            /*State that determines whether the corners of the card must be animated*/
+                            val animateCorners by remember {
+                                derivedStateOf {
+                                    dismissState.offset.value.absoluteValue > 40
                                 }
                             }
-                        )
+                            val endCorners by animateDpAsState(
+                                targetValue = when {
+                                    dismissState.dismissDirection == DismissDirection.EndToStart && animateCorners -> 8.dp
+                                    else -> 0.dp
+                                }
+                            )
+                            val elevation by animateDpAsState(
+                                targetValue = when {
+                                    animateCorners -> 8.dp
+                                    else -> 2.dp
+                                })
+
+                            Card(modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(
+                                    topEnd = endCorners,
+                                    bottomEnd = endCorners
+                                ),
+                                elevation = elevation) {
+                                ListItemProduct(product = product, modifier = Modifier.fillMaxWidth())
+                            }
+                        }
                     }
                 }
 
@@ -334,7 +335,7 @@ class HomeFragment:Fragment() {
                     .shadow(6.dp, CircleShape)
                     .clip(CircleShape)
                     .background(MaterialTheme.colors.primary)) {
-                Icon(painter = painterResource(id = R.drawable.ic_keyboard_double_arrow_up), contentDescription = "",
+                Icon(imageVector = Icons.Default.KeyboardDoubleArrowUp, contentDescription = "",
                     tint = MaterialTheme.colors.onSurface)
             }
         }
@@ -464,7 +465,7 @@ class HomeFragment:Fragment() {
                     trailingIcon = {
                         IconButton(onClick = { onDoneClicked() }, enabled = !errorState) {
                             Icon(imageVector = Icons.Default.Done, contentDescription = "",
-                            tint = if(!errorState) MaterialTheme.colors.primaryVariant
+                            tint = if(!errorState) MaterialTheme.colors.secondary
                                 else MaterialTheme.colors.error)
                         }
                     },
@@ -482,7 +483,8 @@ class HomeFragment:Fragment() {
                         cursorColor = MaterialTheme.colors.primaryVariant.copy(ContentAlpha.medium),
                         textColor = MaterialTheme.colors.secondary
                     ),
-                    textStyle = MaterialTheme.typography.h6)
+                    textStyle = MaterialTheme.typography.h6,
+                    visualTransformation = PrefixVisualTransformation("$ "))
             }
         }
     }
@@ -583,7 +585,8 @@ class HomeFragment:Fragment() {
                     .fillMaxSize()
                     .padding(3.dp)
                     .align(Alignment.Center)
-                DetailImageSmall(product = product,imgModifier)
+                DetailImageSmall(
+                    product = product,imgModifier)
             }
         }
     }
@@ -592,39 +595,19 @@ class HomeFragment:Fragment() {
     private fun DetailImageSmall(product: Product,modifier: Modifier = Modifier){
         product.getImage()?.let {
             Image(bitmap = it.asImageBitmap(), contentDescription = "",
-                modifier = modifier, contentScale = ContentScale.Crop)
+                modifier = modifier,
+                contentScale = ContentScale.Crop)
             return
         }
-        Image(painter = painterResource(id = R.drawable.ic_image), contentDescription = "",
-            modifier = modifier, contentScale = ContentScale.Crop)
+        Image(imageVector = Icons.Default.Image, contentDescription = "",
+            modifier = modifier,
+            contentScale = ContentScale.Crop,
+            colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface))
     }
 
     @Composable
     private fun DetailDialogBottomActionBar(product: Product, onDismiss: () -> Unit,
                                             onEditPriceClicked:() -> Unit){
-        /*Creates a dialog that provides the option to delete the current selected product*/
-        var showDeleteProductDialog by remember {
-            mutableStateOf(false)
-        }
-        CustomAlertDialog(show = showDeleteProductDialog,
-            title = stringResource(id = R.string.delete_product_string),
-            msg = {
-                Text(text = stringResource(id = R.string.delete_product_dialog_msg),
-                    color = MaterialTheme.colors.onSurface)
-            },
-            confirmButtonText = stringResource(id = R.string.accept_button_string),
-            dismissButtonText = stringResource(id = R.string.cancel_button_string),
-            onConfirm = {
-                showDeleteProductDialog = false
-                onDismiss()
-                viewModel.deleteProduct(product.getId())
-                Toast.makeText(requireContext(),getString(R.string.delete_success_msg,product.getDescription()),
-                    Toast.LENGTH_SHORT).show()
-            },
-            onDismiss = {
-                showDeleteProductDialog = false
-            })
-
         Row(modifier = Modifier
             .padding(top = 8.dp, bottom = 3.dp)
             .fillMaxWidth()
@@ -647,9 +630,6 @@ class HomeFragment:Fragment() {
                     onDismiss()
                     navigateToEditFragment(product.getId())
                 }),
-                AppBarAction(stringResource(id = R.string.delete_product_string), icon = Icons.Outlined.Delete, action = {
-                    showDeleteProductDialog = true
-                }),
                 AppBarAction(stringResource(id = R.string.update_price_button_desc),
                     icon = ImageUtils.createImageVector(drawableRes = R.drawable.ic_add_price), action = {
                         onEditPriceClicked()
@@ -662,7 +642,7 @@ class HomeFragment:Fragment() {
                         .padding(end = 8.dp, bottom = 4.dp, top = 4.dp)
                         .background(MaterialTheme.colors.primary)) {
                     Icon(imageVector = it.icon!!, contentDescription = it.name,
-                        tint = Black, modifier = Modifier
+                        tint = MaterialTheme.colors.onSurface, modifier = Modifier
                             .width(44.dp)
                             .height(44.dp))
                 }
@@ -704,16 +684,17 @@ class HomeFragment:Fragment() {
                             .padding(start = 16.dp, end = 16.dp)
                             .fillMaxWidth(),
                         label = {
-                            Text(text = stringResource(id = R.string.category_input_string),
+                            Text(text = stringResource(id = R.string.category_label),
                                 style = MaterialTheme.typography.subtitle1,
                                 color = MaterialTheme.colors.onSurface.copy(0.6f)) },
                         onValueChange = {
                             viewModel.updateCategoryFilter(it)
                         },
                         leadingIcon = {
-                            Icon(painter = painterResource(id = R.drawable.ic_category), contentDescription = "")
+                            Icon(imageVector = Icons.Default.Category, contentDescription = "")
                         },
-                        options = viewModel.getListOfCategories())
+                        options = viewModel.getListOfCategories(),
+                        darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext()))
 
                     /*place of purchase text field*/
                     AutoCompleteTextField(
@@ -731,7 +712,7 @@ class HomeFragment:Fragment() {
                             viewModel.updatePlaceFilter(it)
                         },
                         leadingIcon = {
-                            Icon(painter = painterResource(id = R.drawable.ic_place), contentDescription = "")
+                            Icon(imageVector = Icons.Default.Place, contentDescription = "")
                         },
                         trailingIcon = {
                             IconButton(onClick = {
@@ -750,18 +731,21 @@ class HomeFragment:Fragment() {
                                 style = MaterialTheme.typography.subtitle1.copy(fontSize = 18.sp),
                                 color = MaterialTheme.colors.onSurface.copy(0.8f),
                                 modifier = Modifier.padding(2.dp))
-                        }
+                        },
+                        darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext())
                     )
 
                     Row(modifier = Modifier
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)
+                        .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp)
                         .fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.End) {
                         Button(onClick = onConfirm,
                             enabled = filterEnabled.value,
-                            colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent,
-                                contentColor = MaterialTheme.colors.secondary),
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color.Transparent,
+                                contentColor = MaterialTheme.colors.secondary,
+                                disabledBackgroundColor = Color.Transparent),
                             elevation = ButtonDefaults.elevation(defaultElevation = 0.dp)) {
                             Text(text = stringResource(id = R.string.button_apply_label)
                                 , style = MaterialTheme.typography.h6)
@@ -796,7 +780,7 @@ class HomeFragment:Fragment() {
                     ChipItem(
                         text = viewModel.categoryFilter.value,
                         leadingIcon = {
-                            Icon(painter = painterResource(id = R.drawable.ic_category), contentDescription = "",
+                            Icon(imageVector = Icons.Default.Category, contentDescription = "",
                                 modifier = Modifier.clip(CircleShape))
                         }
                     )
@@ -807,7 +791,7 @@ class HomeFragment:Fragment() {
                     ChipItem(
                         text = viewModel.placeFilter.value,
                         leadingIcon = {
-                            Icon(painter = painterResource(id = R.drawable.ic_place), contentDescription = "",
+                            Icon(imageVector = Icons.Default.Place, contentDescription = "",
                                 modifier = Modifier.clip(CircleShape))
                         }
                     )

@@ -1,6 +1,5 @@
 package com.example.pricerecorder.database
 
-import android.app.Application
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room.databaseBuilder

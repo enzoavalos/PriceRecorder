@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
@@ -13,8 +12,10 @@ import androidx.activity.result.ActivityResultRegistry
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.core.content.FileProvider
+import androidx.core.content.res.ResourcesCompat
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
 
@@ -159,13 +160,28 @@ class ImageUtils(
             return ImageVector.Companion.vectorResource(id = drawableRes)
         }
 
-        /*Given a drawable returns a bitmap created from it*/
-        fun createBitmapFromDrawable(drawable: Drawable): Bitmap {
-            return Bitmap.createBitmap(
-                drawable.intrinsicWidth,
-                drawable.intrinsicHeight,
-                Bitmap.Config.ARGB_8888
-            )
+        /*Given a drawable resource returns a bitmap created from it if possible*/
+        @Composable
+        fun createBitmapFromDrawable(
+            drawableRes: Int): Bitmap? {
+            ResourcesCompat.getDrawable(
+                LocalContext.current.resources,
+                drawableRes,
+                LocalContext.current.theme
+            )?.let {
+                val bitmap = Bitmap.createBitmap(
+                    it.intrinsicWidth,
+                    it.intrinsicHeight,
+                    Bitmap.Config.ARGB_8888
+                )
+                val canvas = android.graphics.Canvas(bitmap)
+                it.setBounds(0,0,canvas.width,canvas.height)
+                it.draw(canvas)
+
+                return bitmap
+            }
+
+            return null
         }
     }
 }

@@ -8,9 +8,10 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 
 /*Concatenates a prefix along with the text input*/
-class PrefixVisualTransformation(private val prefix:String) : VisualTransformation {
+class PrefixVisualTransformation(private val prefix:String,private val prefixColor: Color = Color.Gray) :
+    VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
-        val transformedText = AnnotatedString(prefix, SpanStyle(Color.Gray)) + text
+        val transformedText = AnnotatedString(prefix, SpanStyle(prefixColor)) + text
         return TransformedText(transformedText,PrefixOffsetMapping(prefix))
     }
 }

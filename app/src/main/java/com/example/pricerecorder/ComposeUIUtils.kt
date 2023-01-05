@@ -4,10 +4,9 @@ import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +18,7 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -26,12 +26,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -39,14 +39,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.res.ResourcesCompat
 import com.example.pricerecorder.theme.PriceRecorderShapes
-import com.example.pricerecorder.theme.PriceRecorderTheme
+import com.example.pricerecorder.theme.customTextFieldColors
+import com.example.pricerecorder.theme.customTextFieldSelectionColors
 
 data class ChipItem(
     val text:String,
@@ -60,6 +59,18 @@ data class RadioButtonItem(
     var selected: Boolean = false
 )
 
+data class FabItem(
+    val label:String,
+    val onClick: () -> Unit,
+    val icon: ImageVector,
+    var enabled: Boolean = true
+)
+
+enum class MultiFloatingButtonState {
+    Expanded,Collapsed
+}
+
+/*Implements a horizontal scrollable chip list*/
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun CustomChipList(items:List<ChipItem>,
@@ -134,16 +145,18 @@ fun CustomAlertDialog(show:Boolean, title:String, onConfirm:() -> Unit, onDismis
     )
 }
 
+/*Menu that displays a set of options for the user to select*/
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ExposedDropdownMenu(
     value: String,
+    options:List<String>,
     label:@Composable (() -> Unit)?,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     leadingIcon:@Composable (() -> Unit)? = null,
     helperText:String? = null,
-    options:List<String>
+    darkThemeEnabled: Boolean = false
 ){
     var expanded by remember { mutableStateOf(false) }
 
@@ -172,53 +185,42 @@ fun ExposedDropdownMenu(
                                 onValueChange("")
                                 expanded = false }) {
                                 Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
-                                }
-                       },
+                            }
+                    },
                     textStyle = MaterialTheme.typography.subtitle1,
-                    colors = TextFieldDefaults.textFieldColors(
-                        backgroundColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colors.primaryVariant.copy(ContentAlpha.medium),
-                        textColor = MaterialTheme.colors.onSurface
+                    colors = MaterialTheme.customTextFieldColors(
+                        darkThemeEnabled = darkThemeEnabled
                     ))
-
 
                 TextFieldDecorators(helperText = helperText)
             }
 
             ExposedDropdownMenu(expanded = (expanded and options.isNotEmpty()),
                 onDismissRequest = { expanded = false }) {
-                options.forEach { option ->
-                    DropdownMenuItem(onClick = {
-                        expanded = false
-                        onValueChange(option)
-                    }) {
-                        Text(text = option,
-                            style = MaterialTheme.typography.subtitle2)
+                options.forEachIndexed { index,option ->
+                    Column {
+                        DropdownMenuItem(onClick = {
+                            expanded = false
+                            onValueChange(option)
+                        }) {
+                            Text(text = option,
+                                style = MaterialTheme.typography.subtitle2)
+                        }
+
+                        if(index < options.size-1){
+                            Divider(thickness = 1.dp,
+                                color = MaterialTheme.colors.secondary.copy(0.7f),
+                                modifier = Modifier
+                                    .padding(start = 12.dp, end = 12.dp))
+                        }
                     }
                 }
             }
         }
     }
 }
-/*
-@Preview(showBackground = true, heightDp = 900)
-@Composable
-private fun ExposedDropdownMenuPreview(){
-    PriceRecorderTheme {
-        ExposedDropdownMenu(
-            value = "Comestibles",
-            label = {
-                Text(text = stringResource(id = R.string.category_input_string),
-                    style = MaterialTheme.typography.subtitle1,
-                    color = MaterialTheme.colors.onSurface.copy(0.6f))
-            }, onValueChange = {},
-            leadingIcon = {
-                Icon(painter = painterResource(id = R.drawable.ic_category), contentDescription = "")
-            },
-            options = listOf("Comestibles","Lacteos","tecnologia","hogar"))
-    }
-}*/
 
+/*Implements a text field that shows predictions menu based on the user input*/
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun AutoCompleteTextField(
@@ -234,6 +236,7 @@ fun AutoCompleteTextField(
     isError: Boolean = false,
     predictions:List<String>,
     itemContent:@Composable (String) -> Unit,
+    darkThemeEnabled: Boolean = false
 ){
     val charCount = value.length
     val showTrailingIcon by derivedStateOf { value.isNotEmpty() }
@@ -241,67 +244,67 @@ fun AutoCompleteTextField(
         mutableStateOf(false)
     }
 
-    Column(modifier = modifier
-        .background(Color.Transparent),
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.Top) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {
-                var newValue = it
-                maxAllowedChars?.let { limit ->
-                    if(it.length > limit)
-                        newValue = it.dropLast(it.length - limit)
-                }
-                onValueChange(newValue)
-                showPredictions.value = true
-            },
-            label = label,
-            modifier = Modifier
-                .fillMaxWidth(),
-            singleLine = true,
-            leadingIcon = leadingIcon,
-            trailingIcon = if(showTrailingIcon) trailingIcon else null,
-            textStyle = MaterialTheme.typography.subtitle1,
-            colors = TextFieldDefaults.textFieldColors(
-                backgroundColor = Color.Transparent,
-                cursorColor = MaterialTheme.colors.primaryVariant.copy(ContentAlpha.medium),
-                textColor = MaterialTheme.colors.onSurface
-            ),
-            keyboardOptions = keyboardOptions,
-            keyboardActions = keyboardActions,
-            isError = isError)
+    CompositionLocalProvider(LocalTextSelectionColors provides MaterialTheme.customTextFieldSelectionColors()){
+        Column(modifier = modifier
+            .background(Color.Transparent),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Top) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = {
+                    var newValue = it
+                    maxAllowedChars?.let { limit ->
+                        if(it.length > limit)
+                            newValue = it.dropLast(it.length - limit)
+                    }
+                    onValueChange(newValue)
+                    showPredictions.value = true
+                },
+                label = label,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                singleLine = true,
+                leadingIcon = leadingIcon,
+                trailingIcon = if(showTrailingIcon) trailingIcon else null,
+                textStyle = MaterialTheme.typography.subtitle1,
+                colors = MaterialTheme.customTextFieldColors(
+                    darkThemeEnabled = darkThemeEnabled
+                ),
+                keyboardOptions = keyboardOptions,
+                keyboardActions = keyboardActions,
+                isError = isError)
 
-        Box(modifier = Modifier.fillMaxWidth()) {
-            TextFieldDecorators(
-                maxAllowedChars = maxAllowedChars,
-                charCount = charCount,
-                showCount = true
-            )
+            Box(modifier = Modifier.fillMaxWidth()) {
+                TextFieldDecorators(
+                    maxAllowedChars = maxAllowedChars,
+                    charCount = charCount,
+                    showCount = true
+                )
 
-            if((showPredictions.value) and (predictions.isNotEmpty())
-                and (value.isNotEmpty())){
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 6.dp, bottom = 8.dp, end = 6.dp),
-                    elevation = 4.dp,
-                    shape = RoundedCornerShape(topEnd = 0.dp, topStart = 0.dp, bottomStart = 5.dp, bottomEnd = 5.dp)) {
-                    LazyColumn(
-                        state = rememberLazyListState(),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 100.dp)
-                            .padding(start = 4.dp)){
-                        items(predictions){ prediction ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onValueChange(prediction)
-                                        showPredictions.value = false
-                                    }
-                            ){
-                                itemContent(prediction)
+                if((showPredictions.value) and (predictions.isNotEmpty())
+                    and (value.isNotEmpty())){
+                    Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 6.dp, bottom = 8.dp, end = 6.dp),
+                        elevation = 4.dp,
+                        shape = RoundedCornerShape(topEnd = 0.dp, topStart = 0.dp, bottomStart = 5.dp, bottomEnd = 5.dp)) {
+                        LazyColumn(
+                            state = rememberLazyListState(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 100.dp)
+                                .padding(start = 4.dp)){
+                            items(predictions){ prediction ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onValueChange(prediction)
+                                            showPredictions.value = false
+                                        }
+                                ){
+                                    itemContent(prediction)
+                                }
                             }
                         }
                     }
@@ -310,7 +313,35 @@ fun AutoCompleteTextField(
         }
     }
 }
-
+/*
+TODO("Eliminar preview")
+@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_NO)
+@Composable
+fun CustomTextFieldPreview(){
+    PriceRecorderTheme {
+        Row(modifier = Modifier.padding(32.dp)) {
+            CustomTextField(
+                value = "Valor",
+                label = {
+                    Text(text = stringResource(id = R.string.description_string),
+                        style = MaterialTheme.typography.subtitle1)
+                }, onValueChange = {},
+                leadingIcon = {
+                    Icon(Icons.Default.Description, contentDescription = "")
+                },
+                trailingIcon = {
+                    IconButton(onClick = {  }) {
+                        Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    )
+        }
+    }
+}
+*/
+/*Fully customized text field*/
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun CustomTextField(
@@ -330,13 +361,15 @@ fun CustomTextField(
     enabled: Boolean = true,
     showCount: Boolean = true,
     showTrailingIcon : Boolean = false,
-    visualTransformation: VisualTransformation = VisualTransformation.None
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    darkThemeEnabled:Boolean = false
 ){
     val charCount = value.length
 
-    Column(modifier = modifier
-        .background(Color.Transparent),
-        horizontalAlignment = Alignment.End) {
+    CompositionLocalProvider(LocalTextSelectionColors provides MaterialTheme.customTextFieldSelectionColors()){
+        Column(modifier = modifier
+            .background(Color.Transparent),
+            horizontalAlignment = Alignment.End) {
             OutlinedTextField(
                 value = value,
                 onValueChange = {
@@ -355,10 +388,8 @@ fun CustomTextField(
                 leadingIcon = leadingIcon,
                 trailingIcon = if(showTrailingIcon or value.isNotEmpty()) trailingIcon else null,
                 textStyle = MaterialTheme.typography.subtitle1,
-                colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.Transparent,
-                    cursorColor = MaterialTheme.colors.primaryVariant.copy(ContentAlpha.medium),
-                    textColor = MaterialTheme.colors.onSurface
+                colors = MaterialTheme.customTextFieldColors(
+                    darkThemeEnabled = darkThemeEnabled
                 ),
                 keyboardOptions = keyboardOptions,
                 keyboardActions = keyboardActions,
@@ -366,14 +397,16 @@ fun CustomTextField(
                 enabled = enabled,
                 visualTransformation = visualTransformation)
 
-       TextFieldDecorators(
-            maxAllowedChars =  maxAllowedChars,
-            helperText = helperText,
-            charCount = charCount,
-            showCount = showCount)
+            TextFieldDecorators(
+                maxAllowedChars =  maxAllowedChars,
+                helperText = helperText,
+                charCount = charCount,
+                showCount = showCount)
+        }
     }
 }
 
+/*Creates a series of decorators to be used alongside text fields such as a helper text or current character count*/
 @Composable
 private fun TextFieldDecorators(
     maxAllowedChars:Int? = null,
@@ -401,6 +434,7 @@ private fun TextFieldDecorators(
     }
 }
 
+/*Shows the image the user has selected or taken, and otherwise shows a default image*/
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun CurrentSelectedImage(image: Bitmap?, onClick: () -> Unit, modifier: Modifier = Modifier){
@@ -416,15 +450,18 @@ fun CurrentSelectedImage(image: Bitmap?, onClick: () -> Unit, modifier: Modifier
             Image(bitmap = image.asImageBitmap(), contentDescription = "",
                 modifier = imgModifier, contentScale = ContentScale.Crop)
         }else{
-            Image(painter = painterResource(id = R.drawable.ic_image), contentDescription = "",
-                modifier = imgModifier, contentScale = ContentScale.Crop)
+            Image(imageVector = Icons.Default.Image, contentDescription = "",
+                modifier = imgModifier, contentScale = ContentScale.Crop,
+                colorFilter = ColorFilter.tint(MaterialTheme.colors.onSurface))
         }
     }
 }
 
 /*Adds a fab with the option to be disabled*/
 @Composable
-fun AddFloatingActionButton(enabled:Boolean, onClick:() -> Unit){
+fun AddFloatingActionButton(
+    enabled:Boolean,
+    onClick:() -> Unit){
     var modifier = Modifier.size(56.dp)
     modifier = if(enabled) modifier.shadow(6.dp, CircleShape) else modifier
 
@@ -474,7 +511,8 @@ fun SelectedImageCustomDialog(
     if(!show or (image == null))
         return
 
-    Dialog(onDismissRequest = onDismiss,
+    Dialog(
+        onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(modifier = modifier.background(Color.Red)) {
             Surface(color = Color.Red,
@@ -502,52 +540,89 @@ fun SelectedImageCustomDialog(
     }
 }
 
-/*Creates a dialog that gives the user the option to select an image from the gallery or take a picture in case it has
+/*Creates a bottom sheet that gives the user the option to select an image from the gallery or take a picture in case it has
 * not already done it, in this case a dialog is shown with the current image where the user can delete it if wanted*/
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ImagePickerCustomDialog(
-    show:Boolean,
+fun ImagePickerBottomSheetContent(
     onDismiss:() -> Unit,
     title: String,
     galleryPicker:() -> Unit,
-    pictureTaker:() -> Unit){
-    CustomAlertDialog(show = show,
-        title = title,
-        msg = {
-            Column(modifier = Modifier
+    pictureTaker:() -> Unit,
+    isDarkThemeEnabled:Boolean = false
+){
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .padding(start = 8.dp, end = 8.dp, top = 16.dp, bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center) {
+        Text(text = title,
+            style = MaterialTheme.typography.h6,
+            color = MaterialTheme.colors.primaryVariant,
+            modifier = Modifier.padding(bottom = 8.dp))
+        Surface(modifier = Modifier
+            .fillMaxWidth()
+            .align(Alignment.Start),
+            onClick = {
+                onDismiss()
+                galleryPicker()
+            }) {
+            Row(modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 8.dp, end = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center) {
-                Surface(modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Start),
-                    onClick = {
-                        onDismiss()
-                        galleryPicker()
-                    }) {
-                    Text(text = stringResource(id = R.string.add_img_dialog_pick_from_gallery),
-                        style = MaterialTheme.typography.subtitle1,
-                        color = MaterialTheme.colors.primaryVariant)
-                }
-                Surface(modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Start),
-                    onClick = {
-                        onDismiss()
-                        pictureTaker()
-                    }) {
-                    Text(text = stringResource(id = R.string.add_img_dialog_take_picture),
-                        style = MaterialTheme.typography.subtitle1,
-                        color = MaterialTheme.colors.primaryVariant)
-                }
+                .padding(start = 16.dp),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = Icons.Default.Image,
+                    contentDescription = "",
+                    modifier = Modifier.padding(end = 16.dp))
+                Text(text = stringResource(id = R.string.add_img_dialog_pick_from_gallery),
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface)
             }
-        },
-        confirmButtonText = stringResource(id = R.string.cancel_button_string),
-        dismissButtonText = null,
-        onConfirm = onDismiss,
-        onDismiss = onDismiss)
+        }
+        Surface(modifier = Modifier
+            .fillMaxWidth()
+            .align(Alignment.Start),
+            onClick = {
+                onDismiss()
+                pictureTaker()
+            }) {
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = Icons.Default.CameraAlt,
+                    contentDescription = "",
+                    modifier = Modifier.padding(end = 16.dp))
+                Text(text = stringResource(id = R.string.add_img_dialog_take_picture),
+                    style = MaterialTheme.typography.subtitle1,
+                    color = MaterialTheme.colors.onSurface)
+            }
+        }
+        Surface(modifier = Modifier
+            .fillMaxWidth()
+            .align(Alignment.Start),
+            onClick = {
+                onDismiss()
+            }) {
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp),
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = Icons.Default.HighlightOff,
+                    contentDescription = "",
+                    modifier = Modifier.padding(end = 16.dp),
+                    tint = if(isDarkThemeEnabled) MaterialTheme.colors.onSurface
+                            else MaterialTheme.colors.error)
+                Text(text = stringResource(id = R.string.cancel_button_string),
+                    style = MaterialTheme.typography.subtitle1,
+                    color = if(isDarkThemeEnabled) MaterialTheme.colors.onSurface
+                        else MaterialTheme.colors.error)
+            }
+        }
+    }
 }
 
 /*Receives a drawable, creates a bitmap from it and if successful creates an Image with it*/
@@ -556,28 +631,19 @@ fun AdaptiveIconImage(
     adaptiveDrawable:Int,
     @DrawableRes drawable:Int,
     modifier: Modifier = Modifier){
+    val bitmap = ImageUtils.createBitmapFromDrawable(drawableRes = adaptiveDrawable)
 
-    ResourcesCompat.getDrawable(
-        LocalContext.current.resources,
-        adaptiveDrawable,
-        LocalContext.current.theme
-    )?.let {
-        val bitmap = ImageUtils.createBitmapFromDrawable(it)
-        val canvas = android.graphics.Canvas(bitmap)
-        it.setBounds(0,0,canvas.width,canvas.height)
-        it.draw(canvas)
-
+    if(bitmap != null)
         Image(bitmap = bitmap.asImageBitmap(),
             contentDescription = "",
             modifier = modifier)
-        return
-    }
-
-    Image(painter = painterResource(id = drawable),
-        contentDescription = "",
-        modifier = modifier)
+    else
+        Image(painter = painterResource(id = drawable),
+            contentDescription = "",
+            modifier = modifier)
 }
 
+/*Creates a text field that offers the opportunity to scan a barcode to set it as its value*/
 @Composable
 fun BarcodeScanSection(
     barcodeState:String,
@@ -585,41 +651,45 @@ fun BarcodeScanSection(
     onCancelClicked:() -> Unit,
     onScanCodeClicked:() -> Unit,
     maxAllowedChars:Int? = null,
-    helperText: String? = null){
-    CustomTextField(value = barcodeState,
-        modifier = Modifier
-            .fillMaxWidth(),
-        label = {
-            Text(text = stringResource(id = R.string.product_barcode_label),
-                style = MaterialTheme.typography.subtitle1,
-                color = MaterialTheme.colors.onSurface.copy(0.6f))
-        },
-        maxAllowedChars = maxAllowedChars,
-        onValueChange = {
-            onValueChange(it)
-        },
-        trailingIcon = {
-            if(barcodeState.isNotEmpty()){
-                IconButton(onClick = onCancelClicked) {
-                    Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+    helperText: String? = null,
+    darkThemeEnabled: Boolean = false){
+    CompositionLocalProvider(LocalTextSelectionColors provides MaterialTheme.customTextFieldSelectionColors()){
+        CustomTextField(value = barcodeState,
+            modifier = Modifier
+                .fillMaxWidth(),
+            label = {
+                Text(text = stringResource(id = R.string.product_barcode_label),
+                    style = MaterialTheme.typography.subtitle1)
+            },
+            maxAllowedChars = maxAllowedChars,
+            onValueChange = {
+                onValueChange(it)
+            },
+            trailingIcon = {
+                if(barcodeState.isNotEmpty()){
+                    IconButton(onClick = onCancelClicked) {
+                        Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
+                    }
+                } else {
+                    IconButton(onClick = onScanCodeClicked) {
+                        Icon(imageVector = ImageUtils.createImageVector(drawableRes = R.drawable.ic_barcode),
+                            contentDescription = "")
+                    }
                 }
-            } else {
-                IconButton(onClick = onScanCodeClicked) {
-                    Icon(imageVector = ImageUtils.createImageVector(drawableRes = R.drawable.ic_barcode),
-                        contentDescription = "")
-                }
-            }
-        },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            imeAction = ImeAction.Next
-        ),
-        showCount = false,
-        showTrailingIcon = true)
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
+            showCount = false,
+            showTrailingIcon = true,
+            darkThemeEnabled = darkThemeEnabled)
 
-    TextFieldDecorators(helperText = helperText)
+        TextFieldDecorators(helperText = helperText)
+    }
 }
 
+/*Creates a group a radio buttons where only one can be selected at any given time*/
 @Composable
 fun SingleSelectableRadioButtons(
     radioOptions:List<RadioButtonItem> = listOf()){
@@ -640,6 +710,86 @@ fun SingleSelectableRadioButtons(
                     color = MaterialTheme.colors.onSurface,
                     style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Normal, fontSize = 18.sp))
             }
+        }
+    }
+}
+
+/*Creates an expandable floating action button that shows a series of smaller buttons when pressed*/
+@Composable
+fun MultiFloatingButton(
+    items: List<FabItem>,
+    multiFabState:MultiFloatingButtonState,
+    onMultiFabStateChange:(MultiFloatingButtonState)->Unit){
+    /*Transition used to rotate the fab when clicked*/
+    val transition = updateTransition(targetState = multiFabState, label = "fab rotation transition")
+    val rotateAnim by transition.animateFloat(
+        label = "rotate",
+        transitionSpec = { tween(durationMillis = 500) }) {
+        if(it == MultiFloatingButtonState.Expanded) 315f else 0f
+    }
+
+    Column(
+        horizontalAlignment = Alignment.End
+    ) {
+        items.forEach {
+            if(!it.enabled)
+                return@forEach
+            AnimatedVisibility(
+                visible = (transition.currentState == MultiFloatingButtonState.Expanded),
+                enter = fadeIn() + slideInVertically(),
+                exit = fadeOut() + slideOutVertically()
+                ) {
+                Column {
+                    Row(
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Card(
+                            shape = RoundedCornerShape(10.dp),
+                            backgroundColor = MaterialTheme.colors.secondary,
+                            modifier = Modifier.alpha(alpha = 0.9f)
+                        ) {
+                            Text(
+                                text = it.label,
+                                style = MaterialTheme.typography.subtitle2,
+                                color = MaterialTheme.colors.onSecondary,
+                                modifier = Modifier
+                                    .background(Color.Transparent)
+                                    .padding(vertical = 6.dp, horizontal = 10.dp))
+                        }
+
+                        Spacer(modifier = Modifier.size(10.dp))
+
+                        FloatingActionButton(
+                            shape = CircleShape,
+                            modifier = Modifier.size(40.dp),
+                            backgroundColor = MaterialTheme.colors.primary,
+                            onClick = it.onClick) {
+                            Icon(imageVector = it.icon, contentDescription = null,
+                                tint = MaterialTheme.colors.onPrimary)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.size(10.dp))
+                }
+            }
+        }
+
+        FloatingActionButton(
+            onClick = {
+                onMultiFabStateChange(
+                    if(transition.currentState == MultiFloatingButtonState.Expanded)
+                        MultiFloatingButtonState.Collapsed
+                    else
+                        MultiFloatingButtonState.Expanded
+                )
+            },
+            modifier = Modifier.size(56.dp),
+            backgroundColor = MaterialTheme.colors.secondary,
+            shape = CircleShape) {
+            Icon(imageVector = Icons.Filled.Add, contentDescription = null,
+                tint = MaterialTheme.colors.onSecondary,
+                modifier = Modifier.rotate(rotateAnim))
         }
     }
 }
