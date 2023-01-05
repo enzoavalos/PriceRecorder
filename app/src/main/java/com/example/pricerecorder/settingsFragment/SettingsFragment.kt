@@ -11,7 +11,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -281,7 +283,7 @@ class SettingsFragment : Fragment(){
                     SectionOption(title = accountTitle,
                         desc = accountDesc, onClick = { navigateToSignInFragment() },
                         leadingIcon = {
-                            Icon(painter = painterResource(id = R.drawable.ic_account_circle),
+                            Icon(imageVector = Icons.Default.AccountCircle,
                                 contentDescription = "",
                                 modifier = Modifier.padding(end = 16.dp))
                         })
@@ -317,7 +319,7 @@ class SettingsFragment : Fragment(){
                         desc = stringResource(id = R.string.restore_data_description),
                         onClick = { getBackupFromCloudStorage() },
                         leadingIcon = {
-                            Icon(painter = painterResource(id = R.drawable.ic_cloud_download),
+                            Icon(Icons.Default.CloudDownload,
                                 contentDescription = "",
                                 modifier = Modifier.padding(end = 16.dp))
                         })

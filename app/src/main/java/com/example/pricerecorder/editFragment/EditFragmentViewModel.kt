@@ -132,4 +132,10 @@ class EditFragmentViewModel(application: Application,productId: Long) : ViewMode
             return@runBlocking repository.productAlreadyRegistered(description,place,productId)
         }
     }
+
+    fun deleteProduct(){
+        viewModelScope.launch {
+            repository.deleteProduct(product.getProductId())
+        }
+    }
 }

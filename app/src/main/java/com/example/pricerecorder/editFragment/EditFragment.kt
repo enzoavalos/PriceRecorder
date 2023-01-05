@@ -8,19 +8,18 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.HighlightOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -58,7 +57,6 @@ class EditFragment : Fragment() {
             viewModel.updateProdImage(it)
             }
 
-
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             imageHandler.setTempUri(savedInstanceState?.getParcelable("file_uri",Uri::class.java))
         else
@@ -76,10 +74,10 @@ class EditFragment : Fragment() {
         }
     }
 
-    private fun updateProduct(showSnackbar:(String)->Unit){
+    private fun updateProduct(showSnackBar:(String)->Unit){
         viewModel.apply {
             if(productAlreadyRegistered(prodDescription.value,prodPurchasePlace.value,product.getId())){
-                showSnackbar(getString(R.string.product_already_exists_msg))
+                showSnackBar(getString(R.string.product_already_exists_msg))
                 return
             }
 
@@ -106,44 +104,140 @@ class EditFragment : Fragment() {
         findNavController().navigate(EditFragmentDirections.actionEditFragmentToHomeFragment())
     }
 
+    @OptIn(ExperimentalMaterialApi::class)
     @Composable
     fun EditProductScreen(onNavigateBack:() -> Unit){
         val fabEnabled = viewModel.fabEnabled
-        val scaffoldState = rememberScaffoldState()
+        val modalBottomSheetState = rememberModalBottomSheetState(
+            initialValue = ModalBottomSheetValue.Hidden,
+            confirmStateChange = { it == ModalBottomSheetValue.HalfExpanded || it == ModalBottomSheetValue.Hidden })
         val coroutineScope = rememberCoroutineScope()
+        var multiFabState by remember {
+            mutableStateOf(MultiFloatingButtonState.Collapsed)
+        }
+        /*Creates a dialog that provides the option to delete the current selected product*/
+        var showDeleteProductDialog by remember {
+            mutableStateOf(false)
+        }
+        BackPressHandler {
+            if(modalBottomSheetState.isVisible || modalBottomSheetState.isAnimationRunning)
+                coroutineScope.launch { modalBottomSheetState.hide() }
+            else
+                navigateUp()
+        }
 
         PriceRecorderTheme(
             context = requireContext()
         ) {
-            Scaffold(
-                scaffoldState = scaffoldState,
-                topBar = { ShowTopAppBar(appBarTitle = stringResource(id = R.string.edit_fragment_title), actionItems = listOf(),
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
+            DeleteProductDialog(
+                show = showDeleteProductDialog,
+                onConfirm = {
+                    showDeleteProductDialog = false
+                    viewModel.deleteProduct()
+                    Toast.makeText(requireContext(),getString(R.string.delete_success_msg,viewModel.product.getDescription()),
+                        Toast.LENGTH_SHORT).show()
+                    navigateUp()
+                }, onDismiss = {
+                    showDeleteProductDialog = false
+                })
+
+            ModalBottomSheetLayout(
+                sheetState = modalBottomSheetState,
+                sheetContent = {
+                    ImagePickerBottomSheetContent(onDismiss = {
+                        coroutineScope.launch {
+                            modalBottomSheetState.hide()
                         }
-                    }) },
-                floatingActionButton = { AddFloatingActionButton(enabled = fabEnabled.value,
-                    onClick = {
-                        updateProduct(
-                            showSnackbar = { msg ->
-                                coroutineScope.launch {
-                                    scaffoldState.snackbarHostState.showSnackbar(message = msg)
-                                }
+                    },
+                        title = stringResource(id = R.string.add_image_dialog_title),
+                        galleryPicker = {
+                            permissionChecker.checkForPermissions(
+                                PermissionChecker.READ_EXTERNAL_FILES_PERMISSION,
+                                PermissionChecker.FILE_REQUEST_CODE
+                            ) { imageHandler.pickImageFromGallery() } },
+                        pictureTaker = {
+                            permissionChecker.checkForPermissions(
+                                PermissionChecker.CAMERA_ACCESS_PERMISSION,
+                                PermissionChecker.CAMERA_REQUEST_CODE
+                            ) { imageHandler.takePictureFromCamera() }
+                        },
+                        isDarkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext()))
+                },
+                sheetShape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)){
+                val scaffoldState = rememberScaffoldState()
+                Scaffold(
+                    scaffoldState = scaffoldState,
+                    topBar = { ShowTopAppBar(appBarTitle = stringResource(id = R.string.edit_fragment_title), actionItems = listOf(),
+                        navigationIcon = {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "")
                             }
+                        }) },
+                    floatingActionButton = {
+                        val items = listOf(
+                            FabItem(
+                                icon = Icons.Filled.Save,
+                                label = getString(R.string.save_changes_label),
+                                enabled = fabEnabled.value,
+                                onClick = {
+                                    updateProduct(
+                                        showSnackBar = { msg ->
+                                            coroutineScope.launch {
+                                                scaffoldState.snackbarHostState.showSnackbar(message = msg)
+                                            }
+                                        }
+                                    )
+                                }
+                            ),
+                            FabItem(
+                                icon = Icons.Filled.Delete,
+                                label = getString(R.string.delete_product_label),
+                                onClick = {
+                                    showDeleteProductDialog = true
+                                }
+                            )
                         )
-                    }) },
-                floatingActionButtonPosition = FabPosition.Center
-            ) {
-                EditProductScreenContent(
-                    Modifier
-                        .padding(it))
+
+                        MultiFloatingButton(items = items,
+                            multiFabState = multiFabState,
+                            onMultiFabStateChange = {
+                                multiFabState = it
+                            })},
+                    floatingActionButtonPosition = FabPosition.End,
+                ) {
+                    EditProductScreenContent(
+                        onExpandBottomSheet = {
+                            coroutineScope.launch { modalBottomSheetState.show() }
+                        },
+                        Modifier
+                            .padding(it))
+                }
             }
         }
     }
 
     @Composable
-    private fun EditProductScreenContent(modifier: Modifier = Modifier){
+    private fun DeleteProductDialog(
+        show:Boolean,
+        onConfirm:() -> Unit,
+        onDismiss:() -> Unit){
+        CustomAlertDialog(
+            show = show,
+            title = stringResource(id = R.string.delete_product_title),
+            msg = {
+                Text(text = stringResource(id = R.string.delete_product_dialog_msg),
+                    color = MaterialTheme.colors.onSurface)
+            },
+            confirmButtonText = stringResource(id = R.string.accept_button_string),
+            dismissButtonText = stringResource(id = R.string.cancel_button_string),
+            onConfirm = onConfirm,
+            onDismiss = onDismiss)
+    }
+
+    @Composable
+    private fun EditProductScreenContent(
+        onExpandBottomSheet:() -> Unit,
+        modifier: Modifier = Modifier){
         val image = viewModel.prodImage
         val description = viewModel.prodDescription
         val purchasePlace = viewModel.prodPurchasePlace
@@ -157,23 +251,6 @@ class EditFragment : Fragment() {
         val priceErrorState by viewModel.priceEditError
         val placePredictions by viewModel.placesFiltered
         val barcodeState by viewModel.barCode
-
-        ImagePickerCustomDialog(
-            show = (showImageDialog and (image.value == null)),
-            onDismiss = { showImageDialog = false },
-            title = stringResource(id = R.string.add_image_dialog_title),
-            galleryPicker = {
-                permissionChecker.checkForPermissions(
-                    PermissionChecker.READ_EXTERNAL_FILES_PERMISSION,
-                    PermissionChecker.FILE_REQUEST_CODE
-                ) { imageHandler.pickImageFromGallery() }
-            },
-            pictureTaker = {
-                permissionChecker.checkForPermissions(
-                    PermissionChecker.CAMERA_ACCESS_PERMISSION,
-                    PermissionChecker.CAMERA_REQUEST_CODE
-                ) { imageHandler.takePictureFromCamera() }
-            })
 
         SelectedImageCustomDialog(
             show = showImageDialog,
@@ -196,7 +273,10 @@ class EditFragment : Fragment() {
                 horizontalAlignment = Alignment.CenterHorizontally) {
                 CurrentSelectedImage(image = image.value,
                     onClick = {
-                        showImageDialog = true
+                        if(image.value == null)
+                            onExpandBottomSheet()
+                        else
+                            showImageDialog = true
                     })
 
                 /*Description text field*/
@@ -206,8 +286,7 @@ class EditFragment : Fragment() {
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.description_string),
-                            style = MaterialTheme.typography.subtitle1,
-                            color = MaterialTheme.colors.onSurface.copy(0.6f))
+                            style = MaterialTheme.typography.subtitle1)
                     },
                     maxLines = 2,
                     maxAllowedChars = AddFragment.DESCRIPTION_MAX_LENGTH,
@@ -215,7 +294,7 @@ class EditFragment : Fragment() {
                         viewModel.updateProdDescription(it)
                     },
                     leadingIcon = {
-                        Icon(painter = painterResource(id = R.drawable.ic_description), contentDescription = "")
+                        Icon(Icons.Default.Description, contentDescription = "")
                     },
                     trailingIcon = {
                         IconButton(onClick = { viewModel.updateProdDescription("") }) {
@@ -225,7 +304,8 @@ class EditFragment : Fragment() {
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Next
-                    ))
+                    ),
+                    darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext()))
 
                 /*place of purchase text field*/
                 AutoCompleteTextField(
@@ -235,15 +315,14 @@ class EditFragment : Fragment() {
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.place_hint),
-                            style = MaterialTheme.typography.subtitle1,
-                            color = MaterialTheme.colors.onSurface.copy(0.6f))
+                            style = MaterialTheme.typography.subtitle1)
                     },
                     maxAllowedChars = AddFragment.PLACE_MAX_LENGTH,
                     onValueChange = {
                         viewModel.updateProdPurchasePlace(it)
                     },
                     leadingIcon = {
-                        Icon(painter = painterResource(id = R.drawable.ic_place), contentDescription = "")
+                        Icon(imageVector = Icons.Default.Place, contentDescription = "")
                     },
                     trailingIcon = {
                         IconButton(onClick = {
@@ -262,7 +341,8 @@ class EditFragment : Fragment() {
                             style = MaterialTheme.typography.subtitle1.copy(fontSize = 18.sp),
                             color = MaterialTheme.colors.onSurface.copy(0.8f),
                             modifier = Modifier.padding(2.dp))
-                    }
+                    },
+                    darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext())
                 )
 
                 /*Category dropdown menu*/
@@ -272,18 +352,18 @@ class EditFragment : Fragment() {
                         .padding(bottom = 8.dp)
                         .fillMaxWidth(),
                     label = {
-                        Text(text = stringResource(id = R.string.category_input_string),
-                            style = MaterialTheme.typography.subtitle1,
-                            color = MaterialTheme.colors.onSurface.copy(0.6f)) },
+                        Text(text = stringResource(id = R.string.category_label),
+                            style = MaterialTheme.typography.subtitle1) },
                     onValueChange = {
                         viewModel.updateProductCategoryState(it)
                     },
                     leadingIcon = {
-                        Icon(painter = painterResource(id = R.drawable.ic_category), contentDescription = "")
+                        Icon(imageVector = Icons.Default.Category, contentDescription = "")
                     },
                     helperText = stringResource(id = R.string.helper_text_optional),
                     options = stringArrayResource(id = R.array.categories_array)
-                        .toList().sorted())
+                        .toList().sorted(),
+                    darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext()))
 
                 /*Quantity text field*/
                 CustomTextField(value = quantityState.value,
@@ -292,8 +372,7 @@ class EditFragment : Fragment() {
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.product_quantity_label),
-                            style = MaterialTheme.typography.subtitle1,
-                            color = MaterialTheme.colors.onSurface.copy(0.6f))
+                            style = MaterialTheme.typography.subtitle1)
                     },
                     maxAllowedChars = AddFragment.QUANTITY_MAX_LENGTH,
                     onValueChange = {
@@ -311,7 +390,8 @@ class EditFragment : Fragment() {
                         imeAction = ImeAction.Next
                     ),
                     helperText = stringResource(id = R.string.helper_text_optional),
-                    showCount = false)
+                    showCount = false,
+                    darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext()))
 
                 /*Size/Weight text field*/
                 CustomTextField(value = sizeState.value,
@@ -320,8 +400,7 @@ class EditFragment : Fragment() {
                         .fillMaxWidth(),
                     label = {
                         Text(text = stringResource(id = R.string.product_size_label),
-                            style = MaterialTheme.typography.subtitle1,
-                            color = MaterialTheme.colors.onSurface.copy(0.6f))
+                            style = MaterialTheme.typography.subtitle1)
                     },
                     maxAllowedChars = AddFragment.SIZE_MAX_LENGTH,
                     onValueChange = {
@@ -339,7 +418,8 @@ class EditFragment : Fragment() {
                         imeAction = ImeAction.Next
                     ),
                     helperText = stringResource(id = R.string.helper_text_optional),
-                    showCount = false)
+                    showCount = false,
+                    darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext()))
 
                 BarcodeScanSection(
                     barcodeState = barcodeState,
@@ -355,18 +435,18 @@ class EditFragment : Fragment() {
                         }
                     },
                     maxAllowedChars = AddFragment.BARCODE_MAX_LENGTH,
-                    helperText = stringResource(id = R.string.optional_helper_text))
+                    helperText = stringResource(id = R.string.optional_helper_text),
+                    darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext()))
 
                 /*price text field*/
                 CustomTextField(
                     value = priceState.value,
                     modifier = Modifier
-                        .padding(bottom = 8.dp)
+                        .padding(bottom = 8.dp, top = 4.dp)
                         .width(200.dp),
                     label = {
                         Text(text = stringResource(id = R.string.price_label),
-                            style = MaterialTheme.typography.subtitle1,
-                            color = MaterialTheme.colors.onSurface.copy(0.6f))
+                            style = MaterialTheme.typography.subtitle1)
                     },
                     maxLines = 1,
                     onValueChange = {
@@ -384,7 +464,9 @@ class EditFragment : Fragment() {
                         imeAction = ImeAction.Done
                     ),
                     isError = priceErrorState,
-                    visualTransformation = PrefixVisualTransformation("$ "))
+                    visualTransformation = PrefixVisualTransformation("$ ",
+                        MaterialTheme.colors.onSurface.copy(0.7f)),
+                    darkThemeEnabled = ThemeUtils.systemInDarkTheme(requireContext()))
 
                 Spacer(modifier = Modifier
                     .fillMaxWidth()

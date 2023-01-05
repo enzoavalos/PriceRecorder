@@ -1,9 +1,8 @@
 package com.example.pricerecorder.theme
 
 import android.content.Context
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.darkColors
-import androidx.compose.material.lightColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import com.example.pricerecorder.ThemeUtils
 
@@ -19,11 +18,33 @@ fun PriceRecorderTheme(
         typography = PriceRecorderTypography, shapes = PriceRecorderShapes)
 }
 
+/*Custom theme to be applied to text fields*/
+@Composable
+fun MaterialTheme.customTextFieldColors(
+    darkThemeEnabled : Boolean = false
+) : TextFieldColors = TextFieldDefaults.textFieldColors(
+    backgroundColor = colors.background,
+    cursorColor = colors.secondary.copy(ContentAlpha.medium),
+    textColor = colors.onSurface,
+    focusedIndicatorColor = colors.secondary.copy(ContentAlpha.high),
+    unfocusedIndicatorColor = colors.onSurface.copy(ContentAlpha.medium),
+    leadingIconColor = if(darkThemeEnabled) colors.onSurface.copy(alpha = 0.8f) else colors.primaryVariant,
+    unfocusedLabelColor = if(darkThemeEnabled) colors.onSurface.copy(alpha = 0.8f) else colors.primaryVariant,
+    trailingIconColor = if(darkThemeEnabled) colors.onSurface.copy(alpha = 0.8f) else colors.primaryVariant,
+    focusedLabelColor = colors.secondary.copy(ContentAlpha.high)
+)
+
+@Composable
+fun MaterialTheme.customTextFieldSelectionColors() = TextSelectionColors(
+    handleColor = colors.secondary,
+    backgroundColor = colors.secondary.copy(alpha = 0.5f)
+)
+
 private val LightColors = lightColors(
     primary = LightBlue,
     primaryVariant = PetrolBlue,
     secondary = LightPurple,
-    background = ArticGrey,
+    background = SiberiaGey,
     surface = White,
     error = OpaqueRed,
     onPrimary = White,

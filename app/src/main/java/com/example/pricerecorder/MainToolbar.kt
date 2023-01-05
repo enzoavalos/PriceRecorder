@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
-import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -24,11 +23,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.example.pricerecorder.theme.PriceRecorderShapes
-import com.example.pricerecorder.theme.PriceRecorderTheme
+import com.example.pricerecorder.theme.customTextFieldSelectionColors
 
 /*Class used to generalize app bar action items*/
 data class AppBarAction(
@@ -37,6 +35,14 @@ data class AppBarAction(
     val action: () -> Unit,
     var enabled: Boolean = true
 )
+
+enum class SearchWidgetState {
+    OPENED,CLOSED
+}
+
+enum class SearchState{
+    SEARCHING,STARTING
+}
 
 /*Creates an app bar and receives a title and a composable content to be able to be set dynamically*/
 @Composable
@@ -85,18 +91,15 @@ fun SearchAppBar(text:String, onTextChange:(String) -> Unit,
     val keyboardController = LocalSoftwareKeyboardController.current
     BackPressHandler(onBackPressed = onCloseClicked)
 
-    val customTextSelectionColors = TextSelectionColors(
-        handleColor = MaterialTheme.colors.secondary,
-        backgroundColor = MaterialTheme.colors.secondary.copy(alpha = 0.5f)
-    )
-
-    CompositionLocalProvider(LocalTextSelectionColors provides customTextSelectionColors) {
+    CompositionLocalProvider(LocalTextSelectionColors provides MaterialTheme.customTextFieldSelectionColors()) {
         Surface(modifier = Modifier
             .fillMaxWidth(),
             elevation = AppBarDefaults.TopAppBarElevation,
             color = MaterialTheme.colors.primary) {
 
-            OutlinedTextField(value = text,
+            OutlinedTextField(
+                value = text,
+                textStyle = MaterialTheme.typography.subtitle1,
                 onValueChange = { onTextChange(it) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,39 +166,24 @@ private fun OverflowMenu(isExpanded:Boolean, setExpanded:(Boolean) -> Unit, opti
         DropdownMenu(expanded = isExpanded, onDismissRequest = { setExpanded(false) },
             offset = DpOffset(x = 0.dp, y = (-8).dp)
         ) {
-            options.forEach { option ->
-                DropdownMenuItem(enabled = option.enabled,
-                    onClick = {
-                    option.action()
-                    setExpanded(false)
-                }) {
-                    Text(text = option.name)
+            options.forEachIndexed { index, option ->
+                Column {
+                    DropdownMenuItem(enabled = option.enabled,
+                        onClick = {
+                            option.action()
+                            setExpanded(false)
+                        }) {
+                        Text(text = option.name)
+                    }
+
+                    if(index < options.size-1){
+                        Divider(thickness = 1.dp,
+                            color = MaterialTheme.colors.secondary.copy(0.7f),
+                            modifier = Modifier
+                                .padding(start = 16.dp, end = 16.dp))
+                    }
                 }
             }
         }
-    }
-}
-
-/*
-@Preview
-@Composable
-private fun HomeAppBarPreview(){
-    PriceRecorderTheme {
-        ShowTopAppBar(stringResource(R.string.app_name),
-            navigationIcon = null,
-            actionItems = listOf(
-                AppBarAction(stringResource(id = R.string.search_view_hint),Icons.Filled.Search,{}),
-                AppBarAction(stringResource(id = R.string.filter_dialog_title),Icons.Filled.FilterList,{}),
-                AppBarAction(stringResource(id = R.string.delete_all_menu_option),null,{}),
-                AppBarAction(stringResource(id = R.string.setting_fragment_title),null,{}),
-            ))
-    }
-}*/
-
-@Preview
-@Composable
-private fun SearchAppBarPreview(){
-    PriceRecorderTheme {
-        SearchAppBar(text = "Lorem ipsum", onTextChange = {}, onCloseClicked = {})
     }
 }

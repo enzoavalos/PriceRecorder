@@ -59,7 +59,8 @@ interface ProductDatabaseDao {
 
     /*Selects all products that meet the given conditions. If any of the parameters is empty, then it should
     * not be considered when filtering the list*/
-    @Query("select * from products_table where (:catFilter = IFNULL(category,'')) and " +
+    @Query("select * from products_table where" +
+            "(:catFilter = IFNULL(category,'') or :catFilter = '') and " +
             "(:placeFilter = '' or :placeFilter = place_of_purchase)")
     fun filterProductList(catFilter:String,placeFilter:String) : List<Product>
 

@@ -36,5 +36,10 @@ val PriceRecorderTypography = Typography(
         fontFamily = Inter,
         fontWeight = FontWeight.ExtraBold,
         fontSize = 16.sp
+    ),
+    body1 = TextStyle(
+        fontFamily = Inter,
+        fontWeight = FontWeight.Bold,
+        fontSize = 12.sp
     )
 )
