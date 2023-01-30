@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -228,8 +229,8 @@ class SettingsFragment : Fragment(){
         }
     }
 
-    private fun navigateUp(){
-        findNavController().navigate(SettingsFragmentDirections.actionSettingsFragmentToHomeFragment())
+    private fun navigateUp(actionDone:Boolean = true){
+        findNavController().navigate(SettingsFragmentDirections.actionSettingsFragmentToHomeFragment().setActionDone(actionDone))
     }
 
     private fun navigateToSignInFragment(){
@@ -238,7 +239,9 @@ class SettingsFragment : Fragment(){
 
     @Composable
     private fun SettingsScreen(){
-        BackPressHandler(onBackPressed = { navigateUp() })
+        BackHandler(enabled = true) {
+            navigateUp()
+        }
         val scaffoldState = rememberScaffoldState()
 
         PriceRecorderTheme(
@@ -261,12 +264,69 @@ class SettingsFragment : Fragment(){
     }
 
     @Composable
+    private fun ImportDataFromCloudDialog(
+        show:Boolean,
+        onConfirm:() -> Unit,
+        onDismiss:() -> Unit){
+        CustomAlertDialog(
+            show = show,
+            title = stringResource(id = R.string.import_data_string),
+            msg = {
+                Text(text = stringResource(id = R.string.import_data_warning),
+                    color = MaterialTheme.colors.onSurface)
+            },
+            confirmButtonText = stringResource(id = R.string.accept_button_string),
+            dismissButtonText = stringResource(id = R.string.cancel_button_string),
+            onConfirm = onConfirm,
+            onDismiss = onDismiss)
+    }
+
+    @Composable
+    private fun ExportDataToCloudDialog(
+        show:Boolean,
+        onConfirm:() -> Unit,
+        onDismiss:() -> Unit){
+        CustomAlertDialog(
+            show = show,
+            title = stringResource(id = R.string.export_data_string),
+            msg = {
+                Text(text = stringResource(id = R.string.export_data_warning),
+                    color = MaterialTheme.colors.onSurface)
+            },
+            confirmButtonText = stringResource(id = R.string.accept_button_string),
+            dismissButtonText = stringResource(id = R.string.cancel_button_string),
+            onConfirm = onConfirm,
+            onDismiss = onDismiss)
+    }
+
+    @Composable
     private fun SettingScreenContent(modifier: Modifier = Modifier){
         val user by viewModel.user
         val backupDate by viewModel.lastBackupDate
         val showThemeDialog = remember {
             mutableStateOf(false)
         }
+        val showImportDataDialog = remember {
+            mutableStateOf(false)
+        }
+        val showExportDialog = remember {
+            mutableStateOf(false)
+        }
+
+        ImportDataFromCloudDialog(
+            show = showImportDataDialog.value,
+            onConfirm = {
+                showExportDialog.value = false
+                getBackupFromCloudStorage() },
+            onDismiss = { showImportDataDialog.value = false })
+
+        ExportDataToCloudDialog(
+            show = showExportDialog.value,
+            onConfirm = {
+                showExportDialog.value = false
+                createDbBackup()
+                },
+            onDismiss = { showExportDialog.value = false })
         
         SelectAppThemeDialog(show = showThemeDialog.value,
             onDismiss = { showThemeDialog.value = false })
@@ -309,7 +369,7 @@ class SettingsFragment : Fragment(){
                 SectionOptions(options = listOf(
                     SectionOption(title = stringResource(id = R.string.export_data_string),
                         desc = backupDate ?: getString(R.string.no_backups_found_msg),
-                        onClick = { createDbBackup() },
+                        onClick = { showExportDialog.value = true },
                         leadingIcon = {
                             Icon(painter = painterResource(id = R.drawable.ic_cloud_upload),
                                 contentDescription = "",
@@ -317,7 +377,7 @@ class SettingsFragment : Fragment(){
                         }),
                     SectionOption(title = stringResource(id = R.string.import_data_string),
                         desc = stringResource(id = R.string.restore_data_description),
-                        onClick = { getBackupFromCloudStorage() },
+                        onClick = { showImportDataDialog.value = true },
                         leadingIcon = {
                             Icon(Icons.Default.CloudDownload,
                                 contentDescription = "",
@@ -330,9 +390,9 @@ class SettingsFragment : Fragment(){
                     SectionOption(title = stringResource(id = R.string.version_title_string),
                         desc = BuildConfig.VERSION_NAME, onClick = {}),
                     SectionOption(title = stringResource(id = R.string.privacy_policy_section_title),
-                        onClick = {}),
+                        onClick = { showFeatureComingSoonMsg() }),
                     SectionOption(title = stringResource(id = R.string.review_app_string),
-                        onClick = {})
+                        onClick = { showFeatureComingSoonMsg() })
                 ))
             }
         }
@@ -402,5 +462,7 @@ class SettingsFragment : Fragment(){
         }
     }
 
-
+    private fun showFeatureComingSoonMsg(){
+        Toast.makeText(context,resources.getString(R.string.coming_soon_label),Toast.LENGTH_SHORT).show()
+    }
 }

@@ -47,10 +47,10 @@ interface ProductDatabaseDao {
 
     /*This function is used to search in the list when there has been a previous filter|*/
     @Query("select * from products_table where description like '%'||:query||'%' and" +
-            "(:catFilter = IFNULL(category,'')) and " +
+            "(IFNULL(:catFilter,'uncategorized') = IFNULL(category,'uncategorized') or :catFilter = '') and " +
             "(:placeFilter = '' or :placeFilter = place_of_purchase)" +
-            "order by update_date desc,description asc")
-    fun searchProductList(query: String,catFilter:String,placeFilter:String) : List<Product>
+            "order by description asc")
+    fun searchProductList(query: String,catFilter:String?,placeFilter:String) : List<Product>
 
     /*Selects all different categories associated to at least one product, in case there is one which its category is
     * null then its replaced with an arbitrary string*/
@@ -60,9 +60,10 @@ interface ProductDatabaseDao {
     /*Selects all products that meet the given conditions. If any of the parameters is empty, then it should
     * not be considered when filtering the list*/
     @Query("select * from products_table where" +
-            "(:catFilter = IFNULL(category,'') or :catFilter = '') and " +
-            "(:placeFilter = '' or :placeFilter = place_of_purchase)")
-    fun filterProductList(catFilter:String,placeFilter:String) : List<Product>
+            "(IFNULL(:catFilter,'uncategorized') = IFNULL(category,'uncategorized') or :catFilter = '') and " +
+            "(:placeFilter = '' or :placeFilter = place_of_purchase)" +
+            "order by update_date desc,description asc")
+    fun filterProductList(catFilter:String?,placeFilter:String) : List<Product>
 
     /*Query executed when the user chooses to backup the db. This checkpoint query ensures that all pending transactions are applied.
     A Single is similar to an Observable, but it always emits one value or an error notification*/

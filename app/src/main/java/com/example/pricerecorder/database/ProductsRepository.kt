@@ -1,7 +1,6 @@
 package com.example.pricerecorder.database
 
 import android.app.Application
-import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -46,6 +45,11 @@ class ProductsRepository private constructor(
         mutableStateOf(SearchWidgetState.CLOSED)
     val searchTextState: MutableState<String> = mutableStateOf("")
 
+    /*Used to track whether the swipe tutorial is shown to the user, able to survive home fragment's
+    * destruction*/
+    private val _showSwipeTutorial = mutableStateOf(true)
+    val showSwipeTutorial : State<Boolean> = _showSwipeTutorial
+
     private val _isSearching : MutableState<SearchState> = mutableStateOf(SearchState.STARTING)
     val searching: State<Boolean> = derivedStateOf { _isSearching.value == SearchState.SEARCHING }
     /*var that keeps track of the DB data*/
@@ -65,6 +69,10 @@ class ProductsRepository private constructor(
     var categoryFilter : State<String> = _categoryFilter
     private var _placeFilter = mutableStateOf("")
     var placeFilter : State<String> = _placeFilter
+
+    fun updateShowSwipeTutorialState(show:Boolean){
+        _showSwipeTutorial.value = show
+    }
 
     fun updatePlaceFilter(newValue: String){
         _placeFilter.value = newValue
@@ -112,7 +120,7 @@ class ProductsRepository private constructor(
             return@withContext if(isFiltering.value)
                 databaseDao.searchProductList(
                     query,
-                    catFilter = if(_categoryFilter.value == noCategoryString) "" else _categoryFilter.value,
+                    catFilter = if(_categoryFilter.value == noCategoryString) null else _categoryFilter.value,
                     _placeFilter.value
                     )
             else
@@ -125,7 +133,7 @@ class ProductsRepository private constructor(
         _isFiltering.value = FilterState.FILTERING
         val result = withContext(ioDispatcher){
             return@withContext databaseDao.filterProductList(
-                catFilter = if(_categoryFilter.value == noCategoryString) "" else _categoryFilter.value,
+                catFilter = if(_categoryFilter.value == noCategoryString) null else _categoryFilter.value,
                 _placeFilter.value)
         }
         _filterResults.value = result
@@ -193,7 +201,6 @@ class ProductsRepository private constructor(
                 databaseDao.checkPoint(SimpleSQLiteQuery("pragma wal_checkpoint(full)"))
                 true
             }catch (e: Exception){
-                Log.w("ProductsRepository",e.toString())
                 false
             }
         }

@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +23,6 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
@@ -98,11 +98,11 @@ class AddFragment:Fragment(){
         }
 
         Toast.makeText(context,resources.getString(R.string.new_product_added,desc),Toast.LENGTH_SHORT).show()
-        navigateUp()
+        navigateUp(actionDone = true)
     }
 
-    private fun navigateUp(){
-        findNavController().navigate(AddFragmentDirections.actionAddFragmentToHomeFragment())
+    private fun navigateUp(actionDone:Boolean = false){
+        findNavController().navigate(AddFragmentDirections.actionAddFragmentToHomeFragment().setActionDone(actionDone))
     }
 
     @OptIn(ExperimentalMaterialApi::class)
@@ -111,14 +111,8 @@ class AddFragment:Fragment(){
         val fabEnabled = viewModel.fabEnabled
         val modalBottomSheetState = rememberModalBottomSheetState(
             initialValue = ModalBottomSheetValue.Hidden,
-            confirmStateChange = { it == ModalBottomSheetValue.HalfExpanded || it == ModalBottomSheetValue.Hidden })
+            confirmStateChange = { it == ModalBottomSheetValue.Expanded || it == ModalBottomSheetValue.Hidden })
         val coroutineScope = rememberCoroutineScope()
-        BackPressHandler {
-            if(modalBottomSheetState.isVisible || modalBottomSheetState.isAnimationRunning)
-                coroutineScope.launch { modalBottomSheetState.hide() }
-            else
-                navigateUp()
-        }
 
         PriceRecorderTheme(
             context = requireContext()
@@ -165,6 +159,12 @@ class AddFragment:Fragment(){
                         }) },
                     floatingActionButtonPosition = FabPosition.End,
                 ) {
+                    BackHandler(enabled = modalBottomSheetState.isVisible) {
+                        coroutineScope.launch {
+                            modalBottomSheetState.hide()
+                        }
+                    }
+                    
                     AddProductScreenContent(
                         onExpandBottomSheet = {
                             coroutineScope.launch { modalBottomSheetState.show() }
@@ -423,13 +423,5 @@ class AddFragment:Fragment(){
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putParcelable("file_uri",imageHandler.getTempUri())
-    }
-
-    @Preview(showBackground = true, heightDp = 900)
-    @Composable
-    fun AddScreenPreview(){
-        PriceRecorderTheme {
-            AddProductScreenContent({})
-        }
     }
 }

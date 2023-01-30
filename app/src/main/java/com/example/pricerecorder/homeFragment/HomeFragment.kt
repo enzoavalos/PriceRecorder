@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -13,6 +14,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -49,6 +51,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.example.pricerecorder.*
 import com.example.pricerecorder.R
 import com.example.pricerecorder.addFragment.AddFragment
@@ -59,6 +62,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
 class HomeFragment:Fragment() {
+    private val args : HomeFragmentArgs by navArgs()
     private val viewModel: HomeViewModel by viewModels { HomeViewModel.factory }
     private lateinit var permissionChecker : PermissionChecker
     private lateinit var barcodeScanner: BarcodeScanner
@@ -68,6 +72,10 @@ class HomeFragment:Fragment() {
 
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
+            if(args.actionDone){
+                viewModel.updateFilterState(FilterState.IDLE)
+                viewModel.resetSearchState()
+            }
             setContent {
                 HomeScreen()
             }
@@ -75,14 +83,17 @@ class HomeFragment:Fragment() {
     }
 
     private fun navigateToSettingsFragment(){
+        viewModel.updateShowSwipeTutorialState(false)
         findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToSettingsFragment())
     }
 
     private fun navigateToAddFragment(){
+        viewModel.updateShowSwipeTutorialState(false)
         findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToAddFragment())
     }
 
     private fun navigateToEditFragment(productId : Long){
+        viewModel.updateShowSwipeTutorialState(false)
         findNavController().navigate(HomeFragmentDirections.actionHomeFragmentToEditFragment(productId))
     }
 
@@ -102,10 +113,33 @@ class HomeFragment:Fragment() {
         val appBarActionsEnabled by remember {
             derivedStateOf { list.isNotEmpty() }
         }
+        var showDeleteAllDialog by remember {
+            mutableStateOf(false)
+        }
 
         PriceRecorderTheme(
             context = requireContext()
         ) {
+            CustomAlertDialog(show = showDeleteAllDialog,
+                title = stringResource(id = R.string.delete_all_dialog_title),
+                msg ={
+                    Text(text = stringResource(id = R.string.delete_all_dialog_msg),
+                        color = MaterialTheme.colors.onSurface)
+                },
+                confirmButtonText = stringResource(id = R.string.accept_button_string),
+                dismissButtonText = stringResource(id = R.string.cancel_button_string),
+                onConfirm = {
+                    coroutineScope.launch {
+                        scaffoldState.drawerState.close()
+                    }
+                    showDeleteAllDialog = false
+                    viewModel.clear()
+                    Toast.makeText(context,resources.getString(R.string.delete_all_success_msg), Toast.LENGTH_SHORT).show()
+                },
+                onDismiss = {
+                    showDeleteAllDialog = false
+                })
+
             Scaffold(
                 scaffoldState = scaffoldState,
                 backgroundColor = MaterialTheme.colors.background,
@@ -120,10 +154,54 @@ class HomeFragment:Fragment() {
                         )
                     }
                 },
-                topBar = { MainAppBar(searchWidgetState,searchTextState,appBarActionsEnabled) },
+                topBar = { MainAppBar(
+                    searchWidgetState,
+                    searchTextState,
+                    appBarActionsEnabled,
+                    onNavigationClick = {
+                        coroutineScope.launch {
+                            scaffoldState.drawerState.open()
+                        } }) },
                 floatingActionButton = { AddFloatingActionButton(enabled = true,
                     onClick = { navigateToAddFragment() }) },
-                floatingActionButtonPosition = FabPosition.Center) {
+                floatingActionButtonPosition = FabPosition.Center,
+                drawerContent = {
+                    BackHandler(enabled = scaffoldState.drawerState.isOpen) {
+                        coroutineScope.launch {
+                            scaffoldState.drawerState.close()
+                        }
+                    }
+                    NavDrawerHeader(
+                        backgroundColors =
+                        if(ThemeUtils.systemInDarkTheme(requireContext()))
+                            listOf(
+                                MaterialTheme.colors.primary,
+                                MaterialTheme.colors.secondary
+                            )
+                        else
+                            listOf(
+                                MaterialTheme.colors.primaryVariant,
+                                MaterialTheme.colors.secondary
+                            )
+                    )
+                    NavDrawerBody(
+                        options = listOf(
+                            AppBarAction(stringResource(id = R.string.delete_all_menu_option),
+                                icon = Icons.Default.DeleteForever,
+                                enabled = appBarActionsEnabled,
+                                action = {
+                                    showDeleteAllDialog = true
+                                })
+                        ),
+                        settingsOption = AppBarAction(
+                            icon = Icons.Default.Settings,
+                            name = stringResource(id = R.string.setting_fragment_title),
+                            action = { navigateToSettingsFragment() }
+                        ))
+                },
+                /*Disables gestures to drag the drawer unless its open*/
+                drawerGesturesEnabled = scaffoldState.drawerState.isOpen,
+                drawerShape = MaterialTheme.shapes.large.copy(bottomStart = CornerSize(0.dp))) {
                 Column(modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally) {
@@ -163,11 +241,9 @@ class HomeFragment:Fragment() {
     private fun MainAppBar(
         searchWidgetState: SearchWidgetState,
         searchTextState: String,
-        appBarActionsEnabled: Boolean
+        appBarActionsEnabled: Boolean,
+        onNavigationClick: () -> Unit
         ){
-        var showDeleteAllDialog by remember {
-            mutableStateOf(false)
-        }
         var showFilterDialog by remember {
             mutableStateOf(false)
         }
@@ -175,6 +251,7 @@ class HomeFragment:Fragment() {
         FilterProductsDialog(
             show = showFilterDialog,
             onConfirm = {
+                viewModel.updateShowSwipeTutorialState(show = false)
                 showFilterDialog = false
                 viewModel.filterProducts()
             },
@@ -182,29 +259,12 @@ class HomeFragment:Fragment() {
                 showFilterDialog = false
                 viewModel.resetFilters() })
 
-        CustomAlertDialog(show = showDeleteAllDialog,
-            title = stringResource(id = R.string.delete_all_dialog_title),
-            msg ={
-                Text(text = stringResource(id = R.string.delete_all_dialog_msg),
-                    color = MaterialTheme.colors.onSurface)
-            },
-            confirmButtonText = stringResource(id = R.string.accept_button_string),
-            dismissButtonText = stringResource(id = R.string.cancel_button_string),
-            onConfirm = {
-                showDeleteAllDialog = false
-                viewModel.clear()
-                Toast.makeText(context,resources.getString(R.string.delete_all_success_msg), Toast.LENGTH_SHORT).show()
-                },
-            onDismiss = {
-                showDeleteAllDialog = false
-            })
-
         when(searchWidgetState){
             SearchWidgetState.CLOSED -> {
-                HomeAppBar(onSearchClick = { viewModel.updateSearchWidgetState(SearchWidgetState.OPENED) },
+                HomeAppBar(
+                    onNavigationClick = onNavigationClick,
+                    onSearchClick = { viewModel.updateSearchWidgetState(SearchWidgetState.OPENED) },
                     onFilterClick = { showFilterDialog = true },
-                    onDeleteAllClicked = { showDeleteAllDialog = true },
-                    onSettingsClicked = { navigateToSettingsFragment() },
                     onSearchWithBarcode = {
                         if(!::permissionChecker.isInitialized)
                             permissionChecker = PermissionChecker(requireContext(),requireActivity().activityResultRegistry)
@@ -267,7 +327,13 @@ class HomeFragment:Fragment() {
                                 }
                             ),
                             /*Tutorial for swipe content shown only on the first element*/
-                            //showTutorial = (index == 0)
+                            showTutorial = viewModel.showSwipeTutorial.value && (index == 0),
+                            dismissTutorial = {
+                                viewModel.updateShowSwipeTutorialState(false)
+                            },
+                            vibrateOnActionTriggered = {
+                                vibrateDevice(requireContext())
+                            }
                         ) { dismissState ->
                             /*State that determines whether the corners of the card must be animated*/
                             val animateCorners by remember {
@@ -385,7 +451,11 @@ class HomeFragment:Fragment() {
                 })
         }
 
-        Surface(onClick = {showDetailDialog = true}, modifier = modifier,
+        Surface(onClick = {
+            viewModel.updateShowSwipeTutorialState(show = false)
+            showDetailDialog = true
+            },
+            modifier = modifier,
             color = MaterialTheme.colors.surface) {
             Column {
                 Row(modifier = Modifier.padding(top = 8.dp),
@@ -641,7 +711,7 @@ class HomeFragment:Fragment() {
                     modifier = Modifier
                         .padding(end = 8.dp, bottom = 4.dp, top = 4.dp)
                         .background(MaterialTheme.colors.primary)) {
-                    Icon(imageVector = it.icon!!, contentDescription = it.name,
+                    Icon(imageVector = it.icon, contentDescription = it.name,
                         tint = MaterialTheme.colors.onSurface, modifier = Modifier
                             .width(44.dp)
                             .height(44.dp))
@@ -685,8 +755,7 @@ class HomeFragment:Fragment() {
                             .fillMaxWidth(),
                         label = {
                             Text(text = stringResource(id = R.string.category_label),
-                                style = MaterialTheme.typography.subtitle1,
-                                color = MaterialTheme.colors.onSurface.copy(0.6f)) },
+                                style = MaterialTheme.typography.subtitle1) },
                         onValueChange = {
                             viewModel.updateCategoryFilter(it)
                         },
@@ -704,8 +773,7 @@ class HomeFragment:Fragment() {
                             .fillMaxWidth(),
                         label = {
                             Text(text = stringResource(id = R.string.place_hint),
-                                style = MaterialTheme.typography.subtitle1,
-                                color = MaterialTheme.colors.onSurface.copy(0.6f))
+                                style = MaterialTheme.typography.subtitle1)
                         },
                         maxAllowedChars = AddFragment.PLACE_MAX_LENGTH,
                         onValueChange = {
@@ -766,7 +834,8 @@ class HomeFragment:Fragment() {
             return
 
         /*Filter is cancelled when the system back press key is pressed*/
-        BackPressHandler(onBackPressed = onCancelClick)
+        BackHandler(enabled = true, onBack = onCancelClick)
+
         Row(modifier = modifier
             .background(MaterialTheme.colors.primaryVariant.copy(0.8f))
             .fillMaxWidth()
@@ -825,24 +894,27 @@ class HomeFragment:Fragment() {
 
     @Composable
     fun HomeAppBar(
-        onSearchClick: () -> Unit, onFilterClick: () -> Unit, onDeleteAllClicked: () -> Unit,
-        onSettingsClicked: () -> Unit,
+        onNavigationClick: () -> Unit,
+        onSearchClick: () -> Unit,
+        onFilterClick: () -> Unit,
         onSearchWithBarcode: () -> Unit,
         appBarActionsEnabled: Boolean
     ){
         ShowTopAppBar(stringResource(R.string.app_name),
-            navigationIcon = null
+            navigationIcon = {
+                IconButton(onClick = onNavigationClick) {
+                    Icon(imageVector = Icons.Default.Menu,
+                        contentDescription = stringResource(id = R.string.drawer_menu_description))
+                }
+            }
             , actionItems = listOf(
                 AppBarAction(stringResource(id = R.string.search_view_hint),
                     Icons.Filled.Search, onSearchClick, enabled = appBarActionsEnabled),
                 AppBarAction(stringResource(id = R.string.filter_dialog_title),
                     Icons.Filled.FilterList,onFilterClick,enabled = (appBarActionsEnabled and !viewModel.isFiltering.value)),
-                AppBarAction(stringResource(id = R.string.delete_all_menu_option),
-                    null,onDeleteAllClicked,enabled = appBarActionsEnabled),
                 AppBarAction(stringResource(id = R.string.scan_barcode_prompt),
                     ImageUtils.createImageVector(drawableRes = R.drawable.ic_barcode),
-                    onSearchWithBarcode,enabled = (appBarActionsEnabled and !viewModel.isFiltering.value)),
-                AppBarAction(stringResource(id = R.string.setting_fragment_title),null,onSettingsClicked)
+                    onSearchWithBarcode,enabled = (appBarActionsEnabled and !viewModel.isFiltering.value))
             ))
     }
 }

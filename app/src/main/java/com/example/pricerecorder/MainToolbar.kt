@@ -1,10 +1,8 @@
 package com.example.pricerecorder
 
-import androidx.compose.foundation.layout.Column
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
@@ -23,15 +21,13 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import com.example.pricerecorder.theme.PriceRecorderShapes
 import com.example.pricerecorder.theme.customTextFieldSelectionColors
 
 /*Class used to generalize app bar action items*/
 data class AppBarAction(
     val name:String,
-    val icon:ImageVector?,
+    val icon:ImageVector,
     val action: () -> Unit,
     var enabled: Boolean = true
 )
@@ -53,28 +49,16 @@ fun ShowTopAppBar(appBarTitle: String, actionItems:List<AppBarAction>,
         navigationIcon = navigationIcon,
         backgroundColor = MaterialTheme.colors.primary,
         actions = {
-            /*Divides the items that will be actions presented in the appbar from those which will be
-            * options of the overflow menu*/
-            val (actions,options) = actionItems.partition { it.icon != null }
-                  /*creates action items from the given list*/
-                  actions.forEach {
-                      IconButton(
-                          onClick = it.action,
-                          enabled = it.enabled,
-                          content = { Icon(imageVector = it.icon!!,contentDescription = it.name,
-                              tint = if(it.enabled) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onPrimary.copy(alpha = 0.7f),
-                              modifier = Modifier.alpha(1f)) }
-                      )
-                  }
-
-            if(options.isNotEmpty()) {
-                /*State declared to keep track of the menu visibility*/
-                val isExpanded = remember { mutableStateOf(false) }
-                OverflowMenu(isExpanded = isExpanded.value,
-                    setExpanded = {
-                        isExpanded.value = it
-                    }, options = options)
-            }
+              /*creates action items from the given list*/
+              actionItems.forEach {
+                  IconButton(
+                      onClick = it.action,
+                      enabled = it.enabled,
+                      content = { Icon(imageVector = it.icon,contentDescription = it.name,
+                          tint = if(it.enabled) MaterialTheme.colors.onPrimary else MaterialTheme.colors.onPrimary.copy(alpha = 0.7f),
+                          modifier = Modifier.alpha(1f)) }
+                  )
+              }
         },
         modifier = modifier.height(56.dp),
         elevation = AppBarDefaults.TopAppBarElevation
@@ -89,7 +73,7 @@ fun SearchAppBar(text:String, onTextChange:(String) -> Unit,
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    BackPressHandler(onBackPressed = onCloseClicked)
+    BackHandler(enabled = true, onBack = onCloseClicked)
 
     CompositionLocalProvider(LocalTextSelectionColors provides MaterialTheme.customTextFieldSelectionColors()) {
         Surface(modifier = Modifier
@@ -150,39 +134,6 @@ fun SearchAppBar(text:String, onTextChange:(String) -> Unit,
             /*Suspends recomposition and request focus for the component associated to the focusRequester*/
             LaunchedEffect(key1 = null) {
                 focusRequester.requestFocus()
-            }
-        }
-    }
-}
-
-/*Creates an overflow menu with the options given*/
-@Composable
-private fun OverflowMenu(isExpanded:Boolean, setExpanded:(Boolean) -> Unit, options:List<AppBarAction>){
-    IconButton(onClick = { setExpanded(true) }) {
-        Icon(imageVector = Icons.Filled.MoreVert, contentDescription = stringResource(id = R.string.overflow_menu_description),
-            tint = MaterialTheme.colors.onPrimary,modifier = Modifier.alpha(1f))
-    }
-    MaterialTheme(shapes = PriceRecorderShapes.copy(medium = RoundedCornerShape(0.dp))) {
-        DropdownMenu(expanded = isExpanded, onDismissRequest = { setExpanded(false) },
-            offset = DpOffset(x = 0.dp, y = (-8).dp)
-        ) {
-            options.forEachIndexed { index, option ->
-                Column {
-                    DropdownMenuItem(enabled = option.enabled,
-                        onClick = {
-                            option.action()
-                            setExpanded(false)
-                        }) {
-                        Text(text = option.name)
-                    }
-
-                    if(index < options.size-1){
-                        Divider(thickness = 1.dp,
-                            color = MaterialTheme.colors.secondary.copy(0.7f),
-                            modifier = Modifier
-                                .padding(start = 16.dp, end = 16.dp))
-                    }
-                }
             }
         }
     }
