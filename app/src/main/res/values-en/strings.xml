@@ -78,7 +78,7 @@
     <string name="delete_product_dialog_msg">Once deleted it will not be possible to restore it.</string>
     <string name="delete_all_dialog_msg">Once deleted it will not be possible to restore them.</string>
     <string name="up_button_description">Navigate back</string>
-    <string name="overflow_menu_description">Dropdown menu</string>
+    <string name="drawer_menu_description">Toggle menu</string>
     <string name="update_price_button_desc">Update price</string>
     <string name="share_product_button_desc">Share product</string>
     <string name="modified_date_desc">Modified</string>
@@ -104,4 +104,7 @@
     <string name="system_default_theme_string">System default</string>
     <string name="delete_product_label">Delete</string>
     <string name="save_changes_label">Save</string>
+    <string name="import_data_warning">All products not present in the backup will be lost</string>
+    <string name="export_data_warning">Any previous backup will be lost</string>
+    <string name="coming_soon_label">Coming soon</string>
 </resources>

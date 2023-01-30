@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -97,11 +98,11 @@ class EditFragment : Fragment() {
 
         Toast.makeText(context,resources.getString(R.string.product_updated_string,viewModel.product.getDescription()),
             Toast.LENGTH_SHORT).show()
-        navigateUp()
+        navigateUp(actionDone = true)
     }
 
-    private fun navigateUp(){
-        findNavController().navigate(EditFragmentDirections.actionEditFragmentToHomeFragment())
+    private fun navigateUp(actionDone:Boolean = false){
+        findNavController().navigate(EditFragmentDirections.actionEditFragmentToHomeFragment().setActionDone(actionDone))
     }
 
     @OptIn(ExperimentalMaterialApi::class)
@@ -110,7 +111,7 @@ class EditFragment : Fragment() {
         val fabEnabled = viewModel.fabEnabled
         val modalBottomSheetState = rememberModalBottomSheetState(
             initialValue = ModalBottomSheetValue.Hidden,
-            confirmStateChange = { it == ModalBottomSheetValue.HalfExpanded || it == ModalBottomSheetValue.Hidden })
+            confirmStateChange = { it == ModalBottomSheetValue.Expanded || it == ModalBottomSheetValue.Hidden })
         val coroutineScope = rememberCoroutineScope()
         var multiFabState by remember {
             mutableStateOf(MultiFloatingButtonState.Collapsed)
@@ -118,12 +119,6 @@ class EditFragment : Fragment() {
         /*Creates a dialog that provides the option to delete the current selected product*/
         var showDeleteProductDialog by remember {
             mutableStateOf(false)
-        }
-        BackPressHandler {
-            if(modalBottomSheetState.isVisible || modalBottomSheetState.isAnimationRunning)
-                coroutineScope.launch { modalBottomSheetState.hide() }
-            else
-                navigateUp()
         }
 
         PriceRecorderTheme(
@@ -136,7 +131,7 @@ class EditFragment : Fragment() {
                     viewModel.deleteProduct()
                     Toast.makeText(requireContext(),getString(R.string.delete_success_msg,viewModel.product.getDescription()),
                         Toast.LENGTH_SHORT).show()
-                    navigateUp()
+                    navigateUp(actionDone = true)
                 }, onDismiss = {
                     showDeleteProductDialog = false
                 })
@@ -205,6 +200,12 @@ class EditFragment : Fragment() {
                             })},
                     floatingActionButtonPosition = FabPosition.End,
                 ) {
+                    BackHandler(enabled = modalBottomSheetState.isVisible) {
+                        coroutineScope.launch {
+                            modalBottomSheetState.hide()
+                        }
+                    }
+
                     EditProductScreenContent(
                         onExpandBottomSheet = {
                             coroutineScope.launch { modalBottomSheetState.show() }

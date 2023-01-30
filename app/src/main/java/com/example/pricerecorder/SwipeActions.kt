@@ -10,7 +10,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -23,7 +22,6 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInteropFilter
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
@@ -58,10 +56,11 @@ fun SwipeActions(
     startActionsConfig: SwipeActionsConfig = DefaultSwipeActionsConfig,
     endActionsConfig: SwipeActionsConfig = DefaultSwipeActionsConfig,
     showTutorial: Boolean = false,
+    dismissTutorial:() -> Unit = {},
+    vibrateOnActionTriggered:() -> Unit = {},
     content: @Composable (DismissState) -> Unit
 ) = BoxWithConstraints(modifier) {
     val width = constraints.maxWidth.toFloat()
-    val view = LocalView.current
 
     /*state used to know if the users current swipe will cause an action. It*/
     var willDismissDirection: DismissDirection? by remember {
@@ -90,13 +89,15 @@ fun SwipeActions(
         }
     )
 
-    /*Tutorial shown to the user to indicate that the item can be swiped. The animation is shown repeatedly
-    * until the user swipes the element*/
-    var showingTutorial by rememberSaveable {
+    /*Variable used to keep track of what item shows the swipe tutorial, and to reset its state through an animation
+    * when the tutorial animation is dismissed*/
+    var finishAnimation by remember {
         mutableStateOf(showTutorial)
     }
 
-    if (showingTutorial) {
+    /*Tutorial shown to the user to indicate that the item can be swiped. The animation is shown repeatedly
+    * until the user swipes the element*/
+    if (showTutorial) {
         val infiniteTransition = rememberInfiniteTransition()
         val x by infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -111,16 +112,23 @@ fun SwipeActions(
         LaunchedEffect(key1 = x, block = {
             state.performDrag(x - state.offset.value)
         })
+    }else if (finishAnimation){
+        val x by animateFloatAsState(
+            targetValue = -state.offset.value,
+            animationSpec = tween(500, easing = FastOutSlowInEasing))
+        LaunchedEffect(key1 = null, block = {
+            state.performDrag(x - state.offset.value)
+        })
+        finishAnimation = false
     }
 
     /*Haptic feedback refers to sensations delivered to users through the sense of touch, in this case
     * it vibrates the device if tha action is triggered*/
-    /*TODO("Implementar vibracion al deslizar elemento pasado el limite establecido")*/
-    /*LaunchedEffect(key1 = willDismissDirection, block = {
+    LaunchedEffect(key1 = willDismissDirection, block = {
         if (willDismissDirection != null) {
-            view.vibrate()
+            vibrateOnActionTriggered()
         }
-    })*/
+    })
 
     /*Contains the action the user has triggered or null if it has not reached the threshold.
     * This allows to change the UI based on the current position and state of the swipe*/
@@ -151,7 +159,7 @@ fun SwipeActions(
             /*Event action down refers to when a pressed gesture has started and its used to disable the tutorial
             * shown for the swipe element*/
             if (it.action == MotionEvent.ACTION_DOWN) {
-                showingTutorial = false
+                dismissTutorial()
             }
             false
         },

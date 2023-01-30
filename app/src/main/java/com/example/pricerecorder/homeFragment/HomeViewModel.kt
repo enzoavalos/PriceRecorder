@@ -46,11 +46,17 @@ class HomeViewModel(
     var isFiltering : State<Boolean> = repository.isFiltering
     private var _filterEnabled : MutableState<Boolean> = mutableStateOf(false)
     var filterEnabled : State<Boolean> = _filterEnabled
+    var showSwipeTutorial : State<Boolean> = repository.showSwipeTutorial
 
     private var _barcodeFilter = mutableStateOf("")
     var barcodeFilter : State<String> = _barcodeFilter
 
+    fun updateShowSwipeTutorialState(show:Boolean){
+        repository.updateShowSwipeTutorialState(show)
+    }
+
     fun updateSearchWidgetState(newValue: SearchWidgetState){
+        repository.updateShowSwipeTutorialState(show = false)
         repository.updateSearchWidgetState(newValue)
     }
 

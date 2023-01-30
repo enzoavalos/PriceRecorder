@@ -17,6 +17,11 @@ private val Inter = FontFamily(
 
 val PriceRecorderTypography = Typography(
     defaultFontFamily = Inter,
+    h4 = TextStyle(
+        fontFamily = Inter,
+        fontWeight = FontWeight.Bold,
+        fontSize = 30.sp
+    ),
     h5 = TextStyle(
         fontFamily = Inter,
         fontWeight = FontWeight.Bold,

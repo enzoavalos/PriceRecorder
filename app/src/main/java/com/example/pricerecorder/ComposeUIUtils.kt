@@ -2,6 +2,8 @@ package com.example.pricerecorder
 
 import android.annotation.SuppressLint
 import android.content.res.Configuration
+import android.content.res.Configuration.UI_MODE_NIGHT_NO
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Bitmap
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.*
@@ -27,9 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -39,11 +40,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.pricerecorder.theme.PriceRecorderShapes
+import com.example.pricerecorder.theme.PriceRecorderTheme
 import com.example.pricerecorder.theme.customTextFieldColors
 import com.example.pricerecorder.theme.customTextFieldSelectionColors
 
@@ -313,34 +316,7 @@ fun AutoCompleteTextField(
         }
     }
 }
-/*
-TODO("Eliminar preview")
-@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_NO)
-@Composable
-fun CustomTextFieldPreview(){
-    PriceRecorderTheme {
-        Row(modifier = Modifier.padding(32.dp)) {
-            CustomTextField(
-                value = "Valor",
-                label = {
-                    Text(text = stringResource(id = R.string.description_string),
-                        style = MaterialTheme.typography.subtitle1)
-                }, onValueChange = {},
-                leadingIcon = {
-                    Icon(Icons.Default.Description, contentDescription = "")
-                },
-                trailingIcon = {
-                    IconButton(onClick = {  }) {
-                        Icon(imageVector = Icons.Default.HighlightOff, contentDescription = "")
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    )
-        }
-    }
-}
-*/
+
 /*Fully customized text field*/
 @SuppressLint("UnrememberedMutableState")
 @Composable
@@ -790,6 +766,127 @@ fun MultiFloatingButton(
             Icon(imageVector = Icons.Filled.Add, contentDescription = null,
                 tint = MaterialTheme.colors.onSecondary,
                 modifier = Modifier.rotate(rotateAnim))
+        }
+    }
+}
+
+@Composable
+fun NavDrawerHeader(
+    backgroundColors : List<Color> = listOf(
+        MaterialTheme.colors.primaryVariant,
+        MaterialTheme.colors.secondary
+    )
+){
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(brush = Brush.horizontalGradient(
+                colors = backgroundColors)),
+        contentAlignment = Alignment.Center) {
+        Row(modifier = Modifier.padding(vertical = 32.dp, horizontal = 20.dp),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = CircleShape,
+                modifier = Modifier
+                    .height(80.dp)
+                    .width(80.dp),
+                border = BorderStroke(2.dp, Color.Black.copy(alpha = 0.8f)),
+                elevation = 8.dp) {
+                AdaptiveIconImage(
+                    adaptiveDrawable = R.mipmap.launcher_icon_round,
+                    drawable = R.drawable.ic_account_circle,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .sizeIn(minHeight = 64.dp, minWidth = 64.dp)
+                        .background(color = Color.Transparent))
+            }
+            Text(text = stringResource(id = R.string.app_name),
+                modifier = Modifier.padding(start = 20.dp),
+                style = MaterialTheme.typography.h5.copy(
+                    shadow = Shadow(
+                        color = MaterialTheme.colors.background,
+                        offset = Offset(5f,5f),
+                        blurRadius = 6f
+                    )
+                ),
+                color = MaterialTheme.colors.onPrimary)
+        }
+    }
+}
+
+@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
+@Composable
+fun NavDrawerHeaderPreview(){
+    PriceRecorderTheme {
+        NavDrawerHeader(backgroundColors =
+        listOf(
+            MaterialTheme.colors.primary,
+            MaterialTheme.colors.secondary
+        ))
+    }
+}
+
+@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_NO)
+@Composable
+fun NavDrawerHeaderPreview2(){
+    PriceRecorderTheme {
+        NavDrawerHeader(backgroundColors =
+        listOf(
+            MaterialTheme.colors.primaryVariant,
+            MaterialTheme.colors.secondary
+        )
+        )
+    }
+}
+
+@Composable
+fun NavDrawerBody(
+    options:List<AppBarAction>,
+    settingsOption:AppBarAction,
+    modifier: Modifier = Modifier){
+    val lazyListState = rememberLazyListState()
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top) {
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier
+                .weight(1f)){
+            items(options){ item ->  
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = item.action)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically){
+                    Icon(imageVector = item.icon, contentDescription = item.name)
+                    Spacer(modifier = Modifier.size(12.dp))
+                    Text(text = item.name, color = MaterialTheme.colors.onSurface,
+                        style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Normal, fontSize = 16.sp),
+                        modifier = Modifier
+                            .alpha(1f))
+                }
+            }
+        }
+        Spacer(modifier = Modifier.size(16.dp))
+        Divider(thickness = 1.dp,
+            color = MaterialTheme.colors.onSurface,
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                .alpha(0.8f))
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = settingsOption.action)
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 12.dp),
+            verticalAlignment = Alignment.CenterVertically){
+            Icon(imageVector = settingsOption.icon, contentDescription = settingsOption.name)
+            Spacer(modifier = Modifier.size(12.dp))
+            Text(text = settingsOption.name, color = MaterialTheme.colors.onSurface,
+                style = MaterialTheme.typography.h6.copy(fontWeight = FontWeight.Normal, fontSize = 16.sp),
+                modifier = Modifier.alpha(1f))
         }
     }
 }
