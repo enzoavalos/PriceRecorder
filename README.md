@@ -18,12 +18,12 @@ The idea behind the project was born from the observed necessity of various acqu
 
 
 ## Installation
-From Android 5.0 onwards, you can install and test this app on your own device. In order to download it click the following [link]().   
+From Android 5.0 onwards, you can install and test this app on your own device. In order to download it click the following [link](https://github.com/enzoavalos/PriceRecorder/releases/download/v1.0.0/pricerecorder.apk).   
 The download will begin automatically, and after completion, you will be required to install the app. And that's it; you are good to go.
 
 ## Technologies and libraries used
 - Firebase storage and authentication
-- Room databse
+- Room database
 - Jetpack Compose
 - Zxing barcode scanning library
 - Exif interface
