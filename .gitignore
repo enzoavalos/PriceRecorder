@@ -13,3 +13,13 @@
 .externalNativeBuild
 .cxx
 local.properties
+.idea/deploymentTargetDropDown.xml
+build.gradle
+gradle.properties
+app/google-services.json
+app/build.gradle
+app/src/androidTest
+app/src/main/res/drawable-*
+app/src/main/res/mipmap*
+app/src/main/res/font
+app/src/main/res/layout*
