@@ -1,18 +1,18 @@
 # PriceRecorder
-App to record your list of best prices!
+Price tracker app!
 
 ## About the project
-Price Recorder is a fully functioning Android app built in its entirety with Kotlin and a combination of Fragments and Jetpack Compose, following Android design and development best practices. It was originally intended as a personal side project to apply my newly acquired knowledge of Android development and to learn more about it in-depth and hands-on.
+Price Recorder is a fully functioning Android app built in its entirety with Kotlin and a combination of Fragments and Jetpack Compose, following Android design and development best practices. It was originally intended as a personal side project to apply my newly acquired knowledge of Android development and to learn more about it in depth and hands-on.
 
 ## Motivation
-The idea behind the project was born from the observed necessity of various acquainted families, mine included, of a certain socioeconomic status to store and constantly update the price of daily-use products in different establishments to ensure the maximum savings possible, due to the current unstable and ever-changing economic situation in my home country.
+The inspiration for this project stemmed from a common need among multiple acquainted families, including my own, who share a similar socioeconomic background. With the ongoing unstable and ever-changing economic situation in my home country, we recognized the importance of storing and regularly updating the prices of daily-use products from different establishments. This tracking system is crucial to ensure maximum savings and make informed purchasing decisions amid the challenging economic conditions.
 
 ## Features
-- Adding new products with their corresponding information
+- Add new products with their corresponding information
 - Edit and manage existing products
 - Product filtering and search
-- Register with your google account
-- Create cloud backup for future restoration
+- Register through google account
+- Cloud backup for future restoration
 
 ## Screenshots
 | Home | Product Detail | Search |
@@ -44,11 +44,12 @@ The download will begin automatically, and after completion, you will be require
 - MVVM and Repository patterns implemented
 - Room persistence library for storing data in local DB (CRUD, SQL queries, checkpoints for backup and restore)
 - Firebase authentication with google
-- Firebase storage to both store and retrieve backup information
+- Firebase storage for cloud backup
 - Permissions management (read/write external storage and more)
-- Possibility to both pick images from gallery and take pictures
+- Possibility to pick images from gallery and take pictures
 - Image manipulation using exif info
-- Barcode and qr scanning implemented
-- Usage of custom notifications for both upload and download
+- Barcode and qr scanning
+- Custom notifications
 - Asynchronous tasks through Kotlin coroutines
-- Use of shared preferences interface to store user setting preferences
+- Save user setting preferences through shared preferences interface
+- System/Light/Dark theme
